@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Planning Response Schema",
+  "description": "JSON Schema für KI-generierte Tagespläne",
+  "type": "object",
+  "required": ["date", "timezone", "suggested_blocks", "reasoning_brief", "confidence", "metadata"],
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Datum des Plans (ISO 8601 Date)",
+      "format": "date"
+    },
+    "timezone": {
+      "type": "string",
+      "description": "IANA Zeitzone",
+      "default": "Europe/Berlin"
+    },
+    "focus_task_id": {
+      "type": "string",
+      "description": "UUID der Fokus-Aufgabe (kann null sein)",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "mini_task_ids": {
+      "type": "array",
+      "description": "UUIDs der Mini-Aufgaben (0-2)",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      },
+      "maxItems": 2
+    },
+    "suggested_blocks": {
+      "type": "array",
+      "description": "Zeitblöcke für den Tag",
+      "items": {
+        "$ref": "#/definitions/TimeBlock"
+      }
+    },
+    "reasoning_brief": {
+      "type": "string",
+      "description": "Kurze Begründung der Auswahl",
+      "minLength": 10,
+      "maxLength": 500
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Sicherheit des Plans",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadaten zur Verarbeitung",
+      "required": ["processing_time_ms"],
+      "properties": {
+        "processing_time_ms": {
+          "type": "integer",
+          "description": "Verarbeitungszeit in Millisekunden",
+          "minimum": 0
+        },
+        "algorithm_version": {
+          "type": "string",
+          "description": "Version des Planungs-Algorithmus"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "TimeBlock": {
+      "type": "object",
+      "required": ["start_at", "end_at", "block_type", "duration_minutes"],
+      "properties": {
+        "start_at": {
+          "type": "string",
+          "description": "Startzeit des Blocks (ISO 8601)",
+          "format": "date-time"
+        },
+        "end_at": {
+          "type": "string",
+          "description": "Endzeit des Blocks (ISO 8601)",
+          "format": "date-time"
+        },
+        "block_type": {
+          "type": "string",
+          "description": "Typ des Zeitblocks",
+          "enum": ["focus", "mini", "buffer"]
+        },
+        "task_id": {
+          "type": ["string", "null"],
+          "description": "UUID der zugeordneten Task (null bei buffer)",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "duration_minutes": {
+          "type": "integer",
+          "description": "Dauer des Blocks in Minuten",
+          "minimum": 1,
+          "maximum": 480
+        }
+      }
+    }
+  }
+}

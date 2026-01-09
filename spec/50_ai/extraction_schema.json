@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Extraction Response Schema",
+  "description": "JSON Schema für KI-Extraktion von Tasks, Events und Ideas aus Freitext",
+  "type": "object",
+  "required": ["items", "overall_confidence", "metadata"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "Liste der extrahierten Items",
+      "items": {
+        "$ref": "#/definitions/ExtractedItem"
+      },
+      "maxItems": 10
+    },
+    "overall_confidence": {
+      "type": "number",
+      "description": "Durchschnittlicher Confidence-Wert aller Items",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadaten zur Verarbeitung",
+      "required": ["processing_time_ms"],
+      "properties": {
+        "processing_time_ms": {
+          "type": "integer",
+          "description": "Verarbeitungszeit in Millisekunden",
+          "minimum": 0
+        },
+        "model_version": {
+          "type": "string",
+          "description": "Version des verwendeten KI-Modells"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ExtractedItem": {
+      "type": "object",
+      "required": ["id", "type", "title", "parsed_fields", "confidence"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Temporäre UUID für dieses Item",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "type": {
+          "type": "string",
+          "description": "Typ des Items",
+          "enum": ["task", "event", "idea"]
+        },
+        "title": {
+          "type": "string",
+          "description": "Titel des Items",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "raw_text_span": {
+          "type": "string",
+          "description": "Original-Textstelle aus der Notiz"
+        },
+        "parsed_fields": {
+          "type": "object",
+          "description": "Typ-spezifische Felder",
+          "oneOf": [
+            {"$ref": "#/definitions/TaskFields"},
+            {"$ref": "#/definitions/EventFields"},
+            {"$ref": "#/definitions/IdeaFields"}
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Sicherheit der Extraktion",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "questions": {
+          "type": "array",
+          "description": "Rückfragen bei niedriger Confidence",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 1
+        }
+      }
+    },
+    "TaskFields": {
+      "type": "object",
+      "required": ["duration_min_minutes", "duration_max_minutes", "estimation_source"],
+      "properties": {
+        "duration_min_minutes": {
+          "type": "integer",
+          "description": "Minimale Dauer in Minuten",
+          "minimum": 5,
+          "maximum": 480
+        },
+        "duration_max_minutes": {
+          "type": "integer",
+          "description": "Maximale Dauer in Minuten",
+          "minimum": 5,
+          "maximum": 480
+        },
+        "estimation_source": {
+          "type": "string",
+          "description": "Quelle der Schätzung",
+          "enum": ["ai", "parsed", "default"]
+        },
+        "due_at": {
+          "type": "string",
+          "description": "Fälligkeitsdatum (ISO 8601)",
+          "format": "date-time"
+        },
+        "importance": {
+          "type": "string",
+          "description": "Wichtigkeit",
+          "enum": ["low", "medium", "high"]
+        },
+        "energy_type": {
+          "type": "string",
+          "description": "Energie-Typ für Scheduling",
+          "enum": ["deep_work", "admin", "creative"]
+        }
+      }
+    },
+    "EventFields": {
+      "type": "object",
+      "required": ["timezone"],
+      "properties": {
+        "start_at": {
+          "type": "string",
+          "description": "Startzeit (ISO 8601)",
+          "format": "date-time"
+        },
+        "end_at": {
+          "type": "string",
+          "description": "Endzeit (ISO 8601)",
+          "format": "date-time"
+        },
+        "time_window_start": {
+          "type": "string",
+          "description": "Zeitfenster Start (HH:MM:SS)",
+          "pattern": "^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)$"
+        },
+        "time_window_end": {
+          "type": "string",
+          "description": "Zeitfenster Ende (HH:MM:SS)",
+          "pattern": "^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)$"
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA Zeitzone",
+          "default": "Europe/Berlin"
+        },
+        "all_day": {
+          "type": "boolean",
+          "description": "Ganztägiges Event",
+          "default": false
+        },
+        "location": {
+          "type": "string",
+          "description": "Ort des Events",
+          "maxLength": 500
+        }
+      },
+      "oneOf": [
+        {"required": ["start_at", "end_at"]},
+        {"required": ["time_window_start", "time_window_end"]}
+      ]
+    },
+    "IdeaFields": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "Ausführlicher Inhalt",
+          "maxLength": 10000
+        }
+      }
+    }
+  }
+}
