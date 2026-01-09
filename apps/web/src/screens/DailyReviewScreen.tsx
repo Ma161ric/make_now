@@ -1,0 +1,209 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getDayPlan, getDailyReview, saveDailyReview, listTasks, updateTaskStatus, saveDayPlan } from '../storage';
+import { formatDate } from '../utils';
+
+export default function DailyReviewScreen() {
+  const navigate = useNavigate();
+  const today = formatDate(new Date());
+  const dayPlan = getDayPlan(today);
+  const existingReview = getDailyReview(today);
+
+  const [taskStates, setTaskStates] = useState<Record<string, 'done' | 'postpone' | 'keep-open'>>({});
+  const [reflection, setReflection] = useState('');
+  const [mood, setMood] = useState<'great' | 'good' | 'okay' | 'tough' | undefined>();
+  const [error, setError] = useState<string | null>(null);
+
+  if (!dayPlan || dayPlan.status !== 'confirmed') {
+    return (
+      <div className="card">
+        <div className="section-title">Daily Review</div>
+        <div className="muted">Kein bestätigter Plan für heute vorhanden.</div>
+      </div>
+    );
+  }
+
+  if (existingReview) {
+    return (
+      <div className="card">
+        <div className="section-title">Daily Review</div>
+        <div className="muted">Review für heute bereits abgeschlossen.</div>
+        <div style={{ marginTop: 12 }}>
+          <div>Erledigte Tasks: {existingReview.tasks_done} von {existingReview.tasks_total}</div>
+          {existingReview.mood && <div>Stimmung: {getMoodEmoji(existingReview.mood)}</div>}
+          {existingReview.reflection_note && (
+            <div style={{ marginTop: 8 }}>
+              <div className="label">Notiz</div>
+              <div className="muted">{existingReview.reflection_note}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const plan = dayPlan.plan;
+  const allTaskIds = [
+    ...(plan.focus_task_id ? [plan.focus_task_id] : []),
+    ...plan.mini_task_ids,
+  ];
+  const tasks = allTaskIds.map(id => listTasks(t => t.id === id)[0]).filter(Boolean);
+
+  const allReviewed = tasks.every(t => taskStates[t.id]);
+  const doneCount = Object.values(taskStates).filter(s => s === 'done').length;
+
+  const handleComplete = () => {
+    if (!allReviewed) {
+      setError('Bitte alle Aufgaben bewerten.');
+      return;
+    }
+
+    // Update task states
+    tasks.forEach(task => {
+      const state = taskStates[task.id];
+      if (state === 'done') {
+        updateTaskStatus(task.id, 'done');
+      } else if (state === 'postpone') {
+        updateTaskStatus(task.id, 'scheduled');
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        // Would need to update due_at here in a real implementation
+      } else {
+        updateTaskStatus(task.id, 'open');
+      }
+    });
+
+    // Mark plan as completed
+    saveDayPlan({
+      ...dayPlan,
+      status: 'completed',
+    });
+
+    // Save review
+    const review: import('../storage').DailyReviewData = {
+      id: `review-${today}-${Date.now()}`,
+      date: today,
+      day_plan_id: dayPlan.id,
+      completed_at: new Date().toISOString(),
+      tasks_done: doneCount,
+      tasks_total: tasks.length,
+      reflection_note: reflection || undefined,
+      mood,
+    };
+    saveDailyReview(review);
+
+    setError(null);
+    navigate('/');
+  };
+
+  const motivationText = getMotivationText(doneCount, tasks.length);
+
+  return (
+    <div className="grid" style={{ gap: 16 }}>
+      <div className="card">
+        <div className="section-title">Daily Review</div>
+        <div className="muted" style={{ marginBottom: 12 }}>
+          Wie war dein Tag? • {today}
+        </div>
+
+        <div className="grid" style={{ gap: 12 }}>
+          {tasks.map(task => (
+            <div key={task.id} className="card" style={{ borderColor: '#e5e7eb' }}>
+              <div className="label">{task.title}</div>
+              <div className="flex" style={{ gap: 8, marginTop: 8 }}>
+                <button
+                  className={`button ${taskStates[task.id] === 'done' ? '' : 'secondary'}`}
+                  onClick={() => setTaskStates(prev => ({ ...prev, [task.id]: 'done' }))}
+                  style={{ flex: 1 }}
+                >
+                  ✅ Erledigt
+                </button>
+                <button
+                  className={`button ${taskStates[task.id] === 'postpone' ? '' : 'secondary'}`}
+                  onClick={() => setTaskStates(prev => ({ ...prev, [task.id]: 'postpone' }))}
+                  style={{ flex: 1 }}
+                >
+                  ➡️ Morgen
+                </button>
+                <button
+                  className={`button ${taskStates[task.id] === 'keep-open' ? '' : 'secondary'}`}
+                  onClick={() => setTaskStates(prev => ({ ...prev, [task.id]: 'keep-open' }))}
+                  style={{ flex: 1 }}
+                >
+                  ⏸️ Offen
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {allReviewed && (
+          <div style={{ marginTop: 12, padding: 12, background: '#ecfeff', borderRadius: 8 }}>
+            <div style={{ fontWeight: 600 }}>{motivationText}</div>
+            <div className="muted">{doneCount} von {tasks.length} Aufgaben erledigt</div>
+          </div>
+        )}
+
+        <div style={{ marginTop: 16 }}>
+          <div className="label">Kurze Notiz zum Tag? (optional)</div>
+          <textarea
+            className="input"
+            rows={3}
+            value={reflection}
+            onChange={(e) => setReflection(e.target.value)}
+            placeholder="Was lief gut? Was nicht?"
+          />
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <div className="label">Stimmung</div>
+          <div className="flex" style={{ gap: 8 }}>
+            {(['great', 'good', 'okay', 'tough'] as const).map(m => (
+              <button
+                key={m}
+                className={`button ${mood === m ? '' : 'secondary'}`}
+                onClick={() => setMood(m)}
+                style={{ flex: 1 }}
+              >
+                {getMoodEmoji(m)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
+
+        <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 16, gap: 8 }}>
+          <button className="button secondary" onClick={() => navigate('/today')}>
+            Später
+          </button>
+          <button
+            className="button"
+            onClick={handleComplete}
+            disabled={!allReviewed}
+          >
+            Tag abschließen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getMoodEmoji(mood: 'great' | 'good' | 'okay' | 'tough'): string {
+  const map = {
+    great: '😊',
+    good: '🙂',
+    okay: '😐',
+    tough: '😔',
+  };
+  return map[mood];
+}
+
+function getMotivationText(done: number, total: number): string {
+  const pct = (done / total) * 100;
+  if (pct === 100) return 'Perfekt! Alles geschafft! 🏆';
+  if (pct >= 66) return 'Stark! Fast alles erledigt! 🎉';
+  if (pct >= 33) return 'Solide! Morgen geht\'s weiter. 💪';
+  return 'Schwieriger Tag. Morgen wird besser! 🌟';
+}

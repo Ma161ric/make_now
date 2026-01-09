@@ -14,12 +14,21 @@ export default function InboxScreen() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-    if (!text.trim()) {
+    const trimmed = text.trim();
+    if (!trimmed) {
       setError('Bitte gib eine Notiz ein.');
       return;
     }
+    if (trimmed.length < 3) {
+      setError('Notiz muss mindestens 3 Zeichen haben.');
+      return;
+    }
+    if (trimmed.length > 2000) {
+      setError('Notiz darf maximal 2000 Zeichen haben.');
+      return;
+    }
     const noteId = uuid();
-    const extraction = extractFromNoteMock(text, { timezone: 'Europe/Berlin' });
+    const extraction = extractFromNoteMock(trimmed, { timezone: 'Europe/Berlin' });
     const validation = validateExtraction(extraction);
     if (!validation.valid) {
       setError('Extraktion ungültig, bitte Text anpassen.');
@@ -28,9 +37,9 @@ export default function InboxScreen() {
     addNote(
       {
         id: noteId,
-        raw_text: text,
+        raw_text: trimmed,
         created_at: new Date().toISOString(),
-        status: 'saved',
+        status: 'unprocessed',
       },
       extraction
     );
@@ -51,7 +60,11 @@ export default function InboxScreen() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Notiz eingeben..."
+            maxLength={2000}
           />
+          <div className="muted" style={{ fontSize: 12 }}>
+            {text.length}/2000 Zeichen
+          </div>
           {error && <div className="muted" style={{ color: '#b91c1c' }}>{error}</div>}
           {success && <div className="muted" style={{ color: '#15803d' }}>{success}</div>}
           <div className="flex" style={{ justifyContent: 'flex-end' }}>
