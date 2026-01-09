@@ -59,3 +59,14 @@ export type { ValidationError, ValidationResult } from './validation';
 
 // Mock AI
 export { extractFromNoteMock, planFromItemsMock } from './mockAi';
+
+// AI Service
+export {
+  AiService,
+  AiServiceError,
+  AiHttpError,
+  AiResponseParseError,
+  AiValidationError,
+} from './aiService';
+export type { AiServiceConfig, AiCallOptions, AiCallResult, ExtractionRequest, PlanDayRequest } from './aiService';
+export { MOCK_EXTRACTION_RESPONSE, MOCK_PLANNING_RESPONSE } from './mockResponses';

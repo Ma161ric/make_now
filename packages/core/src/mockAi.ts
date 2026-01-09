@@ -10,6 +10,7 @@ import type {
   TaskFields,
   EventFields,
   IdeaFields,
+  PlanningResponse,
 } from './models';
 import { estimateDuration, requiresQuestion, generateDurationQuestion } from './rules';
 
@@ -274,10 +275,47 @@ export function extractFromNoteMock(
 export function planFromItemsMock(
   items: Array<{ id: string; type: string; title: string }>,
   _context?: { date?: Date; timezone?: string }
-): Omit<ReturnType<typeof extractFromNoteMock>, 'items' | 'overall_confidence'> {
+): PlanningResponse {
   const startTime = Date.now();
+  const timezone = _context?.timezone || 'Europe/Berlin';
+  const dateObj = _context?.date ? new Date(_context.date) : new Date();
+  const date = dateObj.toISOString().split('T')[0];
+
+  const focus = items.find((i) => i.type === 'task') || items[0];
+  const minis = items
+    .filter((i) => i.id !== focus?.id)
+    .slice(0, 2)
+    .map((i) => i.id);
+
+  const baseStart = new Date(`${date}T09:00:00Z`);
+  const focusEnd = new Date(baseStart);
+  focusEnd.setMinutes(focusEnd.getMinutes() + 60);
+  const bufferEnd = new Date(focusEnd);
+  bufferEnd.setMinutes(bufferEnd.getMinutes() + 15);
 
   return {
+    date,
+    timezone,
+    focus_task_id: focus?.id,
+    mini_task_ids: minis,
+    suggested_blocks: [
+      {
+        start_at: baseStart.toISOString(),
+        end_at: focusEnd.toISOString(),
+        block_type: focus ? 'focus' : 'buffer',
+        task_id: focus?.id ?? null,
+        duration_minutes: 60,
+      },
+      {
+        start_at: focusEnd.toISOString(),
+        end_at: bufferEnd.toISOString(),
+        block_type: 'buffer',
+        task_id: null,
+        duration_minutes: 15,
+      },
+    ],
+    reasoning_brief: 'Mock planning uses first task as focus and adds one buffer block.',
+    confidence: items.length ? 0.8 : 0.5,
     metadata: {
       processing_time_ms: Date.now() - startTime,
       model_version: 'mock-v1',

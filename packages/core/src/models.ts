@@ -122,10 +122,10 @@ export interface DayPlan {
  * Part of a DayPlan
  */
 export interface TimeBlock {
-  start_at: Date;
-  end_at: Date;
+  start_at: string | Date;
+  end_at: string | Date;
   block_type: 'focus' | 'mini' | 'buffer';
-  task_id?: string; // null for buffer blocks
+  task_id?: string | null; // null for buffer blocks
   duration_minutes: number;
 }
 
