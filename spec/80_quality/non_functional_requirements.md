@@ -249,3 +249,24 @@ Nicht-funktionale Anforderungen an Performance, Zuverlässigkeit, Skalierbarkeit
 - Unit Tests: > 80%
 - Integration Tests: Critical paths covered
 - E2E Tests: Happy paths + 3 error scenarios
+
+## Security Baseline
+
+**Web MVP Security Requirements**:
+- See `/spec/80_quality/web_security_baseline.md` für vollständige Checkliste
+- XSS-Prevention (alle Inputs als Text gerendert)
+- Content Security Policy (CSP) konfiguriert
+- Security Headers gesetzt (X-Frame-Options, X-Content-Type-Options, etc.)
+- Dependency Audit (`npm audit`) vor jedem Release
+- Keine API Keys im Client-Code (siehe `/adr/0003_no_secrets_in_client.md`)
+
+**Threat Model und Risk Management**:
+- See `/spec/80_quality/threat_model.md` für vollständiges Threat Model
+- 12 identifizierte Risiken mit Controls und Testideen
+- Explizite Non-Goals für MVP dokumentiert
+
+**Storage Security**:
+- See `/spec/80_quality/secure_storage.md` für Storage-Strategie
+- localStorage im MVP (mit Export/Import-Funktion)
+- Migration zu IndexedDB vorbereitet (V2)
+- Optional: Client-Side Encryption (V2)

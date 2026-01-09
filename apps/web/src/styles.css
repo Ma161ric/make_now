@@ -1,0 +1,18 @@
+.app-shell { font-family: 'Segoe UI', sans-serif; background: #f6f7fb; color: #1f2933; min-height: 100vh; }
+.app-header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background:#fff; border-bottom:1px solid #e5e7eb; position:sticky; top:0; z-index:10; }
+.brand { font-weight:700; letter-spacing:0.3px; }
+.nav a { margin-right:12px; text-decoration:none; color:#4b5563; padding:6px 8px; border-radius:6px; }
+.nav a.active { background:#e0f2fe; color:#0369a1; }
+.app-main { max-width:960px; margin:0 auto; padding:20px; }
+.card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; box-shadow:0 6px 20px rgba(0,0,0,0.04); margin-bottom:16px; }
+.button { background:#0ea5e9; color:white; border:none; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; }
+.button.secondary { background:#e5e7eb; color:#111827; }
+.input, textarea { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; font-size:14px; }
+.list { list-style:none; padding:0; margin:0; }
+.list-item { padding:10px 0; border-bottom:1px solid #e5e7eb; }
+.badge { display:inline-block; padding:4px 8px; border-radius:8px; font-size:12px; background:#e0f2fe; color:#0369a1; }
+.flex { display:flex; gap:12px; align-items:center; }
+.grid { display:grid; gap:12px; }
+.label { font-weight:600; font-size:13px; margin-bottom:4px; }
+.section-title { font-size:18px; font-weight:700; margin-bottom:8px; }
+.muted { color:#6b7280; }

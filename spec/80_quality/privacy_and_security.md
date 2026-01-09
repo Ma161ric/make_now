@@ -346,3 +346,16 @@ Das DayFlow-Team
 **Data Subject Requests**:
 - Email: privacy@dayflow.app
 - Form: Settings → "Datenauskunft anfordern"
+
+## Verwandte Security-Dokumente
+
+**Threat Modeling und Risk Management**:
+- `/spec/80_quality/threat_model.md` → Vollständiges Threat Model mit 12 Risiken und Controls
+- `/spec/80_quality/secure_storage.md` → Storage-Strategie, Verschlüsselung, Export/Import
+
+**Secrets und API Keys**:
+- `/spec/80_quality/secrets_management.md` → .env-Regeln, Key-Rotation, Backend-Proxy
+- `/adr/0003_no_secrets_in_client.md` → Begründung für "Keine API Keys im Client"
+
+**Web Security Baseline**:
+- `/spec/80_quality/web_security_baseline.md` → XSS-Prevention, CSP, Security Headers

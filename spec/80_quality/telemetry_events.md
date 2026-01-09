@@ -4,6 +4,75 @@
 
 Alle Events für Analytics und Monitoring (opt-in, GDPR-compliant).
 
+## PII-Schutz und Verbotene Properties
+
+### Harte Regel: Niemals tracken
+
+**Verbotene Properties** (dürfen NIEMALS in Telemetrie):
+- `raw_text` (Notiz-Inhalt)
+- `title` (Task/Event/Idea-Titel)
+- `notes` (Task-Notes)
+- `email` (User Email)
+- `phone` (Phone Number)
+- `phone_number` (WhatsApp)
+- `location` (Event Location, falls präzise Adresse)
+- Jegliche Freitext-Eingaben von Usern
+
+**Erlaubte Alternativen**:
+- `text_length` statt `raw_text`
+- `tasks_count` statt `task_titles[]`
+- `user_id` (hashed Device-ID) statt `email`
+
+**Begründung**: Siehe `/spec/80_quality/privacy_and_security.md` und `/spec/80_quality/web_security_baseline.md`
+
+### Sanitization-Funktion (erforderlich)
+
+**Alle Telemetrie-Calls müssen durch Sanitization**:
+
+```typescript
+const FORBIDDEN_KEYS = [
+  "raw_text", "title", "notes", "email", "phone", 
+  "phone_number", "location", "text", "content"
+];
+
+function sanitizeProperties(props: Record<string, any>): Record<string, any> {
+  const sanitized = { ...props };
+  
+  // Remove PII
+  for (const key of FORBIDDEN_KEYS) {
+    delete sanitized[key];
+  }
+  
+  // Round durations (prevent fingerprinting)
+  if (sanitized.duration_ms) {
+    sanitized.duration_ms = Math.round(sanitized.duration_ms / 5000) * 5000;
+  }
+  
+  return sanitized;
+}
+
+function trackEvent(name: string, props: Record<string, any>) {
+  if (!userHasOptedIn()) return;
+  
+  analytics.track(name, sanitizeProperties(props));
+}
+```
+
+**Unit Test (erforderlich)**:
+```typescript
+test("trackEvent removes PII", () => {
+  const event = trackEvent("note_created", {
+    raw_text: "Secret info",
+    text_length: 15,
+    email: "user@example.com"
+  });
+  
+  expect(event.properties.raw_text).toBeUndefined();
+  expect(event.properties.email).toBeUndefined();
+  expect(event.properties.text_length).toBe(15); // Erlaubt
+});
+```
+
 ## Event Categories
 
 1. **Capture**: Notiz-Erfassung
