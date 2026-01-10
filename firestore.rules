@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidTimestamp(value) {
+      return value is timestamp;
+    }
+    
+    // User data - only accessible by the user themselves
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+      
+      // Day Plans
+      match /day_plans/{planId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) 
+          && request.resource.data.keys().hasAll(['date', 'plan', 'status'])
+          && request.resource.data.date is string
+          && request.resource.data.status in ['draft', 'confirmed', 'completed'];
+      }
+      
+      // Tasks
+      match /tasks/{taskId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId)
+          && request.resource.data.keys().hasAll(['title', 'status'])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 200
+          && request.resource.data.status in ['open', 'scheduled', 'in_progress', 'done', 'cancelled'];
+      }
+      
+      // Inbox Notes
+      match /inbox_notes/{noteId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId)
+          && request.resource.data.keys().hasAll(['raw_text', 'status'])
+          && request.resource.data.raw_text is string
+          && request.resource.data.raw_text.size() >= 3
+          && request.resource.data.raw_text.size() <= 2000
+          && request.resource.data.status in ['unprocessed', 'processed', 'archived'];
+      }
+      
+      // Extractions (linked to inbox notes)
+      match /extractions/{extractionId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId)
+          && request.resource.data.keys().hasAll(['note_id', 'items', 'overall_confidence'])
+          && request.resource.data.overall_confidence >= 0.0
+          && request.resource.data.overall_confidence <= 1.0;
+      }
+      
+      // Daily Reviews
+      match /daily_reviews/{reviewId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId)
+          && request.resource.data.keys().hasAll(['date', 'day_plan_id', 'tasks_done', 'tasks_total'])
+          && request.resource.data.tasks_done >= 0
+          && request.resource.data.tasks_total >= 0
+          && request.resource.data.tasks_done <= request.resource.data.tasks_total;
+      }
+    }
+    
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

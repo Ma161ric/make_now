@@ -1,59 +1,76 @@
-# 🎯 DayFlow
+# 🎯 Make Now
 
 > AI-powered day planner that transforms notes into structured daily plans
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-%3E%3D18.0.0-green.svg)](https://nodejs.org/)
-[![License](https://img.shields.io/badge/license-Private-red.svg)]()
+[![Firebase](https://img.shields.io/badge/Firebase-Ready-orange.svg)](https://firebase.google.com/)
+[![Production](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
 
 ## 🌟 Vision
 
-DayFlow is a mobile app that automatically creates structured tasks and event suggestions from freeform text notes, generating realistic daily plans. Write a quick note, the app suggests, you confirm.
+Make Now helps you capture thoughts effortlessly and turn them into actionable plans. Using AI-powered extraction and intelligent scheduling, it creates realistic daily plans that you can actually complete.
 
-## ✨ Core Principles
+## ✨ Core Features
 
-- **📥 Inbox First** – Everything starts as freeform text. No forms, no fields.
-- **💡 Suggestions, Not Autopilot** – The app suggests, you confirm. No surprises.
-- **⏱️ Minimal Scheduling** – 1 focus task (60-120 min) + 2 mini tasks (5-20 min) per day, plus buffer.
-- **🤖 AI with Confidence** – When uncertain, the app asks one targeted question.
-- **📖 MVP: Calendar Read-Only** – Optional calendar reading in V1. No calendar writing.
-- **💬 WhatsApp Integration** – Optional in MVP, but cleanly specified for V1.
+### 🎯 Production-Ready MVP
+
+- **📝 Inbox Capture** – Write notes naturally, no forms or fields required
+- **🤖 AI Extraction** – Groq-powered AI extracts tasks, events, and ideas automatically  
+- **✅ Review & Confirm** – You stay in control—review and approve all suggestions
+- **📅 Smart Planning** – AI generates focused daily plans: 1 major task + 2 small tasks
+- **🔄 Real-time Sync** – Firebase-powered cloud sync across devices
+- **🔐 Secure Auth** – Email, Google, and Apple sign-in with Firebase Authentication
+- **🌓 Theme Support** – Beautiful light and dark modes
+- **📱 Responsive** – Works seamlessly on desktop and mobile
+
+### 🛡️ Security & Privacy
+
+- **End-to-end Security** – Security headers, HTTPS enforcement, CSP
+- **Privacy First** – GDPR-compliant data handling
+- **Firestore Rules** – Robust security rules protecting user data
+- **No Tracking** – We don't use third-party analytics or ad trackers
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js >= 18.0.0
-- npm or yarn
+- Firebase CLI (`npm install -g firebase-tools`)
+- Groq API key ([Get one free](https://console.groq.com/))
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd make_now
-
 # Install dependencies
 npm install
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your Firebase and Groq credentials
 
 # Start development server
 npm run dev
 ```
 
-### Development
+### Development Commands
 
 ```bash
-# Run development server
-npm run dev
+# Development
+npm run dev              # Start dev server
 
-# Run tests
-npm test
+# Testing
+npm test                 # Run all tests
+npm run test:watch       # Run tests in watch mode
 
-# Run tests in watch mode
-npm run test:watch
+# Building
+npm run build            # Build for production
+npm run preview          # Preview production build
 
-# Build for production
-npm run build
+# Deployment
+npm run deploy           # Deploy to Firebase
+npm run deploy:hosting   # Deploy hosting only
+npm run deploy:rules     # Deploy security rules only
 ```
 
 ## 📦 Project Structure

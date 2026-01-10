@@ -29,6 +29,9 @@ export type {
 
 export { StateTransitionError } from './models';
 
+// Groq AI Service (Production)
+export { extractFromNote, planDay, estimateDuration, GroqAPIError } from './groqService';
+
 // State Transitions
 export {
   transitionTaskStatus,

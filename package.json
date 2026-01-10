@@ -13,7 +13,13 @@
     "test": "npm run test:once --workspaces",
     "test:once": "npm run test:once --workspaces",
     "test:watch": "npm run test --workspaces",
-    "build": "npm run build -w @make-now/web && npm run build -w @make-now/core"
+    "build": "npm run build -w @make-now/web && npm run build -w @make-now/core",
+    "build:prod": "NODE_ENV=production npm run build",
+    "preview": "npm run preview -w @make-now/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "deploy": "npm run build:prod && firebase deploy",
+    "deploy:hosting": "npm run build:prod && firebase deploy --only hosting",
+    "deploy:rules": "firebase deploy --only firestore:rules"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
