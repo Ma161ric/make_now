@@ -339,9 +339,9 @@ export default function TodayScreen() {
             {miniTasks.length === 0 && <div className="muted">Keine Minis.</div>}
             {miniTasks.length > 0 && (
               <ul className="list">
-                {miniTasks.map((task) => (
-                  <SortableTaskItem key={task.id} task={task} type="mini" />
-                ))}
+                {miniTasks.map((task) => 
+                  task ? <SortableTaskItem key={task.id} task={task} type="mini" /> : null
+                )}
               </ul>
             )}
           </SortableContext>

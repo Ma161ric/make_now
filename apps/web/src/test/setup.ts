@@ -14,6 +14,14 @@ vi.mock('../firebase/firebaseConfig', () => ({
   db: {},
   app: {},
 }));
+// Mock AuthContext
+vi.mock('../auth/authContext', () => ({
+  useAuth: vi.fn(() => ({
+    firebaseUser: { uid: 'test-uid', email: 'test@example.com', displayName: 'Test User' },
+  })),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(),
@@ -48,9 +56,22 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
-  onSnapshot: vi.fn(),
+  onSnapshot: vi.fn((refOrQuery: any, callback: Function) => {
+    // Provide a snapshot object compatible with both doc and query callbacks
+    const snapshot: any = {
+      exists: () => false,
+      data: () => ({}),
+      docs: [],
+    };
+    if (typeof callback === 'function') {
+      callback(snapshot);
+    }
+    // Return unsubscribe function
+    return vi.fn();
+  }),
   Timestamp: {
     now: () => ({ seconds: Date.now() / 1000, nanoseconds: 0 }),
+    fromDate: (date: Date) => ({ seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 }),
   },
 }));
 

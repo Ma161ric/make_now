@@ -99,7 +99,7 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Notiz darf maximal 2000 Zeichen haben.')).toBeInTheDocument();
   });
 
-  it('should trim whitespace from input', () => {
+  it('should trim whitespace from input', async () => {
     render(
       <TestRouter>
         <InboxScreen />
@@ -112,7 +112,9 @@ describe('InboxScreen', () => {
     const submitButton = screen.getByRole('button', { name: 'Speichern' });
     fireEvent.click(submitButton);
 
-    expect(screen.getByText('Gespeichert. Jetzt prüfen.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Gespeichert. Jetzt prüfen.')).toBeInTheDocument();
+    });
 
     const notes = storage.listNotes();
     expect(notes[0].raw_text).toBe('Test note with spaces');
@@ -136,7 +138,7 @@ describe('InboxScreen', () => {
     expect(notes[0].status).toBe('unprocessed');
   });
 
-  it('should clear form after successful submission', () => {
+  it('should clear form after successful submission', async () => {
     render(
       <TestRouter>
         <InboxScreen />
@@ -149,11 +151,13 @@ describe('InboxScreen', () => {
     const submitButton = screen.getByRole('button', { name: 'Speichern' });
     fireEvent.click(submitButton);
 
-    expect(textarea.value).toBe('');
-    expect(screen.getByText('0/2000 Zeichen')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(textarea.value).toBe('');
+      expect(screen.getByText('0/2000 Zeichen')).toBeInTheDocument();
+    });
   });
 
-  it('should show success message and save note', () => {
+  it('should show success message and save note', async () => {
     render(
       <TestRouter>
         <InboxScreen />
@@ -166,7 +170,9 @@ describe('InboxScreen', () => {
     const submitButton = screen.getByRole('button', { name: 'Speichern' });
     fireEvent.click(submitButton);
 
-    expect(screen.getByText('Gespeichert. Jetzt prüfen.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Gespeichert. Jetzt prüfen.')).toBeInTheDocument();
+    });
 
     const notes = storage.listNotes();
     expect(notes).toHaveLength(1);
@@ -302,7 +308,7 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Keine Notizen vorhanden.')).toBeInTheDocument();
   });
 
-  it('should accept exactly 3 characters', () => {
+  it('should accept exactly 3 characters', async () => {
     render(
       <TestRouter>
         <InboxScreen />
@@ -315,10 +321,12 @@ describe('InboxScreen', () => {
     const submitButton = screen.getByRole('button', { name: 'Speichern' });
     fireEvent.click(submitButton);
 
-    expect(screen.getByText('Gespeichert. Jetzt prüfen.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Gespeichert. Jetzt prüfen.')).toBeInTheDocument();
+    });
   });
 
-  it('should accept exactly 2000 characters', () => {
+  it('should accept exactly 2000 characters', async () => {
     render(
       <TestRouter>
         <InboxScreen />
@@ -332,6 +340,8 @@ describe('InboxScreen', () => {
     const submitButton = screen.getByRole('button', { name: 'Speichern' });
     fireEvent.click(submitButton);
 
-    expect(screen.getByText('Gespeichert. Jetzt prüfen.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Gespeichert. Jetzt prüfen.')).toBeInTheDocument();
+    });
   });
 });

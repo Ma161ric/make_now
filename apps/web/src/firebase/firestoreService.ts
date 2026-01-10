@@ -1,18 +1,5 @@
-import {
-  collection,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
-  query,
-  where,
-  onSnapshot,
-  Query,
-  QueryConstraint,
-  Timestamp,
-} from 'firebase/firestore';
-import { db } from '../firebase/firebaseConfig';
+import { getDb } from '../firebase/firebaseConfig';
+import { Timestamp } from 'firebase/firestore';
 
 export interface FirestoreTask {
   id: string;
@@ -41,6 +28,8 @@ export interface FirestorePlan {
 export class FirestoreService {
   async saveDayPlan(userId: string, date: string, planData: any) {
     try {
+      const db = await getDb();
+      const { doc, setDoc, Timestamp } = await import('firebase/firestore');
       const planRef = doc(db, `users/${userId}/day_plans/${date}`);
       await setDoc(planRef, {
         date,
@@ -57,8 +46,9 @@ export class FirestoreService {
 
   async getDayPlan(userId: string, date: string) {
     try {
+      const db = await getDb();
+      const { doc, getDoc } = await import('firebase/firestore');
       const planRef = doc(db, `users/${userId}/day_plans/${date}`);
-      const { getDoc } = await import('firebase/firestore');
       const docSnapshot = await getDoc(planRef);
       if (docSnapshot.exists()) {
         return docSnapshot.data() as any;
@@ -75,20 +65,27 @@ export class FirestoreService {
     date: string,
     callback: (plan: any | null) => void
   ): (() => void) {
-    const planRef = doc(db, `users/${userId}/day_plans/${date}`);
-    const unsubscribe = onSnapshot(planRef, (docSnapshot) => {
-      if (docSnapshot.exists()) {
-        callback(docSnapshot.data());
-      } else {
-        callback(null);
-      }
-    });
-    return unsubscribe;
+    let unsubscribe: () => void = () => {};
+    (async () => {
+      const db = await getDb();
+      const { doc, onSnapshot } = await import('firebase/firestore');
+      const planRef = doc(db, `users/${userId}/day_plans/${date}`);
+      unsubscribe = onSnapshot(planRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          callback(docSnapshot.data());
+        } else {
+          callback(null);
+        }
+      });
+    })();
+    return () => { try { unsubscribe(); } catch {} }
   }
 
   async saveTask(userId: string, taskData: any) {
     try {
       const taskId = taskData.id || Date.now().toString();
+      const db = await getDb();
+      const { doc, setDoc, Timestamp } = await import('firebase/firestore');
       const taskRef = doc(db, `users/${userId}/items/${taskId}`);
       await setDoc(taskRef, {
         ...taskData,
@@ -105,6 +102,8 @@ export class FirestoreService {
 
   async updateTask(userId: string, taskId: string, updates: any) {
     try {
+      const db = await getDb();
+      const { doc, updateDoc, Timestamp } = await import('firebase/firestore');
       const taskRef = doc(db, `users/${userId}/items/${taskId}`);
       await updateDoc(taskRef, {
         ...updates,
@@ -118,6 +117,8 @@ export class FirestoreService {
 
   async deleteTask(userId: string, taskId: string) {
     try {
+      const db = await getDb();
+      const { doc, deleteDoc } = await import('firebase/firestore');
       const taskRef = doc(db, `users/${userId}/items/${taskId}`);
       await deleteDoc(taskRef);
     } catch (error) {
@@ -128,6 +129,8 @@ export class FirestoreService {
 
   async getTasks(userId: string): Promise<FirestoreTask[]> {
     try {
+      const db = await getDb();
+      const { query, collection, getDocs } = await import('firebase/firestore');
       const q = query(collection(db, `users/${userId}/items`));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map((doc) => ({
@@ -144,19 +147,26 @@ export class FirestoreService {
     userId: string,
     callback: (tasks: FirestoreTask[]) => void
   ): (() => void) {
-    const q = query(collection(db, `users/${userId}/items`));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const tasks = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as FirestoreTask[];
-      callback(tasks);
-    });
-    return unsubscribe;
+    let unsubscribe: () => void = () => {};
+    (async () => {
+      const db = await getDb();
+      const { query, collection, onSnapshot } = await import('firebase/firestore');
+      const q = query(collection(db, `users/${userId}/items`));
+      unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const tasks = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as FirestoreTask[];
+        callback(tasks);
+      });
+    })();
+    return () => { try { unsubscribe(); } catch {} }
   }
 
   async saveInboxNote(userId: string, noteText: string) {
     try {
+      const db = await getDb();
+      const { doc, collection, setDoc, Timestamp } = await import('firebase/firestore');
       const noteRef = doc(collection(db, `users/${userId}/inbox_notes`));
       return setDoc(noteRef, {
         raw_text: noteText,
@@ -174,22 +184,29 @@ export class FirestoreService {
     userId: string,
     callback: (notes: any[]) => void
   ): (() => void) {
-    const q = query(
-      collection(db, `users/${userId}/inbox_notes`),
-      where('status', '==', 'unprocessed')
-    );
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const notes = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      callback(notes);
-    });
-    return unsubscribe;
+    let unsubscribe: () => void = () => {};
+    (async () => {
+      const db = await getDb();
+      const { query, collection, where, onSnapshot } = await import('firebase/firestore');
+      const q = query(
+        collection(db, `users/${userId}/inbox_notes`),
+        where('status', '==', 'unprocessed')
+      );
+      unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const notes = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        callback(notes);
+      });
+    })();
+    return () => { try { unsubscribe(); } catch {} }
   }
 
   async saveDailyReview(userId: string, review: any) {
     try {
+      const db = await getDb();
+      const { doc, setDoc, Timestamp } = await import('firebase/firestore');
       const reviewRef = doc(db, `users/${userId}/daily_reviews/${review.date}`);
       await setDoc(reviewRef, {
         ...review,
@@ -204,8 +221,9 @@ export class FirestoreService {
 
   async getDailyReview(userId: string, date: string) {
     try {
+      const db = await getDb();
+      const { doc, getDoc } = await import('firebase/firestore');
       const reviewRef = doc(db, `users/${userId}/daily_reviews/${date}`);
-      const { getDoc } = await import('firebase/firestore');
       const docSnapshot = await getDoc(reviewRef);
       if (docSnapshot.exists()) {
         return docSnapshot.data();

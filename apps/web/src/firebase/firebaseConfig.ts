@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -17,7 +16,13 @@ export const app = initializeApp(firebaseConfig);
 // Initialize Auth and get a reference to the service
 export const auth = getAuth(app);
 
-// Initialize Firestore and get a reference to the service
-export const db = getFirestore(app);
+// Lazy Firestore getter to enable code-splitting
+let cachedDb: any | null = null;
+export async function getDb() {
+  if (cachedDb) return cachedDb;
+  const { getFirestore } = await import('firebase/firestore');
+  cachedDb = getFirestore(app);
+  return cachedDb;
+}
 
 export default app;

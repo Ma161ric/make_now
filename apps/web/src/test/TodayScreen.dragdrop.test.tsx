@@ -76,9 +76,10 @@ describe('TodayScreen - Drag and Drop', () => {
       id: 'task-1',
       title: 'Test Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -91,10 +92,14 @@ describe('TodayScreen - Drag and Drop', () => {
       status: 'suggested',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -117,9 +122,10 @@ describe('TodayScreen - Drag and Drop', () => {
       id: 'task-1',
       title: 'Focus Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -128,9 +134,10 @@ describe('TodayScreen - Drag and Drop', () => {
       id: 'task-2',
       title: 'Mini Task',
       status: 'scheduled',
-      duration_minutes: 20,
       duration_min_minutes: 15,
       duration_max_minutes: 25,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -144,10 +151,14 @@ describe('TodayScreen - Drag and Drop', () => {
       status: 'suggested',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: ['task-2'],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -183,9 +194,10 @@ describe('TodayScreen - Drag and Drop', () => {
       id: 'task-1',
       title: 'Original Focus',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -194,9 +206,10 @@ describe('TodayScreen - Drag and Drop', () => {
       id: 'task-2',
       title: 'Mini 1',
       status: 'scheduled',
-      duration_minutes: 20,
       duration_min_minutes: 15,
       duration_max_minutes: 25,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -205,9 +218,10 @@ describe('TodayScreen - Drag and Drop', () => {
       id: 'task-3',
       title: 'Mini 2',
       status: 'scheduled',
-      duration_minutes: 20,
       duration_min_minutes: 15,
       duration_max_minutes: 25,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -222,10 +236,14 @@ describe('TodayScreen - Drag and Drop', () => {
       status: 'suggested',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: ['task-2', 'task-3'],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -253,9 +271,10 @@ describe('TodayScreen - Drag and Drop', () => {
       id: 'task-1',
       title: 'Focus Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -268,10 +287,14 @@ describe('TodayScreen - Drag and Drop', () => {
       status: 'suggested',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -290,3 +313,4 @@ describe('TodayScreen - Drag and Drop', () => {
     expect(focusCard).toBeInTheDocument();
   });
 });
+

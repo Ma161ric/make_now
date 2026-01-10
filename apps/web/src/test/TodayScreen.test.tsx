@@ -79,9 +79,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Test Task',
       status: 'open',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -106,9 +107,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Focus Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -121,6 +123,8 @@ describe('TodayScreen', () => {
       status: 'suggested',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [
@@ -133,6 +137,8 @@ describe('TodayScreen', () => {
           },
         ],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -150,14 +156,15 @@ describe('TodayScreen', () => {
     expect(screen.getByText(/ca\. 60-120 Min/)).toBeInTheDocument();
   });
 
-  it('should confirm plan and set tasks to scheduled', () => {
+  it('should confirm plan and set tasks to scheduled', async () => {
     const task1: Task = {
       id: 'task-1',
       title: 'Focus Task',
       status: 'open',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -166,9 +173,10 @@ describe('TodayScreen', () => {
       id: 'task-2',
       title: 'Mini Task',
       status: 'open',
-      duration_minutes: 30,
       duration_min_minutes: 20,
       duration_max_minutes: 40,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -182,10 +190,14 @@ describe('TodayScreen', () => {
       status: 'suggested',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: ['task-2'],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -202,15 +214,12 @@ describe('TodayScreen', () => {
     const confirmButton = screen.getByRole('button', { name: /Plan bestätigen/ });
     fireEvent.click(confirmButton);
 
-    // Check tasks are now scheduled
-    const updatedTask1 = storage.getTask('task-1');
-    const updatedTask2 = storage.getTask('task-2');
-    expect(updatedTask1?.status).toBe('scheduled');
-    expect(updatedTask2?.status).toBe('scheduled');
-
-    // Check plan is confirmed
-    const updatedPlan = storage.getDayPlan(today);
-    expect(updatedPlan?.status).toBe('confirmed');
+    // Wait for async confirm to complete and tasks to update
+    await waitFor(() => {
+      expect(storage.getTask('task-1')?.status).toBe('scheduled');
+      expect(storage.getTask('task-2')?.status).toBe('scheduled');
+      expect(storage.getDayPlan(today)?.status).toBe('confirmed');
+    });
   });
 
   it('should show Plan B button when plan is confirmed', () => {
@@ -218,9 +227,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Test Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -233,10 +243,14 @@ describe('TodayScreen', () => {
       status: 'confirmed',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -258,9 +272,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Test Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -273,10 +288,14 @@ describe('TodayScreen', () => {
       status: 'confirmed',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -302,9 +321,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Original Focus',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -313,9 +333,10 @@ describe('TodayScreen', () => {
       id: 'task-2',
       title: 'Alternative Focus',
       status: 'open',
-      duration_minutes: 60,
       duration_min_minutes: 45,
       duration_max_minutes: 75,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -329,10 +350,14 @@ describe('TodayScreen', () => {
       status: 'confirmed',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [],
         reasoning_brief: 'Original plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -366,9 +391,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Test Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -381,10 +407,14 @@ describe('TodayScreen', () => {
       status: 'confirmed',
       replan_count: 3,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -407,9 +437,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Test Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -422,10 +453,14 @@ describe('TodayScreen', () => {
       status: 'confirmed',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -449,9 +484,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Test Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -464,6 +500,8 @@ describe('TodayScreen', () => {
       status: 'suggested',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: [],
         suggested_blocks: [
@@ -482,6 +520,8 @@ describe('TodayScreen', () => {
           },
         ],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -502,9 +542,10 @@ describe('TodayScreen', () => {
       id: 'task-1',
       title: 'Focus Task',
       status: 'scheduled',
-      duration_minutes: 90,
       duration_min_minutes: 60,
       duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -513,9 +554,10 @@ describe('TodayScreen', () => {
       id: 'task-2',
       title: 'Mini Task 1',
       status: 'scheduled',
-      duration_minutes: 30,
       duration_min_minutes: 20,
       duration_max_minutes: 40,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -524,9 +566,10 @@ describe('TodayScreen', () => {
       id: 'task-3',
       title: 'Mini Task 2',
       status: 'scheduled',
-      duration_minutes: 15,
       duration_min_minutes: 10,
       duration_max_minutes: 20,
+      estimation_source: 'parsed',
+      importance: 'medium',
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -541,10 +584,14 @@ describe('TodayScreen', () => {
       status: 'suggested',
       replan_count: 0,
       plan: {
+        date: today,
+        timezone: 'Europe/Berlin',
         focus_task_id: 'task-1',
         mini_task_ids: ['task-2', 'task-3'],
         suggested_blocks: [],
         reasoning_brief: 'Test plan',
+        confidence: 0.8,
+        metadata: { processing_time_ms: 100 },
       },
     };
 
@@ -562,3 +609,4 @@ describe('TodayScreen', () => {
     expect(screen.getByText(/Mini Task 2/)).toBeInTheDocument();
   });
 });
+
