@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist",
     "declaration": true,
-    "strict": true
+    "strict": true,
+    "module": "esnext",
+    "skipLibCheck": true
   },
   "include": ["src"],
   "exclude": ["test"]

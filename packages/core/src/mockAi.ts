@@ -318,7 +318,7 @@ export function planFromItemsMock(
     confidence: items.length ? 0.8 : 0.5,
     metadata: {
       processing_time_ms: Date.now() - startTime,
-      model_version: 'mock-v1',
+      algorithm_version: 'mock-v1',
     },
   };
 }

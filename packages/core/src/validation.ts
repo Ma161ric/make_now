@@ -72,7 +72,7 @@ export function validateExtraction(data: unknown): ValidationResult {
   }
 
   const errors: ValidationError[] = (extractionValidator.errors || []).map((err) => ({
-    path: err.dataPath || err.instancePath || 'root',
+    path: err.instancePath || 'root',
     message: err.message || 'Unknown error',
     keyword: err.keyword || 'unknown',
     params: err.params || {},
@@ -93,7 +93,7 @@ export function validatePlanning(data: unknown): ValidationResult {
   }
 
   const errors: ValidationError[] = (planningValidator.errors || []).map((err) => ({
-    path: err.dataPath || err.instancePath || 'root',
+    path: err.instancePath || 'root',
     message: err.message || 'Unknown error',
     keyword: err.keyword || 'unknown',
     params: err.params || {},

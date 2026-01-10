@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { estimateDuration, GroqAPIError } from '@make-now/core';
+import { estimateDurationAI as estimateDuration, GroqAPIError } from '@make-now/core';
 
 interface DurationEstimate {
   min_minutes: number;
