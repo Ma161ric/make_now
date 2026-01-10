@@ -1,4 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  OAuthProvider,
+  AuthError,
+} from 'firebase/auth';
+import { auth } from '../firebase/firebaseConfig';
 
 export interface User {
   id: string;
@@ -22,32 +34,58 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof AuthError) {
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        return 'Diese E-Mail wird bereits verwendet';
+      case 'auth/weak-password':
+        return 'Passwort ist zu schwach (mind. 6 Zeichen)';
+      case 'auth/invalid-email':
+        return 'Ungültige E-Mail-Adresse';
+      case 'auth/user-not-found':
+        return 'Benutzer nicht gefunden';
+      case 'auth/wrong-password':
+        return 'Passwort ist falsch';
+      case 'auth/popup-closed-by-user':
+        return 'Anmeldung abgebrochen';
+      default:
+        return error.message;
+    }
+  }
+  return error instanceof Error ? error.message : 'Ein Fehler ist aufgetreten';
+};
+
+const mapFirebaseUser = (fbUser: any): User => ({
+  id: fbUser.uid,
+  email: fbUser.email || '',
+  displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
+  avatar: fbUser.photoURL || undefined,
+  provider: fbUser.providerData?.[0]?.providerId?.includes('google')
+    ? 'google'
+    : fbUser.providerData?.[0]?.providerId?.includes('apple')
+      ? 'apple'
+      : 'email',
+});
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize from localStorage on mount
+  // Initialize Firebase Auth State
   useEffect(() => {
-    const storedUser = localStorage.getItem('auth_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (err) {
-        localStorage.removeItem('auth_user');
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      if (fbUser) {
+        setUser(mapFirebaseUser(fbUser));
+      } else {
+        setUser(null);
       }
-    }
-    setLoading(false);
-  }, []);
+      setLoading(false);
+    });
 
-  // Persist user to localStorage
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('auth_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('auth_user');
-    }
-  }, [user]);
+    return () => unsubscribe();
+  }, []);
 
   const signup = async (email: string, password: string, displayName: string) => {
     setError(null);
@@ -64,18 +102,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error('Ungültige E-Mail-Adresse');
       }
 
-      // In production: call Firebase Auth
-      // For now: mock implementation with localStorage
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email,
-        displayName,
-        provider: 'email',
-      };
+      // Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      setUser(mockUser);
+      // Update profile with display name
+      await updateProfile(userCredential.user, {
+        displayName,
+      });
+
+      // Firebase auth state listener will handle setting user
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Registrierung fehlgeschlagen';
+      const message = getErrorMessage(err);
       setError(message);
       throw err;
     } finally {
@@ -91,18 +128,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error('E-Mail und Passwort sind erforderlich');
       }
 
-      // In production: call Firebase Auth
-      // For now: mock implementation
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email,
-        displayName: email.split('@')[0],
-        provider: 'email',
-      };
-
-      setUser(mockUser);
+      await signInWithEmailAndPassword(auth, email, password);
+      // Firebase auth state listener will handle setting user
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen';
+      const message = getErrorMessage(err);
       setError(message);
       throw err;
     } finally {
@@ -114,19 +143,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     setLoading(true);
     try {
-      // In production: Firebase Google Sign-In
-      // For now: mock implementation
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email: `user${Date.now()}@google.mock`,
-        displayName: 'Google User',
-        avatar: '👤',
-        provider: 'google',
-      };
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
 
-      setUser(mockUser);
+      await signInWithPopup(auth, provider);
+      // Firebase auth state listener will handle setting user
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Google-Anmeldung fehlgeschlagen';
+      const message = getErrorMessage(err);
       setError(message);
       throw err;
     } finally {
@@ -138,19 +161,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     setLoading(true);
     try {
-      // In production: Firebase Apple Sign-In
-      // For now: mock implementation
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email: `user${Date.now()}@apple.mock`,
-        displayName: 'Apple User',
-        avatar: '🍎',
-        provider: 'apple',
-      };
+      const provider = new OAuthProvider('apple.com');
+      provider.addScope('email');
+      provider.addScope('name');
 
-      setUser(mockUser);
+      await signInWithPopup(auth, provider);
+      // Firebase auth state listener will handle setting user
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Apple-Anmeldung fehlgeschlagen';
+      const message = getErrorMessage(err);
       setError(message);
       throw err;
     } finally {
@@ -162,10 +180,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     setLoading(true);
     try {
-      // In production: call Firebase Auth logout
+      await signOut(auth);
       setUser(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Abmeldung fehlgeschlagen';
+      const message = getErrorMessage(err);
       setError(message);
       throw err;
     } finally {
