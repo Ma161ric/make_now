@@ -11,9 +11,10 @@ vi.mock('../firebase/firebaseConfig', () => ({
       return vi.fn(); // unsubscribe function
     }),
   },
-  db: {},
+  getDb: vi.fn(async () => ({})),
   app: {},
 }));
+
 // Mock AuthContext
 vi.mock('../auth/authContext', () => ({
   useAuth: vi.fn(() => ({
@@ -21,7 +22,6 @@ vi.mock('../auth/authContext', () => ({
   })),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
-
 
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(),
@@ -45,33 +45,67 @@ vi.mock('firebase/auth', () => ({
   },
 }));
 
-vi.mock('firebase/firestore', () => ({
-  getFirestore: vi.fn(),
-  collection: vi.fn(),
-  doc: vi.fn(),
-  setDoc: vi.fn(),
-  getDoc: vi.fn(),
-  getDocs: vi.fn(),
-  updateDoc: vi.fn(),
-  deleteDoc: vi.fn(),
-  query: vi.fn(),
-  where: vi.fn(),
-  onSnapshot: vi.fn((refOrQuery: any, callback: Function) => {
-    // Provide a snapshot object compatible with both doc and query callbacks
-    const snapshot: any = {
-      exists: () => false,
-      data: () => ({}),
-      docs: [],
-    };
-    if (typeof callback === 'function') {
-      callback(snapshot);
+// Mock the FirestoreService entirely - bypass Firebase calls completely
+vi.mock('../firebase/firestoreService', () => ({
+  FirestoreService: class MockFirestoreService {
+    async saveDayPlan() {
+      return Promise.resolve();
     }
-    // Return unsubscribe function
+    async getDayPlan() {
+      return Promise.resolve(null);
+    }
+    async saveTask() {
+      return Promise.resolve();
+    }
+    async getTask() {
+      return Promise.resolve(null);
+    }
+    async saveInboxNote() {
+      return Promise.resolve();
+    }
+    async getInboxNotes() {
+      return Promise.resolve([]);
+    }
+    async saveDailyReview() {
+      return Promise.resolve();
+    }
+    async getDailyReview() {
+      return Promise.resolve(null);
+    }
+    onDayPlanSnapshot() {
+      return () => {};
+    }
+    onTasksSync() {
+      return () => {};
+    }
+    onInboxNotesSnapshot() {
+      return () => {};
+    }
+  },
+}));
+
+// Mock firebase/firestore as backup (in case it's imported directly)
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(() => ({})),
+  collection: vi.fn((_db: any, path: string) => ({ path })),
+  doc: vi.fn((_ref: any, id?: string) => ({ id })),
+  setDoc: vi.fn(async () => undefined),
+  getDoc: vi.fn(async () => ({ exists: () => false, data: () => ({}) })),
+  getDocs: vi.fn(async () => ({ docs: [] })),
+  updateDoc: vi.fn(async () => undefined),
+  deleteDoc: vi.fn(async () => undefined),
+  query: vi.fn((_ref: any) => ({ _ref })),
+  where: vi.fn((_field: string) => ({ _field })),
+  onSnapshot: vi.fn((_ref: any, callback: Function) => {
+    callback({ exists: () => false, data: () => ({}) });
     return vi.fn();
   }),
   Timestamp: {
     now: () => ({ seconds: Date.now() / 1000, nanoseconds: 0 }),
-    fromDate: (date: Date) => ({ seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 }),
+    fromDate: (date: Date) => ({
+      seconds: Math.floor(date.getTime() / 1000),
+      nanoseconds: 0,
+    }),
   },
 }));
 
