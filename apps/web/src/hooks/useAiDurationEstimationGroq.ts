@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { estimateDurationAI as estimateDuration, GroqAPIError } from '@make-now/core';
+import { estimateDurationCloud } from '../firebase/functionsService';
 
 interface DurationEstimate {
   min_minutes: number;
@@ -16,18 +16,31 @@ export function useAiDurationEstimationGroq() {
     setError(null);
 
     try {
-      const apiKey = import.meta.env.GROQ_API_KEY;
-      
-      if (!apiKey) {
-        throw new Error('Groq API Key fehlt. Bitte in .env konfigurieren.');
-      }
-
-      const result = await estimateDuration(taskTitle, apiKey);
-      return result;
+      const result = await estimateDurationCloud(taskTitle);
+      return {
+        min_minutes: result.min,
+        max_minutes: result.max,
+        confidence: result.confidence
+      };
     } catch (err) {
-      const errorMessage = err instanceof GroqAPIError 
+      const errorMessage = err instanceof Error 
         ? err.message 
-        : err instanceof Error 
+        : 'Unbekannter Fehler bei der Zeitschätzung';
+      
+      setError(errorMessage);
+      console.error('AI duration estimation error:', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    estimate,
+    loading,
+    error,
+  };
+}
           ? err.message 
           : 'Unbekannter Fehler bei der Schätzung';
       
