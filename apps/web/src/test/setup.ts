@@ -1,14 +1,8 @@
-import { expect, afterEach, vi } from 'vitest';
+import { expect, afterEach, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
-// Cleanup after each test
-afterEach(() => {
-  cleanup();
-  localStorage.clear();
-});
-
-// Mock localStorage
+// Mock localStorage BEFORE anything else
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
 
@@ -43,4 +37,10 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
+});
+
+// Cleanup after each test
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
 });

@@ -1,9 +1,48 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import TodayScreen from '../screens/TodayScreen';
+import { ThemeProvider } from '../ThemeContext';
 import * as storage from '../storage';
 import { Task, ExtractedItem } from '@make-now/core';
+
+// Mock @dnd-kit modules
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({ children }: any) => <div>{children}</div>,
+  closestCenter: vi.fn(),
+  KeyboardSensor: vi.fn(),
+  PointerSensor: vi.fn(),
+  useSensor: vi.fn(),
+  useSensors: vi.fn(() => []),
+}));
+
+vi.mock('@dnd-kit/sortable', () => ({
+  arrayMove: (arr: any[], oldIndex: number, newIndex: number) => {
+    const newArr = [...arr];
+    const [removed] = newArr.splice(oldIndex, 1);
+    newArr.splice(newIndex, 0, removed);
+    return newArr;
+  },
+  SortableContext: ({ children }: any) => <div>{children}</div>,
+  sortableKeyboardCoordinates: vi.fn(),
+  useSortable: () => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: vi.fn(),
+    transform: null,
+    transition: null,
+    isDragging: false,
+  }),
+  verticalListSortingStrategy: vi.fn(),
+}));
+
+vi.mock('@dnd-kit/utilities', () => ({
+  CSS: {
+    Transform: {
+      toString: () => '',
+    },
+  },
+}));
 
 // Mock scheduleDay and validatePlanning
 vi.mock('@make-now/core', async () => {
@@ -51,7 +90,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
@@ -99,7 +140,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
@@ -150,7 +193,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
@@ -199,7 +244,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
@@ -237,7 +284,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
@@ -291,7 +340,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
@@ -341,7 +392,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
@@ -380,7 +433,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
@@ -497,7 +552,9 @@ describe('TodayScreen', () => {
 
     render(
       <BrowserRouter>
-        <TodayScreen />
+        <ThemeProvider>
+          <TodayScreen />
+        </ThemeProvider>
       </BrowserRouter>
     );
 
