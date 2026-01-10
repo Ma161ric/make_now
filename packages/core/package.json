@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:once": "vitest run",
     "build": "tsc"
   },
   "devDependencies": {
