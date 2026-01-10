@@ -39,13 +39,13 @@ export interface FirestorePlan {
  * Handles syncing app data to/from Firestore
  */
 export class FirestoreService {
-  static async saveDayPlan(userId: string, date: string, planData: any) {
+  async saveDayPlan(userId: string, date: string, planData: any) {
     try {
       const planRef = doc(db, `users/${userId}/day_plans/${date}`);
       await setDoc(planRef, {
         date,
         plan: planData,
-        status: 'confirmed',
+        status: planData.status || 'confirmed',
         created_at: Timestamp.now(),
         updated_at: Timestamp.now(),
       });
@@ -55,14 +55,13 @@ export class FirestoreService {
     }
   }
 
-  static async getDayPlan(userId: string, date: string) {
+  async getDayPlan(userId: string, date: string) {
     try {
       const planRef = doc(db, `users/${userId}/day_plans/${date}`);
-      const docSnapshot = await import('firebase/firestore').then(
-        ({ getDoc }) => getDoc(planRef)
-      );
+      const { getDoc } = await import('firebase/firestore');
+      const docSnapshot = await getDoc(planRef);
       if (docSnapshot.exists()) {
-        return docSnapshot.data() as FirestorePlan;
+        return docSnapshot.data() as any;
       }
       return null;
     } catch (error) {
@@ -71,14 +70,30 @@ export class FirestoreService {
     }
   }
 
-  static async saveTask(userId: string, taskData: Omit<FirestoreTask, 'id' | 'created_at' | 'updated_at' | 'user_id'>) {
+  onDayPlanSnapshot(
+    userId: string,
+    date: string,
+    callback: (plan: any | null) => void
+  ): (() => void) {
+    const planRef = doc(db, `users/${userId}/day_plans/${date}`);
+    const unsubscribe = onSnapshot(planRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        callback(docSnapshot.data());
+      } else {
+        callback(null);
+      }
+    });
+    return unsubscribe;
+  }
+
+  async saveTask(userId: string, taskData: any) {
     try {
       const taskId = taskData.id || Date.now().toString();
       const taskRef = doc(db, `users/${userId}/items/${taskId}`);
       await setDoc(taskRef, {
         ...taskData,
         user_id: userId,
-        created_at: Timestamp.now(),
+        created_at: taskData.created_at ? Timestamp.fromDate(new Date(taskData.created_at)) : Timestamp.now(),
         updated_at: Timestamp.now(),
       });
       return taskId;
@@ -88,7 +103,7 @@ export class FirestoreService {
     }
   }
 
-  static async updateTask(userId: string, taskId: string, updates: Partial<FirestoreTask>) {
+  async updateTask(userId: string, taskId: string, updates: any) {
     try {
       const taskRef = doc(db, `users/${userId}/items/${taskId}`);
       await updateDoc(taskRef, {
@@ -101,7 +116,7 @@ export class FirestoreService {
     }
   }
 
-  static async deleteTask(userId: string, taskId: string) {
+  async deleteTask(userId: string, taskId: string) {
     try {
       const taskRef = doc(db, `users/${userId}/items/${taskId}`);
       await deleteDoc(taskRef);
@@ -111,7 +126,7 @@ export class FirestoreService {
     }
   }
 
-  static async getTasks(userId: string): Promise<FirestoreTask[]> {
+  async getTasks(userId: string): Promise<FirestoreTask[]> {
     try {
       const q = query(collection(db, `users/${userId}/items`));
       const querySnapshot = await getDocs(q);
@@ -125,7 +140,7 @@ export class FirestoreService {
     }
   }
 
-  static onTasksSnapshot(
+  onTasksSnapshot(
     userId: string,
     callback: (tasks: FirestoreTask[]) => void
   ): (() => void) {
@@ -140,7 +155,7 @@ export class FirestoreService {
     return unsubscribe;
   }
 
-  static saveInboxNote(userId: string, noteText: string) {
+  async saveInboxNote(userId: string, noteText: string) {
     try {
       const noteRef = doc(collection(db, `users/${userId}/inbox_notes`));
       return setDoc(noteRef, {
@@ -155,7 +170,7 @@ export class FirestoreService {
     }
   }
 
-  static onInboxNotesSnapshot(
+  onInboxNotesSnapshot(
     userId: string,
     callback: (notes: any[]) => void
   ): (() => void) {
@@ -171,5 +186,34 @@ export class FirestoreService {
       callback(notes);
     });
     return unsubscribe;
+  }
+
+  async saveDailyReview(userId: string, review: any) {
+    try {
+      const reviewRef = doc(db, `users/${userId}/daily_reviews/${review.date}`);
+      await setDoc(reviewRef, {
+        ...review,
+        created_at: Timestamp.now(),
+        updated_at: Timestamp.now(),
+      });
+    } catch (error) {
+      console.error('Error saving daily review:', error);
+      throw error;
+    }
+  }
+
+  async getDailyReview(userId: string, date: string) {
+    try {
+      const reviewRef = doc(db, `users/${userId}/daily_reviews/${date}`);
+      const { getDoc } = await import('firebase/firestore');
+      const docSnapshot = await getDoc(reviewRef);
+      if (docSnapshot.exists()) {
+        return docSnapshot.data();
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting daily review:', error);
+      throw error;
+    }
   }
 }

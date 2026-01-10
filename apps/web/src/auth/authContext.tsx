@@ -9,6 +9,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   AuthError,
+  User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 
@@ -22,6 +23,7 @@ export interface User {
 
 export interface AuthContextType {
   user: User | null;
+  firebaseUser: FirebaseUser | null;
   loading: boolean;
   error: string | null;
   signup: (email: string, password: string, displayName: string) => Promise<void>;
@@ -35,8 +37,9 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const getErrorMessage = (error: unknown): string => {
-  if (error instanceof AuthError) {
-    switch (error.code) {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const authError = error as { code: string; message: string };
+    switch (authError.code) {
       case 'auth/email-already-in-use':
         return 'Diese E-Mail wird bereits verwendet';
       case 'auth/weak-password':
@@ -50,7 +53,7 @@ const getErrorMessage = (error: unknown): string => {
       case 'auth/popup-closed-by-user':
         return 'Anmeldung abgebrochen';
       default:
-        return error.message;
+        return authError.message;
     }
   }
   return error instanceof Error ? error.message : 'Ein Fehler ist aufgetreten';
@@ -70,6 +73,7 @@ const mapFirebaseUser = (fbUser: any): User => ({
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,8 +82,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       if (fbUser) {
         setUser(mapFirebaseUser(fbUser));
+        setFirebaseUser(fbUser);
       } else {
         setUser(null);
+        setFirebaseUser(null);
       }
       setLoading(false);
     });
@@ -193,6 +199,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const value: AuthContextType = {
     user,
+    firebaseUser,
     loading,
     error,
     signup,

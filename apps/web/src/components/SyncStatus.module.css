@@ -1,0 +1,39 @@
+.syncStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  background: var(--background-secondary);
+  font-size: 0.875rem;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.synced {
+  background-color: #4ade80;
+}
+
+.syncing {
+  background-color: #fbbf24;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.text {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

@@ -1,7 +1,11 @@
 import { ExtractionResponse, PlanningResponse, ExtractedItem, Task, TaskStatus } from '@make-now/core';
+import { User } from 'firebase/auth';
+import { FirestoreService } from './firebase/firestoreService';
 
 const STORAGE_KEY = 'make-now-state';
 const VERSION = 1;
+
+const firestoreService = new FirestoreService();
 
 export type NoteStatus = 'unprocessed' | 'processed' | 'archived';
 export interface StoredNote {
@@ -76,11 +80,16 @@ export function listNotes(): StoredNote[] {
   return loadState().notes.sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
-export function addNote(note: StoredNote, extraction: ExtractionResponse) {
+export async function addNote(note: StoredNote, extraction: ExtractionResponse, user?: User | null) {
   const state = loadState();
   state.notes.push(note);
   state.extractions[note.id] = extraction;
   saveState(state);
+  
+  // Sync to Firestore if user is logged in
+  if (user) {
+    await firestoreService.saveInboxNote(user.uid, note.raw_text);
+  }
 }
 
 export function getNote(id: string): StoredNote | undefined {
@@ -108,10 +117,15 @@ export function listAllReviewedItems(): ExtractedItem[] {
   return Object.values(state.reviewedItems).flat();
 }
 
-export function saveTask(task: Task) {
+export async function saveTask(task: Task, user?: User | null) {
   const state = loadState();
   state.tasks[task.id] = task;
   saveState(state);
+  
+  // Sync to Firestore if user is logged in
+  if (user) {
+    await firestoreService.saveTask(user.uid, task);
+  }
 }
 
 export function getTask(id: string): Task | undefined {
@@ -124,7 +138,7 @@ export function listTasks(filter?: (task: Task) => boolean): Task[] {
   return filter ? tasks.filter(filter) : tasks;
 }
 
-export function updateTaskStatus(taskId: string, status: TaskStatus) {
+export async function updateTaskStatus(taskId: string, status: TaskStatus, user?: User | null) {
   const state = loadState();
   const task = state.tasks[taskId];
   if (task) {
@@ -134,30 +148,45 @@ export function updateTaskStatus(taskId: string, status: TaskStatus) {
       task.completed_at = new Date();
     }
     saveState(state);
+    
+    // Sync to Firestore if user is logged in
+    if (user) {
+      await firestoreService.saveTask(user.uid, task);
+    }
   }
 }
 
-export function saveDayPlan(dayPlanState: DayPlanState) {
+export async function saveDayPlan(dayPlanState: DayPlanState, user?: User | null) {
   const state = loadState();
   state.dayPlans[dayPlanState.date] = dayPlanState;
   saveState(state);
+  
+  // Sync to Firestore if user is logged in
+  if (user) {
+    await firestoreService.saveDayPlan(user.uid, dayPlanState.date, dayPlanState);
+  }
 }
 
 export function getDayPlan(date: string): DayPlanState | undefined {
   return loadState().dayPlans[date];
 }
 
-export function saveDailyReview(review: DailyReviewData) {
+export async function saveDailyReview(review: DailyReviewData, user?: User | null) {
   const state = loadState();
   state.dailyReviews[review.date] = review;
   saveState(state);
+  
+  // Sync to Firestore if user is logged in
+  if (user) {
+    await firestoreService.saveDailyReview(user.uid, review);
+  }
 }
 
 export function getDailyReview(date: string): DailyReviewData | undefined {
   return loadState().dailyReviews[date];
 }
 
-export function savePlan(date: string, plan: PlanningResponse) {
+export async function savePlan(date: string, plan: PlanningResponse, user?: User | null) {
   const state = loadState();
   const dayPlanState: DayPlanState = {
     id: `plan-${date}-${Date.now()}`,
@@ -168,6 +197,11 @@ export function savePlan(date: string, plan: PlanningResponse) {
   };
   state.dayPlans[date] = dayPlanState;
   saveState(state);
+  
+  // Sync to Firestore if user is logged in
+  if (user) {
+    await firestoreService.saveDayPlan(user.uid, date, dayPlanState);
+  }
 }
 
 export function getPlan(date: string): PlanningResponse | undefined {

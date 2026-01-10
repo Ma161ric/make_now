@@ -3,14 +3,22 @@ import { extractFromNoteMock, validateExtraction } from '@make-now/core';
 import { addNote, listNotes } from '../storage';
 import { uuid } from '../utils';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/authContext';
+import { useDataMigration } from '../hooks/useSyncEffect';
+import { SyncStatus } from '../components/SyncStatus';
 
 export default function InboxScreen() {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const { firebaseUser } = useAuth();
   const notes = useMemo(() => listNotes(), [text, success]);
 
-  const handleSubmit = (e: FormEvent) => {
+  // Data migration on first login
+  useDataMigration(firebaseUser);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -34,15 +42,19 @@ export default function InboxScreen() {
       setError('Extraktion ungültig, bitte Text anpassen.');
       return;
     }
-    addNote(
+    
+    setSyncing(true);
+    await addNote(
       {
         id: noteId,
         raw_text: trimmed,
         created_at: new Date().toISOString(),
         status: 'unprocessed',
       },
-      extraction
+      extraction,
+      firebaseUser
     );
+    setSyncing(false);
     setSuccess('Gespeichert. Jetzt prüfen.');
     setText('');
   };
@@ -50,7 +62,10 @@ export default function InboxScreen() {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="card">
-        <div className="section-title">Inbox Capture</div>
+        <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div className="section-title">Inbox Capture</div>
+          <SyncStatus syncing={syncing} />
+        </div>
         <form onSubmit={handleSubmit} className="grid" style={{ gap: 12 }}>
           <label className="label" htmlFor="note">Freitext Notiz</label>
           <textarea
