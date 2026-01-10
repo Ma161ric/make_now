@@ -60,6 +60,13 @@ export type { ValidationError, ValidationResult } from './validation';
 // Mock AI
 export { extractFromNoteMock, planFromItemsMock } from './mockAi';
 
+// Duration Estimation
+export { estimateDurationFromText } from './durationEstimation';
+export type {
+  DurationEstimationRequest,
+  DurationEstimationResponse,
+} from './durationEstimation';
+
 // AI Service
 export {
   AiService,

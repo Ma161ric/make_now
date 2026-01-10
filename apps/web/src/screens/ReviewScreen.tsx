@@ -9,6 +9,7 @@ import {
   ExtractionResponse,
 } from '@make-now/core';
 import { getExtraction, getNote, getReviewedItems, saveReviewedItems } from '../storage';
+import { useAiDurationEstimation } from '../hooks/useAiDurationEstimation';
 
 function toEditableItems(noteId: string): ExtractedItem[] {
   const reviewed = getReviewedItems(noteId);
@@ -91,6 +92,7 @@ export default function ReviewScreen() {
                 </div>
                 {item.type === 'task' && (
                   <TaskFieldsEditor
+                    title={item.title}
                     fields={item.parsed_fields as TaskFields}
                     onChange={(fields) => updateItem(item.id, (it) => ({ ...it, parsed_fields: fields }))}
                   />
@@ -119,10 +121,41 @@ export default function ReviewScreen() {
   );
 }
 
-function TaskFieldsEditor({ fields, onChange }: { fields: TaskFields; onChange: (f: TaskFields) => void }) {
+function TaskFieldsEditor({ title, fields, onChange }: { title: string; fields: TaskFields; onChange: (f: TaskFields) => void }) {
+  const { estimateDuration, loading, error } = useAiDurationEstimation();
+  const [showEstimation, setShowEstimation] = useState(false);
+
+  const handleEstimate = async () => {
+    const estimate = await estimateDuration(title);
+    if (estimate) {
+      onChange({
+        ...fields,
+        duration_min_minutes: estimate.min_minutes,
+        duration_max_minutes: estimate.max_minutes,
+        estimation_source: 'ai',
+      });
+      setShowEstimation(true);
+      setTimeout(() => setShowEstimation(false), 3000);
+    }
+  };
+
   return (
     <div className="grid" style={{ gap: 8 }}>
-      <div className="label">Dauer (Min/Max)</div>
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="label">Dauer (Min/Max)</div>
+        <button
+          className="button secondary"
+          onClick={handleEstimate}
+          disabled={loading}
+          style={{ fontSize: '0.875rem', padding: '0.25rem 0.75rem' }}
+        >
+          {loading ? '⏳' : '🤖'} AI Estimate
+        </button>
+      </div>
+      {error && <div className="muted" style={{ color: '#b91c1c', fontSize: '0.875rem' }}>{error}</div>}
+      {showEstimation && (
+        <div className="muted" style={{ color: '#15803d', fontSize: '0.875rem' }}>✓ Duration estimated by AI</div>
+      )}
       <div className="flex">
         <input
           type="number"
