@@ -143,7 +143,7 @@ describe('Mock Planning', () => {
 
     expect(result.metadata).toBeDefined();
     expect(result.metadata.processing_time_ms).toBeGreaterThanOrEqual(0);
-    expect(result.metadata.model_version).toBeDefined();
+    expect(result.metadata.algorithm_version).toBeDefined();
   });
 
   it('should handle empty items list', () => {
