@@ -10,8 +10,9 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @make-now/web",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "npm run test:once --workspaces",
+    "test:once": "npm run test:once --workspaces",
+    "test:watch": "npm run test --workspaces",
     "build": "npm run build -w @make-now/web && npm run build -w @make-now/core"
   },
   "devDependencies": {
