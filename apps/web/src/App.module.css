@@ -1,0 +1,46 @@
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.userButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.userButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent-primary);
+}
+
+.userAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  background: var(--bg-primary);
+  border-radius: 50%;
+}
+
+.userName {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .userName {
+    display: inline;
+  }
+}

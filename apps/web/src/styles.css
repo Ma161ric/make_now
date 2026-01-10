@@ -9,6 +9,7 @@
   --accent-bg: #e0f2fe;
   --accent-text: #0369a1;
   --accent-primary: #0ea5e9;
+  --accent-primary-hover: #0284c7;
   --shadow: rgba(0, 0, 0, 0.04);
 }
 
@@ -23,6 +24,7 @@
   --accent-bg: #075985;
   --accent-text: #7dd3fc;
   --accent-primary: #0ea5e9;
+  --accent-primary-hover: #0284c7;
   --shadow: rgba(0, 0, 0, 0.3);
 }
 
