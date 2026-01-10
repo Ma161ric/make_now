@@ -2,6 +2,23 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeProvider, useTheme } from '../ThemeContext';
 
+// Mock localStorage for all tests in this file
+const localStorageMock = {
+  data: {} as Record<string, string>,
+  getItem(key: string) {
+    return this.data[key] || null;
+  },
+  setItem(key: string, value: string) {
+    this.data[key] = String(value);
+  },
+  removeItem(key: string) {
+    delete this.data[key];
+  },
+  clear() {
+    this.data = {};
+  },
+};
+
 // Test component to access theme context
 function TestComponent() {
   const { theme, toggleTheme } = useTheme();
@@ -17,7 +34,9 @@ function TestComponent() {
 
 describe('ThemeContext', () => {
   beforeEach(() => {
-    localStorage.clear();
+    // @ts-ignore - Mock localStorage before each test
+    global.localStorage = localStorageMock;
+    localStorageMock.clear();
     document.documentElement.removeAttribute('data-theme');
   });
 

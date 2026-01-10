@@ -1,33 +1,38 @@
-import { expect, afterEach, beforeEach, vi } from 'vitest';
+import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
-// Mock localStorage BEFORE anything else
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
+// Mock localStorage - define directly on globalThis
+const localStorageMock = {
+  data: {} as Record<string, string>,
+  getItem(key: string) {
+    return this.data[key] || null;
+  },
+  setItem(key: string, value: string) {
+    this.data[key] = String(value);
+  },
+  removeItem(key: string) {
+    delete this.data[key];
+  },
+  clear() {
+    this.data = {};
+  },
+  key(index: number) {
+    const keys = Object.keys(this.data);
+    return keys[index] || null;
+  },
+  get length() {
+    return Object.keys(this.data).length;
+  },
+};
 
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
+// @ts-ignore
+globalThis.localStorage = localStorageMock;
 
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(globalThis, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation((query) => ({
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,
