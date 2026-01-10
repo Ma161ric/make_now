@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { TestRouter } from './TestRouter';
 import InboxScreen from '../screens/InboxScreen';
 import * as storage from '../storage';
 
@@ -30,9 +30,9 @@ describe('InboxScreen', () => {
 
   it('should render inbox capture form', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText('Inbox Capture')).toBeInTheDocument();
@@ -42,9 +42,9 @@ describe('InboxScreen', () => {
 
   it('should show character counter', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...');
@@ -55,9 +55,9 @@ describe('InboxScreen', () => {
 
   it('should reject empty input', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const submitButton = screen.getByRole('button', { name: 'Speichern' });
@@ -68,9 +68,9 @@ describe('InboxScreen', () => {
 
   it('should reject input shorter than 3 characters', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...');
@@ -84,9 +84,9 @@ describe('InboxScreen', () => {
 
   it('should reject input longer than 2000 characters', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...');
@@ -101,9 +101,9 @@ describe('InboxScreen', () => {
 
   it('should trim whitespace from input', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...');
@@ -120,9 +120,9 @@ describe('InboxScreen', () => {
 
   it('should save note with unprocessed status', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...');
@@ -138,9 +138,9 @@ describe('InboxScreen', () => {
 
   it('should clear form after successful submission', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...') as HTMLTextAreaElement;
@@ -155,9 +155,9 @@ describe('InboxScreen', () => {
 
   it('should show success message and save note', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...');
@@ -204,9 +204,9 @@ describe('InboxScreen', () => {
     );
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText(/First task/)).toBeInTheDocument();
@@ -238,9 +238,9 @@ describe('InboxScreen', () => {
     );
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const listItems = screen.getAllByRole('listitem');
@@ -262,9 +262,9 @@ describe('InboxScreen', () => {
     );
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const preview = 'a'.repeat(80);
@@ -283,9 +283,9 @@ describe('InboxScreen', () => {
     );
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const reviewLink = screen.getByRole('link', { name: 'Review' });
@@ -294,9 +294,9 @@ describe('InboxScreen', () => {
 
   it('should show no notes message when list is empty', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText('Keine Notizen vorhanden.')).toBeInTheDocument();
@@ -304,9 +304,9 @@ describe('InboxScreen', () => {
 
   it('should accept exactly 3 characters', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...');
@@ -320,9 +320,9 @@ describe('InboxScreen', () => {
 
   it('should accept exactly 2000 characters', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <InboxScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const textarea = screen.getByPlaceholderText('Notiz eingeben...');

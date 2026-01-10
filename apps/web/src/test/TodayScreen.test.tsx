@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { TestRouter } from './TestRouter';
 import TodayScreen from '../screens/TodayScreen';
 import { ThemeProvider } from '../ThemeContext';
 import * as storage from '../storage';
@@ -89,11 +89,11 @@ describe('TodayScreen', () => {
     storage.saveTask(task);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     await waitFor(() => {
@@ -139,11 +139,11 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText('Focus Task')).toBeInTheDocument();
@@ -192,11 +192,11 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const confirmButton = screen.getByRole('button', { name: /Plan bestätigen/ });
@@ -243,11 +243,11 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByRole('button', { name: /Plan B/ })).toBeInTheDocument();
@@ -283,11 +283,11 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const planBButton = screen.getByRole('button', { name: /Plan B/ });
@@ -339,11 +339,11 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     // Open replan dialog
@@ -391,11 +391,11 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     // Plan B button should not be shown
@@ -432,11 +432,11 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const reviewLink = screen.getByRole('link', { name: /Tag abschließen/ });
@@ -488,9 +488,9 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <TodayScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText('FOCUS')).toBeInTheDocument();
@@ -551,11 +551,11 @@ describe('TodayScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText(/Mini Task 1/)).toBeInTheDocument();

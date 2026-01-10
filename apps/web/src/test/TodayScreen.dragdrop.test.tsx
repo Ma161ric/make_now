@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { TestRouter } from './TestRouter';
 import { ThemeProvider } from '../ThemeContext';
 import TodayScreen from '../screens/TodayScreen';
 import * as storage from '../storage';
@@ -101,11 +101,11 @@ describe('TodayScreen - Drag and Drop', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByTestId('dnd-context')).toBeInTheDocument();
@@ -154,11 +154,11 @@ describe('TodayScreen - Drag and Drop', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     // Check for drag handle indicators
@@ -232,11 +232,11 @@ describe('TodayScreen - Drag and Drop', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     // Focus task should have FOKUS badge
@@ -278,11 +278,11 @@ describe('TodayScreen - Drag and Drop', () => {
     storage.saveDayPlan(dayPlan);
 
     const { container } = render(
-      <BrowserRouter>
+      <TestRouter>
         <ThemeProvider>
           <TodayScreen />
         </ThemeProvider>
-      </BrowserRouter>
+      </TestRouter>
     );
 
     // Focus task should have special data attribute

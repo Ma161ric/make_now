@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { TestRouter } from './TestRouter';
 import DailyReviewScreen from '../screens/DailyReviewScreen';
 import * as storage from '../storage';
 import { Task, PlanningResponse } from '@make-now/core';
@@ -24,9 +24,9 @@ describe('DailyReviewScreen', () => {
 
   it('should show message when no confirmed plan exists', () => {
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText('Kein bestätigter Plan für heute vorhanden.')).toBeInTheDocument();
@@ -60,9 +60,9 @@ describe('DailyReviewScreen', () => {
     storage.saveDailyReview(review);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText('Review für heute bereits abgeschlossen.')).toBeInTheDocument();
@@ -107,9 +107,9 @@ describe('DailyReviewScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     expect(screen.getByText('Focus Task')).toBeInTheDocument();
@@ -143,9 +143,9 @@ describe('DailyReviewScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const doneButton = screen.getByRole('button', { name: /Erledigt/ });
@@ -188,9 +188,9 @@ describe('DailyReviewScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const completeButton = screen.getByRole('button', { name: /Tag abschließen/ });
@@ -234,9 +234,9 @@ describe('DailyReviewScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     // Mark task 1 as done
@@ -301,9 +301,9 @@ describe('DailyReviewScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     // Mark task as done
@@ -375,9 +375,9 @@ describe('DailyReviewScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     // Mark all as done
@@ -415,9 +415,9 @@ describe('DailyReviewScreen', () => {
     storage.saveDayPlan(dayPlan);
 
     render(
-      <BrowserRouter>
+      <TestRouter>
         <DailyReviewScreen />
-      </BrowserRouter>
+      </TestRouter>
     );
 
     const laterButton = screen.getByRole('button', { name: /Später/ });
