@@ -3,6 +3,85 @@ import { Link } from 'react-router-dom';
 import { scheduleDay, validatePlanning, PlanningResponse, Task } from '@make-now/core';
 import { listAllReviewedItems, getDayPlan, saveDayPlan, saveTask, listTasks, getTask } from '../storage';
 import { formatDate, uuid } from '../utils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+function SortableTaskItem({ task, type }: { task: Task; type: 'focus' | 'mini' }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'grab',
+  };
+
+  if (type === 'focus') {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className="card"
+        data-focus-task
+      >
+        <div className="flex" style={{ justifyContent: 'space-between' }}>
+          <div>
+            <div className="badge">🎯 FOKUS</div>
+            <div style={{ fontWeight: 600, marginTop: 4 }}>{task.title}</div>
+            <div className="muted" style={{ fontSize: 12 }}>
+              ca. {task.duration_min_minutes}-{task.duration_max_minutes} Min
+            </div>
+          </div>
+          <div className="muted" style={{ fontSize: 20 }}>⋮⋮</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="list-item"
+    >
+      <div className="flex" style={{ justifyContent: 'space-between' }}>
+        <div>
+          <div>⚡ {task.title}</div>
+          <div className="muted" style={{ fontSize: 12 }}>
+            ca. {task.duration_min_minutes}-{task.duration_max_minutes} Min
+          </div>
+        </div>
+        <div className="muted" style={{ fontSize: 20 }}>⋮⋮</div>
+      </div>
+    </li>
+  );
+}
 
 function mapToTasks(items: ReturnType<typeof listAllReviewedItems>): Task[] {
   const now = new Date();
@@ -33,8 +112,55 @@ export default function TodayScreen() {
   const [dayPlanState, setDayPlanState] = useState<ReturnType<typeof getDayPlan>>(existingDayPlan);
   const [error, setError] = useState<string | null>(null);
   const [showReplanDialog, setShowReplanDialog] = useState(false);
+  const [sortedTaskIds, setSortedTaskIds] = useState<string[]>([]);
 
   const items = useMemo(() => listAllReviewedItems(), []);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Initialize sorted task IDs from plan
+  useEffect(() => {
+    if (dayPlanState?.plan) {
+      const allIds = [
+        ...(dayPlanState.plan.focus_task_id ? [dayPlanState.plan.focus_task_id] : []),
+        ...dayPlanState.plan.mini_task_ids,
+      ];
+      setSortedTaskIds(allIds);
+    }
+  }, [dayPlanState?.plan.focus_task_id, dayPlanState?.plan.mini_task_ids.join(',')]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || !dayPlanState) return;
+
+    const oldIndex = sortedTaskIds.indexOf(active.id as string);
+    const newIndex = sortedTaskIds.indexOf(over.id as string);
+
+    const newTaskIds = arrayMove(sortedTaskIds, oldIndex, newIndex);
+    setSortedTaskIds(newTaskIds);
+
+    // Update plan with new order
+    const newFocusTaskId = newTaskIds[0];
+    const newMiniTaskIds = newTaskIds.slice(1);
+
+    const updatedPlan = {
+      ...dayPlanState,
+      plan: {
+        ...dayPlanState.plan,
+        focus_task_id: newFocusTaskId || null,
+        mini_task_ids: newMiniTaskIds,
+      },
+    };
+
+    setDayPlanState(updatedPlan);
+    saveDayPlan(updatedPlan);
+  };
 
   useEffect(() => {
     if (dayPlanState) return;
@@ -143,57 +269,48 @@ export default function TodayScreen() {
   const isConfirmed = dayPlanState.status === 'confirmed';
   const canReplan = isConfirmed && dayPlanState.replan_count < 3;
 
-  // Get actual task objects for display
-  const focusTask = plan.focus_task_id ? getTask(plan.focus_task_id) : null;
-  const miniTasks = plan.mini_task_ids.map(id => getTask(id)).filter(Boolean);
+  // Get actual task objects for display using sorted order
+  const sortedTasks = sortedTaskIds.map(id => getTask(id)).filter(Boolean);
+  const focusTask = sortedTasks[0] || null;
+  const miniTasks = sortedTasks.slice(1);
 
   return (
-    <div className="grid" style={{ gap: 16 }}>
-      <div className="card">
-        <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className="section-title">Today Plan</div>
-          {canReplan && (
-            <button className="button secondary" onClick={() => setShowReplanDialog(true)}>
-              🔄 Plan B
-            </button>
-          )}
-        </div>
-        <div className="muted" style={{ marginBottom: 8 }}>
-          {today} {isConfirmed && '✓ Bestätigt'}
-        </div>
-
-        {focusTask ? (
-          <div className="card" style={{ background: '#ecfeff', marginBottom: 12 }}>
-            <div className="flex" style={{ justifyContent: 'space-between' }}>
-              <div>
-                <div className="badge">🎯 FOKUS</div>
-                <div style={{ fontWeight: 600, marginTop: 4 }}>{focusTask.title}</div>
-                <div className="muted" style={{ fontSize: 12 }}>
-                  ca. {focusTask.duration_min_minutes}-{focusTask.duration_max_minutes} Min
-                </div>
-              </div>
-            </div>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="grid" style={{ gap: 16 }}>
+        <div className="card">
+          <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="section-title">Today Plan</div>
+            {canReplan && (
+              <button className="button secondary" onClick={() => setShowReplanDialog(true)}>
+                🔄 Plan B
+              </button>
+            )}
           </div>
-        ) : (
-          <div className="muted" style={{ marginBottom: 12 }}>Kein Fokus-Task heute.</div>
-        )}
+          <div className="muted" style={{ marginBottom: 8 }}>
+            {today} {isConfirmed && '✓ Bestätigt'}
+          </div>
 
-        <div className="label">Mini Tasks</div>
-        {miniTasks.length === 0 && <div className="muted">Keine Minis.</div>}
-        <ul className="list">
-          {miniTasks.map((task) => (
-            <li key={task.id} className="list-item">
-              <div className="flex" style={{ justifyContent: 'space-between' }}>
-                <div>
-                  <div>⚡ {task.title}</div>
-                  <div className="muted" style={{ fontSize: 12 }}>
-                    ca. {task.duration_min_minutes}-{task.duration_max_minutes} Min
-                  </div>
-                </div>
+          <SortableContext items={sortedTaskIds} strategy={verticalListSortingStrategy}>
+            {focusTask && (
+              <div style={{ marginBottom: 12 }}>
+                <SortableTaskItem task={focusTask} type="focus" />
               </div>
-            </li>
-          ))}
-        </ul>
+            )}
+
+            <div className="label">Mini Tasks</div>
+            {miniTasks.length === 0 && <div className="muted">Keine Minis.</div>}
+            {miniTasks.length > 0 && (
+              <ul className="list">
+                {miniTasks.map((task) => (
+                  <SortableTaskItem key={task.id} task={task} type="mini" />
+                ))}
+              </ul>
+            )}
+          </SortableContext>
 
         <div className="label" style={{ marginTop: 12 }}>Zeitblöcke</div>
         <ul className="list">
@@ -267,6 +384,7 @@ export default function TodayScreen() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </DndContext>
   );
 }

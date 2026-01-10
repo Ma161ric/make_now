@@ -59,3 +59,12 @@
 .theme-toggle:hover {
   background: var(--border-color);
 }
+
+[data-focus-task] {
+  background: var(--accent-bg) !important;
+  border-color: var(--accent-text) !important;
+}
+
+.list-item:active {
+  cursor: grabbing;
+}
