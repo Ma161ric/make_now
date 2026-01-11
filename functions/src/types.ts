@@ -32,6 +32,7 @@ export interface ExtractionOutput {
   metadata: {
     processing_time_ms: number;
     model_version: string;
+    algorithm_version: string;
   };
 }
 

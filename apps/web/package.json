@@ -17,7 +17,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@make-now/core": "0.0.1",
-    "firebase": "^10.14.1",
+    "@vercel/node": "^2.15.10",
+    "firebase": "^12.7.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3"
@@ -33,7 +34,7 @@
     "@vitest/ui": "^4.0.16",
     "jsdom": "^27.4.0",
     "typescript": "^5.3.3",
-    "vite": "^5.0.10",
-    "vitest": "^4.0.16"
+    "vite": "^7.3.1",
+    "vitest": "4.0.16"
   }
 }

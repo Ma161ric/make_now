@@ -16,17 +16,19 @@
     "build": "npm run build -w @make-now/web && npm run build -w @make-now/core",
     "build:prod": "NODE_ENV=production npm run build",
     "preview": "npm run preview -w @make-now/web",
-    "lint": "npm run lint --workspaces --if-present",
-    "deploy": "npm run build:prod && firebase deploy",
-    "deploy:hosting": "npm run build:prod && firebase deploy --only hosting",
-    "deploy:rules": "firebase deploy --only firestore:rules"
+    "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
+    "@vercel/node": "^2.3.0",
+    "groq-sdk": "^0.7.0",
     "typescript": "^5.3.3",
-    "vitest": "^1.1.0"
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "vite": "7.3.1"
   }
 }

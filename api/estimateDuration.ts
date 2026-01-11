@@ -1,5 +1,13 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { estimateDurationAI } from '../packages/core/src/scheduling.js';
+
+// Mock duration estimation - no AI dependency
+function estimateDurationAI(taskTitle: string) {
+  return {
+    duration_min_minutes: 30,
+    duration_max_minutes: 60,
+    confidence: 0.7,
+  };
+}
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   // CORS

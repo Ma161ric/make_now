@@ -1,13 +1,15 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import Groq from 'groq-sdk';
-import { planFromItemsMock } from '../packages/core/src/scheduling.js';
 import { PlanningInput, PlanningOutput } from '../functions/src/types.js';
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+// Mock planning function - returns empty day plan
+function planFromItemsMock(items: PlanningInput['items']): PlanningOutput {
+  return {
+    date: new Date().toISOString().split('T')[0],
+    timezone: 'UTC',
+    mini_task_ids: [],
+    suggested_blocks: [],
+  };
+}
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   // CORS
