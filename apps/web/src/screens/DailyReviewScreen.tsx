@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getDayPlan, getDailyReview, saveDailyReview, listTasks, updateTaskStatus, saveDayPlan } from '../storage';
 import { formatDate } from '../utils';
 import { useAuth } from '../auth/authContext';
+import { generateReviewAnalysis } from '../utils/aiReview';
 
 export default function DailyReviewScreen() {
   const navigate = useNavigate();
@@ -16,6 +17,12 @@ export default function DailyReviewScreen() {
   const [reflection, setReflection] = useState('');
   const [mood, setMood] = useState<'great' | 'good' | 'okay' | 'tough' | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<{
+    suggestions: string[];
+    insight: string;
+    tomorrow_focus: string;
+  } | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
 
   if (!dayPlan || dayPlan.status !== 'confirmed') {
     return (
@@ -54,6 +61,39 @@ export default function DailyReviewScreen() {
 
   const allReviewed = tasks.every(t => taskStates[t.id]);
   const doneCount = Object.values(taskStates).filter(s => s === 'done').length;
+
+  const handleGenerateAISuggestions = async () => {
+    if (!reflection || !mood) {
+      setError('Bitte Notiz und Stimmung angeben für AI-Vorschläge.');
+      return;
+    }
+
+    setLoadingAI(true);
+    setError(null);
+
+    try {
+      const prompt = `Analyze this day reflection and provide actionable suggestions for improvement:
+
+Reflection: "${reflection}"
+Mood: ${mood}
+Tasks completed: ${doneCount}/${tasks.length}
+
+Please respond with valid JSON (no markdown, just the JSON object):
+{
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
+  "insight": "One key insight about today",
+  "tomorrow_focus": "What to focus on tomorrow"
+}`;
+
+      const analysis = await generateReviewAnalysis(prompt, reflection, mood, doneCount, tasks.length);
+      setAiSuggestions(analysis);
+    } catch (err) {
+      console.error('Failed to generate AI suggestions:', err);
+      setError('AI-Vorschläge konnten nicht generiert werden.');
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
   const handleComplete = () => {
     if (!allReviewed) {
@@ -173,6 +213,58 @@ export default function DailyReviewScreen() {
             ))}
           </div>
         </div>
+
+        {allReviewed && reflection && mood && !aiSuggestions && (
+          <div style={{ marginTop: 12 }}>
+            <button
+              className="button"
+              onClick={handleGenerateAISuggestions}
+              disabled={loadingAI}
+              style={{ width: '100%' }}
+            >
+              {loadingAI ? '⏳ KI analysiert...' : '✨ KI-Vorschläge generieren'}
+            </button>
+          </div>
+        )}
+
+        {aiSuggestions && (
+          <div style={{ marginTop: 12, padding: 12, background: '#f0f9ff', borderRadius: 0, borderLeft: '4px solid #0284c7' }}>
+            <div style={{ fontWeight: 600, color: '#0c4a6e', marginBottom: 8 }}>✨ KI-Analyse</div>
+            
+            {aiSuggestions.insight && (
+              <div style={{ marginBottom: 8 }}>
+                <div className="label" style={{ fontSize: '0.875rem' }}>Erkenntnis</div>
+                <div className="muted">{aiSuggestions.insight}</div>
+              </div>
+            )}
+            
+            {aiSuggestions.suggestions && aiSuggestions.suggestions.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <div className="label" style={{ fontSize: '0.875rem' }}>Verbesserungsvorschläge</div>
+                <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569' }}>
+                  {aiSuggestions.suggestions.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {aiSuggestions.tomorrow_focus && (
+              <div>
+                <div className="label" style={{ fontSize: '0.875rem' }}>Fokus für morgen</div>
+                <div className="muted">{aiSuggestions.tomorrow_focus}</div>
+              </div>
+            )}
+
+            <button
+              className="button secondary"
+              onClick={() => setAiSuggestions(null)}
+              style={{ marginTop: 8, width: '100%' }}
+            >
+              Schließen
+            </button>
+          </div>
+        )}
 
         {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
 

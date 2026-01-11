@@ -5,6 +5,7 @@ import { uuid } from '../utils';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
 import { useDataMigration } from '../hooks/useSyncEffect';
+import { useLiveNotes } from '../hooks/useLiveNotes';
 import { SyncStatus } from '../components/SyncStatus';
 
 export default function InboxScreen() {
@@ -15,7 +16,9 @@ export default function InboxScreen() {
   const { user, firebaseUser } = useAuth();
   const userId = user?.id || firebaseUser?.uid || '';
   const isMountedRef = useRef(true);
-  const notes = useMemo(() => userId ? listNotes(userId) : [], [userId]);
+  
+  // Use live notes hook for real-time updates
+  const notes = useLiveNotes(userId);
 
   // Data migration on first login
   useDataMigration(firebaseUser);

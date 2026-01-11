@@ -33,8 +33,8 @@
 .brand { font-weight:700; letter-spacing:0.3px; }
 .nav a { margin-right:12px; text-decoration:none; color:var(--text-secondary); padding:6px 8px; border-radius:6px; transition: background-color 0.2s, color 0.2s; }
 .nav a.active { background:var(--accent-bg); color:var(--accent-text); }
-.app-main { width:100%; margin:0; padding:16px; box-sizing:border-box; flex:1; }
-.card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:8px; padding:16px; box-shadow:0 2px 8px var(--shadow); margin-bottom:0; width:100%; box-sizing:border-box; }
+.app-main { width:100%; margin:0; padding:0; box-sizing:border-box; flex:1; }
+.card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:0; padding:16px; box-shadow:0 2px 8px var(--shadow); margin-bottom:0; width:100%; box-sizing:border-box; }
 .button { background:var(--accent-primary); color:white; border:none; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; transition: opacity 0.2s; }
 .button:hover { opacity: 0.9; }
 .button.secondary { background:var(--bg-tertiary); color:var(--text-primary); }
