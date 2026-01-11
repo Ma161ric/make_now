@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
+import { usePreferences } from '../context/PreferencesContext';
 import styles from './LoginScreen.module.css';
 
 export const LoginScreen: React.FC = () => {
@@ -8,14 +9,22 @@ export const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, loginWithGoogle, loginWithApple, error } = useAuth();
+  const { preferences } = usePreferences();
   const navigate = useNavigate();
+
+  const getDefaultPath = () => {
+    if (preferences.defaultScreen === 'notes') {
+      return '/inbox';
+    }
+    return `/${preferences.defaultScreen}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       await login(email, password);
-      navigate('/today');
+      navigate(getDefaultPath());
     } catch (err) {
       // Error is handled by AuthContext
     } finally {
@@ -27,7 +36,7 @@ export const LoginScreen: React.FC = () => {
     setIsLoading(true);
     try {
       await loginWithGoogle();
-      navigate('/today');
+      navigate(getDefaultPath());
     } catch (err) {
       // Error is handled by AuthContext
     } finally {
@@ -39,7 +48,7 @@ export const LoginScreen: React.FC = () => {
     setIsLoading(true);
     try {
       await loginWithApple();
-      navigate('/today');
+      navigate(getDefaultPath());
     } catch (err) {
       // Error is handled by AuthContext
     } finally {
