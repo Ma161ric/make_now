@@ -4,6 +4,7 @@ import { getDayPlan, getDailyReview, saveDailyReview, listTasks, updateTaskStatu
 import { formatDate } from '../utils';
 import { useAuth } from '../auth/authContext';
 import { generateReviewAnalysis } from '../utils/aiReview';
+import { generateDayPlanWithAI } from '../utils/aiDayPlanning';
 
 export default function DailyReviewScreen() {
   const navigate = useNavigate();
@@ -24,6 +25,12 @@ export default function DailyReviewScreen() {
     tomorrow_focus: string;
   } | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [aiPlanSuggestions, setAiPlanSuggestions] = useState<{
+    suggested_tasks: Array<{ title: string; duration_minutes: number; priority: string }>;
+    focus_recommendation: string;
+    planning_tips: string[];
+  } | null>(null);
+  const [loadingPlanAI, setLoadingPlanAI] = useState(false);
 
   if (!dayPlan || dayPlan.status !== 'confirmed') {
     return (
@@ -269,16 +276,78 @@ Please respond with valid JSON (no markdown, just the JSON object):
 
         {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
 
-        {completed && (
+        {completed && !aiPlanSuggestions && (
           <div style={{ marginTop: 12, padding: 12, background: '#dcfce7', borderRadius: 0, borderLeft: '4px solid #22c55e' }}>
             <div style={{ fontWeight: 600, color: '#166534', marginBottom: 8 }}>✅ Tag gespeichert!</div>
             <div className="muted">Dein Review wurde erfolgreich gespeichert.</div>
+            <button
+              className="button"
+              onClick={async () => {
+                setLoadingPlanAI(true);
+                const suggestions = await generateDayPlanWithAI(reflection, mood!, doneCount, tasks.length);
+                setAiPlanSuggestions(suggestions);
+                setLoadingPlanAI(false);
+              }}
+              disabled={loadingPlanAI}
+              style={{ marginTop: 12, width: '100%' }}
+            >
+              {loadingPlanAI ? '⏳ Plane den nächsten Tag...' : '🎯 Nächsten Tag mit KI planen'}
+            </button>
             <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 8, gap: 8 }}>
               <button className="button secondary" onClick={() => navigate('/')}>
                 Zur Inbox
               </button>
               <button className="button" onClick={() => navigate('/today')}>
                 Zum Heute
+              </button>
+            </div>
+          </div>
+        )}
+
+        {aiPlanSuggestions && (
+          <div style={{ marginTop: 12, padding: 12, background: '#fef3c7', borderRadius: 0, borderLeft: '4px solid #f59e0b' }}>
+            <div style={{ fontWeight: 600, color: '#92400e', marginBottom: 8 }}>🎯 KI-Planungsvorschläge für morgen</div>
+            
+            {aiPlanSuggestions.focus_recommendation && (
+              <div style={{ marginBottom: 12 }}>
+                <div className="label" style={{ fontSize: '0.875rem' }}>Fokus</div>
+                <div className="muted">{aiPlanSuggestions.focus_recommendation}</div>
+              </div>
+            )}
+            
+            {aiPlanSuggestions.suggested_tasks && aiPlanSuggestions.suggested_tasks.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div className="label" style={{ fontSize: '0.875rem' }}>Vorgeschlagene Tasks</div>
+                <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569' }}>
+                  {aiPlanSuggestions.suggested_tasks.map((task, i) => (
+                    <li key={i} style={{ marginBottom: 4 }}>
+                      <strong>{task.title}</strong> ({task.duration_minutes}min, {task.priority})
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {aiPlanSuggestions.planning_tips && aiPlanSuggestions.planning_tips.length > 0 && (
+              <div>
+                <div className="label" style={{ fontSize: '0.875rem' }}>Tipps für die Planung</div>
+                <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569' }}>
+                  {aiPlanSuggestions.planning_tips.map((tip, i) => (
+                    <li key={i}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 12, gap: 8 }}>
+              <button
+                className="button secondary"
+                onClick={() => setAiPlanSuggestions(null)}
+              >
+                Schließen
+              </button>
+              <button className="button" onClick={() => navigate('/today')}>
+                Zum Planning
               </button>
             </div>
           </div>
