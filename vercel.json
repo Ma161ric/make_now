@@ -1,7 +1,6 @@
 {
   "buildCommand": null,
   "outputDirectory": "apps/web/dist",
-  "docker": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
