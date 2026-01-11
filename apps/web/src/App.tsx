@@ -17,7 +17,7 @@ export default function App() {
     <div className="app-shell">
       {!isAuthPage && (
         <header className="app-header">
-          <div className="brand">Make Now</div>
+          <div className="brand">Dayflow</div>
           {isAuthenticated && (
             <nav className="nav">
               <Link className={location.pathname === '/' ? 'active' : ''} to="/">Inbox</Link>

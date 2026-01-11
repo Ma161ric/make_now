@@ -2,11 +2,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
 import { useTheme } from '../theme/themeContext';
+import { usePreferences } from '../context/PreferencesContext';
 import styles from './SettingsScreen.module.css';
 
 export const SettingsScreen: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { preferences, updateDefaultScreen } = usePreferences();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -69,6 +71,39 @@ export const SettingsScreen: React.FC = () => {
             >
               {theme === 'dark' ? '☀️ Helles Design' : '🌙 Dunkles Design'}
             </button>
+          </div>
+        </div>
+
+        {/* App Preferences Section */}
+        <div className={styles.section}>
+          <h2>App-Einstellungen</h2>
+          <div className={styles.setting}>
+            <div className={styles.settingInfo}>
+              <p className={styles.settingLabel}>Startseite</p>
+              <p className={styles.settingDescription}>
+                Aktuell: <strong>{preferences.defaultScreen === 'inbox' ? 'Inbox' : preferences.defaultScreen === 'today' ? 'Heute' : 'Kalender'}</strong>
+              </p>
+            </div>
+            <div className={styles.buttonGroup}>
+              <button
+                className={`${styles.toggleButton} ${preferences.defaultScreen === 'inbox' ? styles.active : ''}`}
+                onClick={() => updateDefaultScreen('inbox')}
+              >
+                📥 Inbox
+              </button>
+              <button
+                className={`${styles.toggleButton} ${preferences.defaultScreen === 'today' ? styles.active : ''}`}
+                onClick={() => updateDefaultScreen('today')}
+              >
+                📅 Heute
+              </button>
+              <button
+                className={`${styles.toggleButton} ${preferences.defaultScreen === 'week' ? styles.active : ''}`}
+                onClick={() => updateDefaultScreen('week')}
+              >
+                🗓️ Woche
+              </button>
+            </div>
           </div>
         </div>
 
