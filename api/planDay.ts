@@ -8,6 +8,12 @@ function planFromItemsMock(items: PlanningInput['items']): PlanningOutput {
     timezone: 'UTC',
     mini_task_ids: [],
     suggested_blocks: [],
+    reasoning_brief: 'Mock plan - no items provided',
+    confidence: 0.5,
+    metadata: {
+      processing_time_ms: 0,
+      algorithm_version: '1.0-mock',
+    },
   };
 }
 
