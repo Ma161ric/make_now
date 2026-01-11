@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../auth/authContext';
 
 interface UserPreferences {
-  defaultScreen: 'inbox' | 'today' | 'week';
+  defaultScreen: 'notes' | 'today' | 'week';
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -12,7 +12,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 interface PreferencesContextType {
   preferences: UserPreferences;
   setPreferences: (prefs: UserPreferences) => void;
-  updateDefaultScreen: (screen: 'inbox' | 'today' | 'week') => void;
+  updateDefaultScreen: (screen: 'notes' | 'today' | 'week') => void;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -42,8 +42,8 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     }
   };
 
-  const updateDefaultScreen = (screen: 'inbox' | 'today' | 'week') => {
-    setPreferences({ ...preferences, defaultScreen: screen });
+  const updateDefaultScreen = (screen: 'notes' | 'today' | 'week') => {
+    setPreferences({ ...preferences, defaultScreen: screen as 'notes' | 'today' | 'week' });
   };
 
   return (

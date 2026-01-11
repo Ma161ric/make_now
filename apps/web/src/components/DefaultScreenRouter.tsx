@@ -10,7 +10,9 @@ export function DefaultScreenRouter() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (preferences.defaultScreen !== 'inbox') {
+    if (preferences.defaultScreen === 'notes') {
+      navigate('/inbox', { replace: true });
+    } else {
       navigate(`/${preferences.defaultScreen}`, { replace: true });
     }
   }, [preferences.defaultScreen, navigate]);
@@ -21,7 +23,7 @@ export function DefaultScreenRouter() {
       return <TodayScreen />;
     case 'week':
       return <WeekCalendarScreen />;
-    case 'inbox':
+    case 'notes':
     default:
       return <InboxScreen />;
   }

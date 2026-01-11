@@ -81,13 +81,13 @@ export const SettingsScreen: React.FC = () => {
             <div className={styles.settingInfo}>
               <p className={styles.settingLabel}>Startseite</p>
               <p className={styles.settingDescription}>
-                Aktuell: <strong>{preferences.defaultScreen === 'inbox' ? 'Inbox' : preferences.defaultScreen === 'today' ? 'Heute' : 'Kalender'}</strong>
+                Aktuell: <strong>{preferences.defaultScreen === 'notes' ? 'Inbox' : preferences.defaultScreen === 'today' ? 'Heute' : 'Kalender'}</strong>
               </p>
             </div>
             <div className={styles.buttonGroup}>
               <button
-                className={`${styles.toggleButton} ${preferences.defaultScreen === 'inbox' ? styles.active : ''}`}
-                onClick={() => updateDefaultScreen('inbox')}
+                className={`${styles.toggleButton} ${preferences.defaultScreen === 'notes' ? styles.active : ''}`}
+                onClick={() => updateDefaultScreen('notes')}
               >
                 📥 Inbox
               </button>
