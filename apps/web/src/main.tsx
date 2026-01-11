@@ -19,7 +19,6 @@ import { PreferencesProvider } from './context/PreferencesContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { OnboardingGuard } from './components/OnboardingGuard';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { DefaultScreenRouter } from './components/DefaultScreenRouter';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
@@ -40,8 +39,8 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="signup" element={<SignupScreen />} />
                 <Route path="onboarding" element={<ProtectedRoute><OnboardingScreen /></ProtectedRoute>} />
                 <Route path="privacy" element={<PrivacyPolicyScreen />} />
-                <Route path="terms" element={<TermsOfServiceScreen />} />
-                <Route index element={<ProtectedRoute><OnboardingGuard><DefaultScreenRouter /></OnboardingGuard></ProtectedRoute>} />
+                <Route path="terms" element={<PrivacyPolicyScreen />} />
+                <Route index element={<ProtectedRoute><OnboardingGuard><InboxScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="review/:id" element={<ProtectedRoute><OnboardingGuard><ReviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="week" element={<ProtectedRoute><OnboardingGuard><WeekCalendarScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="today" element={<ProtectedRoute><OnboardingGuard><TodayScreen /></OnboardingGuard></ProtectedRoute>} />

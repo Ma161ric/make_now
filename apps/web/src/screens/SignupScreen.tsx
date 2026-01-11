@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
+import { usePreferences } from '../context/PreferencesContext';
 import styles from './SignupScreen.module.css';
 
 export const SignupScreen: React.FC = () => {
@@ -11,7 +12,16 @@ export const SignupScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const { signup, loginWithGoogle, loginWithApple, error } = useAuth();
+  const { preferences } = usePreferences();
   const navigate = useNavigate();
+
+    const getDefaultPath = () => {
+    if (preferences.defaultScreen === 'notes') {
+      return '/inbox';
+    }
+    return `/${preferences.defaultScreen}`;
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +35,7 @@ export const SignupScreen: React.FC = () => {
     setIsLoading(true);
     try {
       await signup(email, password, displayName);
-      navigate('/today');
+      navigate(getDefaultPath());
     } catch (err) {
       // Error is handled by AuthContext
     } finally {
