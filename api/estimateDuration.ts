@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { estimateDurationAI } from '../packages/core/src/scheduling';
+import { estimateDurationAI } from '../packages/core/src/scheduling.js';
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   // CORS

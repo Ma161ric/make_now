@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import Groq from 'groq-sdk';
-import { ExtractionOutput } from '../functions/src/types';
+import { ExtractionOutput } from '../functions/src/types.js';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,

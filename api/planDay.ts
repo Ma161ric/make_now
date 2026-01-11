@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import Groq from 'groq-sdk';
-import { planFromItemsMock } from '../packages/core/src/scheduling';
-import { PlanningInput, PlanningOutput } from '../functions/src/types';
+import { planFromItemsMock } from '../packages/core/src/scheduling.js';
+import { PlanningInput, PlanningOutput } from '../functions/src/types.js';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,

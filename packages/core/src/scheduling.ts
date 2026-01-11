@@ -11,7 +11,7 @@ import type {
   PlanningResponse,
   Importance,
   EnergyType,
-} from './models';
+} from './models.js';
 
 /**
  * Configuration for scheduling
