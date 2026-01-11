@@ -36,7 +36,7 @@
   padding: 12px;
   background: #fee;
   color: #c33;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   border-left: 4px solid #c33;
 }
@@ -63,7 +63,7 @@
   padding: 10px 12px;
   font-size: 14px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: all 0.2s;
@@ -87,7 +87,7 @@
   color: white;
   background: var(--accent-primary);
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -144,7 +144,7 @@
   color: var(--text-primary);
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
