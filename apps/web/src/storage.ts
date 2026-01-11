@@ -2,10 +2,14 @@ import { ExtractionResponse, PlanningResponse, ExtractedItem, Task, TaskStatus }
 import { User } from 'firebase/auth';
 import { FirestoreService } from './firebase/firestoreService';
 
-const STORAGE_KEY = 'make-now-state';
 const VERSION = 1;
 
 const firestoreService = new FirestoreService();
+
+// Generate user-scoped storage key
+function getStorageKey(userId: string): string {
+  return `make-now-state-${userId}`;
+}
 
 export type NoteStatus = 'unprocessed' | 'processed' | 'archived';
 export interface StoredNote {
@@ -58,8 +62,8 @@ function initialState(): StoredState {
   };
 }
 
-function loadState(): StoredState {
-  const raw = localStorage.getItem(STORAGE_KEY);
+function loadState(userId: string): StoredState {
+  const raw = localStorage.getItem(getStorageKey(userId));
   if (!raw) return initialState();
   try {
     const parsed = JSON.parse(raw);
@@ -72,19 +76,19 @@ function loadState(): StoredState {
   }
 }
 
-function saveState(state: StoredState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function saveState(userId: string, state: StoredState) {
+  localStorage.setItem(getStorageKey(userId), JSON.stringify(state));
 }
 
-export function listNotes(): StoredNote[] {
-  return loadState().notes.sort((a, b) => b.created_at.localeCompare(a.created_at));
+export function listNotes(userId: string): StoredNote[] {
+  return loadState(userId).notes.sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
-export async function addNote(note: StoredNote, extraction: ExtractionResponse, user?: User | null) {
-  const state = loadState();
+export async function addNote(userId: string, note: StoredNote, extraction: ExtractionResponse, user?: User | null) {
+  const state = loadState(userId);
   state.notes.push(note);
   state.extractions[note.id] = extraction;
-  saveState(state);
+  saveState(userId, state);
   
   // Sync to Firestore if user is logged in
   if (user) {
@@ -92,35 +96,35 @@ export async function addNote(note: StoredNote, extraction: ExtractionResponse, 
   }
 }
 
-export function getNote(id: string): StoredNote | undefined {
-  return loadState().notes.find((n) => n.id === id);
+export function getNote(userId: string, id: string): StoredNote | undefined {
+  return loadState(userId).notes.find((n) => n.id === id);
 }
 
-export function getExtraction(id: string): ExtractionResponse | undefined {
-  return loadState().extractions[id];
+export function getExtraction(userId: string, id: string): ExtractionResponse | undefined {
+  return loadState(userId).extractions[id];
 }
 
-export function saveReviewedItems(noteId: string, items: ExtractedItem[]) {
-  const state = loadState();
+export function saveReviewedItems(userId: string, noteId: string, items: ExtractedItem[]) {
+  const state = loadState(userId);
   state.reviewedItems[noteId] = items;
   const note = state.notes.find((n) => n.id === noteId);
   if (note) note.status = 'processed';
-  saveState(state);
+  saveState(userId, state);
 }
 
-export function getReviewedItems(noteId: string): ExtractedItem[] | undefined {
-  return loadState().reviewedItems[noteId];
+export function getReviewedItems(userId: string, noteId: string): ExtractedItem[] | undefined {
+  return loadState(userId).reviewedItems[noteId];
 }
 
-export function listAllReviewedItems(): ExtractedItem[] {
-  const state = loadState();
+export function listAllReviewedItems(userId: string): ExtractedItem[] {
+  const state = loadState(userId);
   return Object.values(state.reviewedItems).flat();
 }
 
-export async function saveTask(task: Task, user?: User | null) {
-  const state = loadState();
+export async function saveTask(userId: string, task: Task, user?: User | null) {
+  const state = loadState(userId);
   state.tasks[task.id] = task;
-  saveState(state);
+  saveState(userId, state);
   
   // Sync to Firestore if user is logged in
   if (user) {
@@ -128,18 +132,18 @@ export async function saveTask(task: Task, user?: User | null) {
   }
 }
 
-export function getTask(id: string): Task | undefined {
-  return loadState().tasks[id];
+export function getTask(userId: string, id: string): Task | undefined {
+  return loadState(userId).tasks[id];
 }
 
-export function listTasks(filter?: (task: Task) => boolean): Task[] {
-  const state = loadState();
+export function listTasks(userId: string, filter?: (task: Task) => boolean): Task[] {
+  const state = loadState(userId);
   const tasks = Object.values(state.tasks);
   return filter ? tasks.filter(filter) : tasks;
 }
 
-export async function updateTaskStatus(taskId: string, status: TaskStatus, user?: User | null) {
-  const state = loadState();
+export async function updateTaskStatus(userId: string, taskId: string, status: TaskStatus, user?: User | null) {
+  const state = loadState(userId);
   const task = state.tasks[taskId];
   if (task) {
     task.status = status;
@@ -147,7 +151,7 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus, user?
     if (status === 'done') {
       task.completed_at = new Date();
     }
-    saveState(state);
+    saveState(userId, state);
     
     // Sync to Firestore if user is logged in
     if (user) {
@@ -156,10 +160,10 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus, user?
   }
 }
 
-export async function saveDayPlan(dayPlanState: DayPlanState, user?: User | null) {
-  const state = loadState();
+export async function saveDayPlan(userId: string, dayPlanState: DayPlanState, user?: User | null) {
+  const state = loadState(userId);
   state.dayPlans[dayPlanState.date] = dayPlanState;
-  saveState(state);
+  saveState(userId, state);
   
   // Sync to Firestore if user is logged in
   if (user) {
@@ -167,14 +171,14 @@ export async function saveDayPlan(dayPlanState: DayPlanState, user?: User | null
   }
 }
 
-export function getDayPlan(date: string): DayPlanState | undefined {
-  return loadState().dayPlans[date];
+export function getDayPlan(userId: string, date: string): DayPlanState | undefined {
+  return loadState(userId).dayPlans[date];
 }
 
-export async function saveDailyReview(review: DailyReviewData, user?: User | null) {
-  const state = loadState();
+export async function saveDailyReview(userId: string, review: DailyReviewData, user?: User | null) {
+  const state = loadState(userId);
   state.dailyReviews[review.date] = review;
-  saveState(state);
+  saveState(userId, state);
   
   // Sync to Firestore if user is logged in
   if (user) {
@@ -182,12 +186,12 @@ export async function saveDailyReview(review: DailyReviewData, user?: User | nul
   }
 }
 
-export function getDailyReview(date: string): DailyReviewData | undefined {
-  return loadState().dailyReviews[date];
+export function getDailyReview(userId: string, date: string): DailyReviewData | undefined {
+  return loadState(userId).dailyReviews[date];
 }
 
-export async function savePlan(date: string, plan: PlanningResponse, user?: User | null) {
-  const state = loadState();
+export async function savePlan(userId: string, date: string, plan: PlanningResponse, user?: User | null) {
+  const state = loadState(userId);
   const dayPlanState: DayPlanState = {
     id: `plan-${date}-${Date.now()}`,
     date,
@@ -196,7 +200,7 @@ export async function savePlan(date: string, plan: PlanningResponse, user?: User
     plan,
   };
   state.dayPlans[date] = dayPlanState;
-  saveState(state);
+  saveState(userId, state);
   
   // Sync to Firestore if user is logged in
   if (user) {
@@ -204,7 +208,7 @@ export async function savePlan(date: string, plan: PlanningResponse, user?: User
   }
 }
 
-export function getPlan(date: string): PlanningResponse | undefined {
-  const dayPlan = loadState().dayPlans[date];
+export function getPlan(userId: string, date: string): PlanningResponse | undefined {
+  const dayPlan = loadState(userId).dayPlans[date];
   return dayPlan?.plan;
 }

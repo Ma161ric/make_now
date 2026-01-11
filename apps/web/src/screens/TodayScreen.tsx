@@ -92,17 +92,19 @@ function mapToTasks(items: ReturnType<typeof listAllReviewedItems>): Task[] {
     .filter((i) => i.type === 'task')
     .map((item) => {
       const fields = item.parsed_fields as any;
+      const id = item.id || uuid(); // Use item.id if exists, otherwise generate new UUID
+      
       return {
-        id: item.id,
+        id,
         title: item.title,
-        status: 'open',
+        status: 'open' as const,
         created_at: now,
         updated_at: now,
         estimation_source: fields.estimation_source || 'default',
-        duration_min_minutes: fields.duration_min_minutes,
-        duration_max_minutes: fields.duration_max_minutes,
+        duration_min_minutes: fields.duration_min_minutes || 15,
+        duration_max_minutes: fields.duration_max_minutes || 30,
         importance: fields.importance || 'medium',
-        energy_type: fields.energy_type,
+        energy_type: fields.energy_type || 'mixed',
         due_at: fields.due_at ? new Date(fields.due_at) : undefined,
       } as Task;
     });
@@ -113,14 +115,17 @@ export default function TodayScreen() {
   const { user, firebaseUser } = useAuth();
   const [syncing, setSyncing] = useState(false);
   
-  const existingDayPlan = getDayPlan(today);
+  // Get userId from user object (should always be available in this screen)
+  const userId = user?.id || firebaseUser?.uid || '';
+  
+  const existingDayPlan = userId ? getDayPlan(userId, today) : undefined;
   
   const [dayPlanState, setDayPlanState] = useState<ReturnType<typeof getDayPlan>>(existingDayPlan);
   const [error, setError] = useState<string | null>(null);
   const [showReplanDialog, setShowReplanDialog] = useState(false);
   const [sortedTaskIds, setSortedTaskIds] = useState<string[]>([]);
 
-  const items = useMemo(() => listAllReviewedItems(), []);
+  const items = useMemo(() => (userId ? listAllReviewedItems(userId) : []), [userId]);
 
   // Data migration on first login
   useDataMigration(firebaseUser);
@@ -145,12 +150,12 @@ export default function TodayScreen() {
   useEffect(() => {
     if (dayPlanState?.plan) {
       const allIds = [
-        ...(dayPlanState.plan.focus_task_id ? [dayPlanState.plan.focus_task_id] : []),
-        ...(dayPlanState.plan.mini_task_ids || []),
+        ...(dayPlanState?.plan?.focus_task_id ? [dayPlanState.plan.focus_task_id] : []),
+        ...(dayPlanState?.plan?.mini_task_ids || []),
       ];
       setSortedTaskIds(allIds);
     }
-  }, [dayPlanState?.plan.focus_task_id, dayPlanState?.plan.mini_task_ids?.join(',') || '']);
+  }, [dayPlanState?.plan?.focus_task_id, dayPlanState?.plan?.mini_task_ids]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -178,24 +183,32 @@ export default function TodayScreen() {
 
     setDayPlanState(updatedPlan);
     setSyncing(true);
-    await saveDayPlan(updatedPlan, firebaseUser);
-    setSyncing(false);
+    try {
+      await saveDayPlan(userId, updatedPlan, firebaseUser);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   useEffect(() => {
-    if (dayPlanState) return;
+    if (dayPlanState || !userId) return;
     
     const initializePlan = async () => {
       // Create tasks from reviewed items if not already in storage
       const tasksToCreate = mapToTasks(items);
       for (const task of tasksToCreate) {
-        if (!getTask(task.id)) {
-          await saveTask(task, firebaseUser);
+        if (!getTask(userId, task.id)) {
+          await saveTask(userId, task, firebaseUser);
         }
       }
 
       // Generate initial plan
-      const openTasks = listTasks(t => t.status === 'open');
+      const openTasks = listTasks(userId, t => t.status === 'open');
+      if (openTasks.length === 0) {
+        setError('Keine offenen Tasks verfügbar.');
+        return;
+      }
+      
       const generated = scheduleDay(openTasks, new Date());
       if (!generated) {
         setError('Heute kein Platz für neue Tasks.');
@@ -219,7 +232,7 @@ export default function TodayScreen() {
     };
     
     initializePlan();
-  }, [items, dayPlanState, today, firebaseUser]);
+  }, [items, dayPlanState, today, userId, firebaseUser]);
 
   const handleConfirm = async () => {
     if (!dayPlanState) return;
@@ -233,9 +246,9 @@ export default function TodayScreen() {
     ];
     
     for (const id of allTaskIds) {
-      const task = getTask(id);
+      const task = getTask(userId, id);
       if (task && task.status === 'open') {
-        await saveTask({ ...task, status: 'scheduled', day_plan_id: dayPlanState.id }, firebaseUser);
+        await saveTask(userId, { ...task, status: 'scheduled', day_plan_id: dayPlanState.id }, firebaseUser);
       }
     }
     
@@ -245,7 +258,7 @@ export default function TodayScreen() {
       status: 'confirmed' as const,
       confirmed_at: new Date().toISOString(),
     };
-    await saveDayPlan(confirmedPlan, firebaseUser);
+    await saveDayPlan(userId, confirmedPlan, firebaseUser);
     setDayPlanState(confirmedPlan);
     setError(null);
     setSyncing(false);
@@ -258,42 +271,52 @@ export default function TodayScreen() {
     }
 
     setSyncing(true);
+    try {
+      // Get remaining tasks (exclude done tasks)
+      const openTasks = listTasks(userId, t => t.status === 'open' || t.status === 'scheduled');
+      
+      // Apply replan constraints based on option
+      // (simplified - full implementation would adjust scheduling config based on option)
+      // option: 'other_focus', 'mini_only', 'less_time', 'manual'
+      const newPlan = scheduleDay(openTasks, new Date());
+      
+      if (!newPlan) {
+        setError('Kein Plan möglich.');
+        return;
+      }
 
-    // Get remaining tasks (exclude done tasks)
-    const openTasks = listTasks(t => t.status === 'open' || t.status === 'scheduled');
-    
-    // Apply replan constraints based on option
-    // (simplified - full implementation would adjust scheduling config)
-    const newPlan = scheduleDay(openTasks, new Date());
-    
-    if (!newPlan) {
-      setError('Kein Plan möglich.');
+      // Mark old plan as replanned
+      await saveDayPlan(userId, { ...dayPlanState, status: 'replanned' }, firebaseUser);
+      
+      // Create new plan
+      const replanState = {
+        id: `plan-${today}-${Date.now()}`,
+        date: today,
+        status: 'suggested' as const,
+        replan_count: dayPlanState.replan_count + 1,
+        original_plan_id: dayPlanState.original_plan_id || dayPlanState.id,
+        plan: newPlan,
+      };
+      
+      await saveDayPlan(userId, replanState, firebaseUser);
+      setDayPlanState(replanState);
+      setShowReplanDialog(false);
+      setError(null);
+    } finally {
       setSyncing(false);
-      return;
     }
-
-    // Mark old plan as replanned
-    await saveDayPlan({ ...dayPlanState, status: 'replanned' }, firebaseUser);
-    
-    // Create new plan
-    const replanState = {
-      id: `plan-${today}-${Date.now()}`,
-      date: today,
-      status: 'suggested' as const,
-      replan_count: dayPlanState.replan_count + 1,
-      original_plan_id: dayPlanState.original_plan_id || dayPlanState.id,
-      plan: newPlan,
-    };
-    
-    await saveDayPlan(replanState, firebaseUser);
-    setDayPlanState(replanState);
-    setShowReplanDialog(false);
-    setError(null);
-    setSyncing(false);
   };
 
   if (!dayPlanState) {
-    return <div className="card">{error || 'Kein Plan verfügbar.'}</div>;
+    return (
+      <div className="grid" style={{ gap: 16 }}>
+        <div className="card">
+          <div className="section-title">Today Plan</div>
+          {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
+          {!error && <div className="muted">Plan wird geladen...</div>}
+        </div>
+      </div>
+    );
   }
 
   const plan = dayPlanState.plan;
@@ -301,7 +324,7 @@ export default function TodayScreen() {
   const canReplan = isConfirmed && dayPlanState.replan_count < 3;
 
   // Get actual task objects for display using sorted order
-  const sortedTasks = sortedTaskIds.map(id => getTask(id)).filter(Boolean);
+  const sortedTasks = sortedTaskIds.map(id => getTask(userId, id)).filter(Boolean);
   const focusTask = sortedTasks[0] || null;
   const miniTasks = sortedTasks.slice(1);
 
@@ -348,7 +371,7 @@ export default function TodayScreen() {
 
         <div className="label" style={{ marginTop: 12 }}>Zeitblöcke</div>
         <ul className="list">
-          {(plan.suggested_blocks || []).map((b, idx) => (
+          {(plan?.suggested_blocks || []).map((b, idx) => (
             <li key={idx} className="list-item">
               <div className="flex" style={{ justifyContent: 'space-between' }}>
                 <div>{b.block_type.toUpperCase()}</div>
@@ -361,7 +384,7 @@ export default function TodayScreen() {
           ))}
         </ul>
 
-        {plan.reasoning_brief && (
+        {plan?.reasoning_brief && (
           <div style={{ marginTop: 12, padding: 12, background: '#f3f4f6', borderRadius: 8 }}>
             <div className="muted" style={{ fontSize: 14 }}>{plan.reasoning_brief}</div>
           </div>

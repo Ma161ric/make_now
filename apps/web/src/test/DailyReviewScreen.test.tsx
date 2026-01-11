@@ -5,7 +5,9 @@ import DailyReviewScreen from '../screens/DailyReviewScreen';
 import * as storage from '../storage';
 import { Task, PlanningResponse } from '@make-now/core';
 
+const testUserId = 'test-user-123';
 const mockNavigate = vi.fn();
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -13,6 +15,16 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+vi.mock('../auth/authContext', () => ({
+  useAuth: () => ({
+    user: { id: testUserId, email: 'test@example.com', displayName: 'Test User' },
+    firebaseUser: null,
+    loading: false,
+    error: null,
+    isAuthenticated: true,
+  }),
+}));
 
 describe('DailyReviewScreen', () => {
   const today = new Date().toISOString().split('T')[0];
@@ -56,8 +68,8 @@ describe('DailyReviewScreen', () => {
       mood: 'good',
     };
 
-    storage.saveDayPlan(dayPlan);
-    storage.saveDailyReview(review);
+    storage.saveDayPlan(testUserId, dayPlan);
+    storage.saveDailyReview(testUserId, review);
 
     render(
       <TestRouter>
@@ -89,8 +101,8 @@ describe('DailyReviewScreen', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task1);
-    storage.saveTask(task2);
+    storage.saveTask(testUserId, task1);
+    storage.saveTask(testUserId, task2);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -104,7 +116,7 @@ describe('DailyReviewScreen', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -126,7 +138,7 @@ describe('DailyReviewScreen', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task);
+    storage.saveTask(testUserId, task);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -140,7 +152,7 @@ describe('DailyReviewScreen', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -171,7 +183,7 @@ describe('DailyReviewScreen', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task);
+    storage.saveTask(testUserId, task);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -185,7 +197,7 @@ describe('DailyReviewScreen', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -216,8 +228,8 @@ describe('DailyReviewScreen', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task1);
-    storage.saveTask(task2);
+    storage.saveTask(testUserId, task1);
+    storage.saveTask(testUserId, task2);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -231,7 +243,7 @@ describe('DailyReviewScreen', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -253,18 +265,18 @@ describe('DailyReviewScreen', () => {
 
     await waitFor(() => {
       // Check task statuses
-      const updatedTask1 = storage.getTask('task-1');
+      const updatedTask1 = storage.getTask(testUserId, 'task-1');
       expect(updatedTask1?.status).toBe('done');
 
-      const updatedTask2 = storage.getTask('task-2');
+      const updatedTask2 = storage.getTask(testUserId, 'task-2');
       expect(updatedTask2?.status).toBe('scheduled');
 
       // Check plan status
-      const updatedPlan = storage.getDayPlan(today);
+      const updatedPlan = storage.getDayPlan(testUserId, today);
       expect(updatedPlan?.status).toBe('completed');
 
       // Check review was saved
-      const review = storage.getDailyReview(today);
+      const review = storage.getDailyReview(testUserId, today);
       expect(review).toBeDefined();
       expect(review?.tasks_done).toBe(1);
       expect(review?.tasks_total).toBe(2);
@@ -284,7 +296,7 @@ describe('DailyReviewScreen', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task);
+    storage.saveTask(testUserId, task);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -298,7 +310,7 @@ describe('DailyReviewScreen', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -324,7 +336,7 @@ describe('DailyReviewScreen', () => {
     fireEvent.click(completeButton);
 
     await waitFor(() => {
-      const review = storage.getDailyReview(today);
+      const review = storage.getDailyReview(testUserId, today);
       expect(review?.reflection_note).toBe('Great day!');
       expect(review?.mood).toBe('great');
     });
@@ -358,7 +370,7 @@ describe('DailyReviewScreen', () => {
       },
     ];
 
-    tasks.forEach(t => storage.saveTask(t));
+    tasks.forEach(t => storage.saveTask(testUserId, t));
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -372,7 +384,7 @@ describe('DailyReviewScreen', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -398,7 +410,7 @@ describe('DailyReviewScreen', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task);
+    storage.saveTask(testUserId, task);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -412,7 +424,7 @@ describe('DailyReviewScreen', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -424,5 +436,124 @@ describe('DailyReviewScreen', () => {
     fireEvent.click(laterButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('/today');
+  });
+
+  it('should display energy level buttons', () => {
+    const task: Task = {
+      id: 'task-1',
+      title: 'Test Task',
+      status: 'open',
+      duration_min_minutes: 60,
+      duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
+    storage.saveTask(testUserId, task);
+
+    const dayPlan: storage.DayPlanState = {
+      id: 'plan-1',
+      date: today,
+      status: 'confirmed',
+      replan_count: 0,
+      plan: {
+        focus_task_id: 'task-1',
+        mini_task_ids: [],
+        reasoning_brief: 'Test plan',
+      },
+    };
+
+    storage.saveDayPlan(testUserId, dayPlan);
+
+    render(
+      <TestRouter>
+        <DailyReviewScreen />
+      </TestRouter>
+    );
+
+    const happyButton = screen.getByRole('button', { name: '😊' });
+    const sadButton = screen.getByRole('button', { name: '😔' });
+    expect(happyButton).toBeInTheDocument();
+    expect(sadButton).toBeInTheDocument();
+  });
+
+  it('should handle task completion tracking', () => {
+    const task: Task = {
+      id: 'task-1',
+      title: 'Test Task',
+      status: 'open',
+      duration_min_minutes: 60,
+      duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
+    storage.saveTask(testUserId, task);
+
+    const dayPlan: storage.DayPlanState = {
+      id: 'plan-1',
+      date: today,
+      status: 'confirmed',
+      replan_count: 0,
+      plan: {
+        focus_task_id: 'task-1',
+        mini_task_ids: [],
+        reasoning_brief: 'Test plan',
+      },
+    };
+
+    storage.saveDayPlan(testUserId, dayPlan);
+
+    render(
+      <TestRouter>
+        <DailyReviewScreen />
+      </TestRouter>
+    );
+
+    expect(screen.getByText('Test Task')).toBeInTheDocument();
+  });
+
+  it('should allow review input', async () => {
+    const task: Task = {
+      id: 'task-1',
+      title: 'Test Task',
+      status: 'open',
+      duration_min_minutes: 60,
+      duration_max_minutes: 120,
+      estimation_source: 'parsed',
+      importance: 'medium',
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
+    storage.saveTask(testUserId, task);
+
+    const dayPlan: storage.DayPlanState = {
+      id: 'plan-1',
+      date: today,
+      status: 'confirmed',
+      replan_count: 0,
+      plan: {
+        focus_task_id: 'task-1',
+        mini_task_ids: [],
+        reasoning_brief: 'Test plan',
+      },
+    };
+
+    storage.saveDayPlan(testUserId, dayPlan);
+
+    render(
+      <TestRouter>
+        <DailyReviewScreen />
+      </TestRouter>
+    );
+
+    const textarea = screen.getByPlaceholderText(/Was lief gut/i);
+    fireEvent.change(textarea, { target: { value: 'Today I learned...' } });
+    expect(textarea).toHaveValue('Today I learned...');
   });
 });

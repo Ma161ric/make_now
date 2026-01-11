@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDayPlan, getDailyReview, saveDailyReview, listTasks, updateTaskStatus, saveDayPlan } from '../storage';
 import { formatDate } from '../utils';
+import { useAuth } from '../auth/authContext';
 
 export default function DailyReviewScreen() {
   const navigate = useNavigate();
+  const { user, firebaseUser } = useAuth();
+  const userId = user?.id || firebaseUser?.uid || '';
   const today = formatDate(new Date());
-  const dayPlan = getDayPlan(today);
-  const existingReview = getDailyReview(today);
+  const dayPlan = userId ? getDayPlan(userId, today) : undefined;
+  const existingReview = userId ? getDailyReview(userId, today) : undefined;
 
   const [taskStates, setTaskStates] = useState<Record<string, 'done' | 'postpone' | 'keep-open'>>({});
   const [reflection, setReflection] = useState('');
@@ -47,7 +50,7 @@ export default function DailyReviewScreen() {
     ...(plan.focus_task_id ? [plan.focus_task_id] : []),
     ...plan.mini_task_ids,
   ];
-  const tasks = allTaskIds.map(id => listTasks(t => t.id === id)[0]).filter(Boolean);
+  const tasks = allTaskIds.map(id => listTasks(userId, t => t.id === id)[0]).filter(Boolean);
 
   const allReviewed = tasks.every(t => taskStates[t.id]);
   const doneCount = Object.values(taskStates).filter(s => s === 'done').length;
@@ -62,19 +65,19 @@ export default function DailyReviewScreen() {
     tasks.forEach(task => {
       const state = taskStates[task.id];
       if (state === 'done') {
-        updateTaskStatus(task.id, 'done');
+        updateTaskStatus(userId, task.id, 'done');
       } else if (state === 'postpone') {
-        updateTaskStatus(task.id, 'scheduled');
+        updateTaskStatus(userId, task.id, 'scheduled');
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         // Would need to update due_at here in a real implementation
       } else {
-        updateTaskStatus(task.id, 'open');
+        updateTaskStatus(userId, task.id, 'open');
       }
     });
 
     // Mark plan as completed
-    saveDayPlan({
+    saveDayPlan(userId, {
       ...dayPlan,
       status: 'completed',
     });
@@ -90,7 +93,7 @@ export default function DailyReviewScreen() {
       reflection_note: reflection || undefined,
       mood,
     };
-    saveDailyReview(review);
+    saveDailyReview(userId, review);
 
     setError(null);
     navigate('/');

@@ -32,8 +32,8 @@ service cloud.firestore {
           && request.resource.data.status in ['draft', 'confirmed', 'completed'];
       }
       
-      // Tasks
-      match /tasks/{taskId} {
+      // Tasks / Items (stored under 'items' collection)
+      match /items/{taskId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId)
           && request.resource.data.keys().hasAll(['title', 'status'])

@@ -51,6 +51,8 @@ export function useDataMigration(user: User | null) {
   useEffect(() => {
     if (!user) return;
 
+    let isMounted = true;
+
     const migrationKey = `migration-done-${user.uid}`;
     const alreadyMigrated = localStorage.getItem(migrationKey);
 
@@ -62,7 +64,9 @@ export function useDataMigration(user: User | null) {
         const localState = localStorage.getItem('make-now-state');
         if (!localState) {
           // No local data to migrate
-          localStorage.setItem(migrationKey, 'true');
+          if (isMounted) {
+            localStorage.setItem(migrationKey, 'true');
+          }
           return;
         }
 
@@ -89,14 +93,23 @@ export function useDataMigration(user: User | null) {
           }
         }
 
-        // Mark migration as complete
-        localStorage.setItem(migrationKey, 'true');
-        console.log('Data migration completed successfully');
+        // Mark migration as complete (only if component still mounted)
+        if (isMounted) {
+          localStorage.setItem(migrationKey, 'true');
+          console.log('Data migration completed successfully');
+        }
       } catch (error) {
-        console.error('Data migration failed:', error);
+        if (isMounted) {
+          console.error('Data migration failed:', error);
+        }
       }
     };
 
     migrateData();
+
+    // Cleanup: mark component as unmounted
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 }

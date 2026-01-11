@@ -9,24 +9,27 @@ import {
   ExtractionResponse,
 } from '@make-now/core';
 import { getExtraction, getNote, getReviewedItems, saveReviewedItems } from '../storage';
+import { useAuth } from '../auth/authContext';
 import { useAiDurationEstimation } from '../hooks/useAiDurationEstimation';
 
-function toEditableItems(noteId: string): ExtractedItem[] {
-  const reviewed = getReviewedItems(noteId);
+function toEditableItems(userId: string, noteId: string): ExtractedItem[] {
+  const reviewed = getReviewedItems(userId, noteId);
   if (reviewed) return reviewed;
-  const extraction = getExtraction(noteId);
+  const extraction = getExtraction(userId, noteId);
   return extraction?.items ?? [];
 }
 
 export default function ReviewScreen() {
   const params = useParams();
   const navigate = useNavigate();
+  const { user, firebaseUser } = useAuth();
+  const userId = user?.id || firebaseUser?.uid || '';
   const noteId = params.id || '';
-  const note = getNote(noteId);
-  const [items, setItems] = useState<ExtractedItem[]>(() => toEditableItems(noteId));
+  const note = userId ? getNote(userId, noteId) : undefined;
+  const [items, setItems] = useState<ExtractedItem[]>(() => userId ? toEditableItems(userId, noteId) : []);
   const [error, setError] = useState<string | null>(null);
 
-  const extraction: ExtractionResponse | undefined = useMemo(() => getExtraction(noteId), [noteId]);
+  const extraction: ExtractionResponse | undefined = useMemo(() => userId ? getExtraction(userId, noteId) : undefined, [noteId, userId]);
 
   if (!note || !extraction) {
     return <div className="card">Notiz nicht gefunden.</div>;
@@ -50,7 +53,7 @@ export default function ReviewScreen() {
       setError('Validierung fehlgeschlagen. Bitte Felder prüfen.');
       return;
     }
-    saveReviewedItems(noteId, items);
+    saveReviewedItems(userId, noteId, items);
     setError(null);
     navigate('/today');
   };

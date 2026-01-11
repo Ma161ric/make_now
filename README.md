@@ -202,11 +202,22 @@ make_now/
 - [AI Integration](spec/50_ai/)
 - [Architecture Decisions](adr/)
 
+## � Documentation
+
+Complete documentation is organized in the [docs/](docs/) folder:
+
+- **[Testing](docs/testing/)** – Test coverage, verification plans, and results
+- **[Implementation](docs/implementation/)** – User data isolation implementation details
+- **[Deployment](docs/deployment/)** – Deployment procedures and release checklist
+
+Quick start: [docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)
+
 ## 🔒 Privacy & Security
 
 - **Local-first**: All data stored locally
 - **No secrets in client**: See [ADR-0003](adr/0003_no_secrets_in_client.md)
 - **Privacy by design**: See [Privacy & Security](spec/80_quality/privacy_and_security.md)
+- **User data isolation**: See [Implementation Report](docs/implementation/USER_DATA_ISOLATION_IMPLEMENTATION.md)
 
 ## 🤝 Contributing
 

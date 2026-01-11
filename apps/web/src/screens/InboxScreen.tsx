@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState, useEffect, useRef } from 'react';
 import { extractFromNoteMock, validateExtraction } from '@make-now/core';
 import { addNote, listNotes } from '../storage';
 import { uuid } from '../utils';
@@ -12,11 +12,20 @@ export default function InboxScreen() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const { firebaseUser } = useAuth();
-  const notes = useMemo(() => listNotes(), [text, success]);
+  const { user, firebaseUser } = useAuth();
+  const userId = user?.id || firebaseUser?.uid || '';
+  const isMountedRef = useRef(true);
+  const notes = useMemo(() => userId ? listNotes(userId) : [], [userId]);
 
   // Data migration on first login
   useDataMigration(firebaseUser);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -45,6 +54,7 @@ export default function InboxScreen() {
     
     setSyncing(true);
     await addNote(
+      userId,
       {
         id: noteId,
         raw_text: trimmed,
@@ -54,9 +64,11 @@ export default function InboxScreen() {
       extraction,
       firebaseUser
     );
-    setSyncing(false);
-    setSuccess('Gespeichert. Jetzt prüfen.');
-    setText('');
+    if (isMountedRef.current) {
+      setSyncing(false);
+      setSuccess('Gespeichert. Jetzt prüfen.');
+      setText('');
+    }
   };
 
   return (

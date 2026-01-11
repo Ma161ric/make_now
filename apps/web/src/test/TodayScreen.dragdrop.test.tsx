@@ -7,6 +7,19 @@ import * as storage from '../storage';
 import { Task } from '@make-now/core';
 import { arrayMove } from '@dnd-kit/sortable';
 
+const testUserId = 'test-user-123';
+
+// Mock useAuth hook
+vi.mock('../auth/authContext', () => ({
+  useAuth: () => ({
+    user: { id: testUserId, email: 'test@example.com', displayName: 'Test User' },
+    firebaseUser: null,
+    loading: false,
+    error: null,
+    isAuthenticated: true,
+  }),
+}));
+
 // Mock DnD libraries
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children, onDragEnd }: any) => (
@@ -84,7 +97,7 @@ describe('TodayScreen - Drag and Drop', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task);
+    storage.saveTask(testUserId, task);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -103,7 +116,7 @@ describe('TodayScreen - Drag and Drop', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -142,8 +155,8 @@ describe('TodayScreen - Drag and Drop', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task1);
-    storage.saveTask(task2);
+    storage.saveTask(testUserId, task1);
+    storage.saveTask(testUserId, task2);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -162,7 +175,7 @@ describe('TodayScreen - Drag and Drop', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -226,9 +239,9 @@ describe('TodayScreen - Drag and Drop', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task1);
-    storage.saveTask(task2);
-    storage.saveTask(task3);
+    storage.saveTask(testUserId, task1);
+    storage.saveTask(testUserId, task2);
+    storage.saveTask(testUserId, task3);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -247,7 +260,7 @@ describe('TodayScreen - Drag and Drop', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     render(
       <TestRouter>
@@ -279,7 +292,7 @@ describe('TodayScreen - Drag and Drop', () => {
       updated_at: new Date(),
     };
 
-    storage.saveTask(task);
+    storage.saveTask(testUserId, task);
 
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
@@ -298,7 +311,7 @@ describe('TodayScreen - Drag and Drop', () => {
       },
     };
 
-    storage.saveDayPlan(dayPlan);
+    storage.saveDayPlan(testUserId, dayPlan);
 
     const { container } = render(
       <TestRouter>
