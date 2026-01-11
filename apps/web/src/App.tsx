@@ -35,7 +35,17 @@ export default function App() {
                 onClick={() => navigate('/settings')}
                 title={`Einstellungen für ${user.displayName}`}
               >
-                <span className={styles.userAvatar}>{user.avatar || '👤'}</span>
+                <span className={styles.userAvatar}>
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.displayName}
+                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    '👤'
+                  )}
+                </span>
                 <span className={styles.userName}>{user.displayName}</span>
               </button>
             )}

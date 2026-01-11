@@ -59,17 +59,26 @@ const getErrorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : 'Ein Fehler ist aufgetreten';
 };
 
-const mapFirebaseUser = (fbUser: any): User => ({
-  id: fbUser.uid,
-  email: fbUser.email || '',
-  displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
-  avatar: fbUser.photoURL || undefined,
-  provider: fbUser.providerData?.[0]?.providerId?.includes('google')
-    ? 'google'
-    : fbUser.providerData?.[0]?.providerId?.includes('apple')
-      ? 'apple'
-      : 'email',
-});
+const mapFirebaseUser = (fbUser: any): User => {
+  let provider: 'email' | 'google' | 'apple' = 'email';
+  
+  if (fbUser.providerData && fbUser.providerData.length > 0) {
+    const providerId = fbUser.providerData[0]?.providerId || '';
+    if (providerId.includes('google')) {
+      provider = 'google';
+    } else if (providerId.includes('apple')) {
+      provider = 'apple';
+    }
+  }
+  
+  return {
+    id: fbUser.uid,
+    email: fbUser.email || '',
+    displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
+    avatar: fbUser.photoURL || undefined,
+    provider,
+  };
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);

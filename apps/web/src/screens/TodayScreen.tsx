@@ -146,11 +146,11 @@ export default function TodayScreen() {
     if (dayPlanState?.plan) {
       const allIds = [
         ...(dayPlanState.plan.focus_task_id ? [dayPlanState.plan.focus_task_id] : []),
-        ...dayPlanState.plan.mini_task_ids,
+        ...(dayPlanState.plan.mini_task_ids || []),
       ];
       setSortedTaskIds(allIds);
     }
-  }, [dayPlanState?.plan.focus_task_id, dayPlanState?.plan.mini_task_ids.join(',')]);
+  }, [dayPlanState?.plan.focus_task_id, dayPlanState?.plan.mini_task_ids?.join(',') || '']);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -348,7 +348,7 @@ export default function TodayScreen() {
 
         <div className="label" style={{ marginTop: 12 }}>Zeitblöcke</div>
         <ul className="list">
-          {plan.suggested_blocks.map((b, idx) => (
+          {(plan.suggested_blocks || []).map((b, idx) => (
             <li key={idx} className="list-item">
               <div className="flex" style={{ justifyContent: 'space-between' }}>
                 <div>{b.block_type.toUpperCase()}</div>

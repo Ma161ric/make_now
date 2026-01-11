@@ -71,6 +71,52 @@ npm run preview          # Preview production build
 npm run deploy           # Deploy to Firebase
 npm run deploy:hosting   # Deploy hosting only
 npm run deploy:rules     # Deploy security rules only
+
+## 🌐 Deploy on Vercel (Hosting + APIs)
+
+### Voraussetzungen
+- Vercel Account (kostenlos)
+- Firebase Projekt mit Auth/Firestore (für Login/Sync)
+- `GROQ_API_KEY` (für AI in `/api/*`)
+
+### Schritte
+1. Projekt auf Vercel verbinden
+	- Über Dashboard: "New Project" → Repo importieren
+	- Build Command: `npm run build`
+	- Output Directory: `apps/web/dist`
+	- Root: Repository-Root (Monorepo mit npm Workspaces)
+
+2. Umgebungsvariablen setzen (Vercel → Settings → Environment Variables)
+	- Serverless API:
+	  - `GROQ_API_KEY` → dein Groq Key
+	- Client (Firebase für Auth/Sync):
+	  - `VITE_FIREBASE_API_KEY`
+	  - `VITE_FIREBASE_AUTH_DOMAIN`
+	  - `VITE_FIREBASE_PROJECT_ID`
+	  - `VITE_FIREBASE_STORAGE_BUCKET`
+	  - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+	  - `VITE_FIREBASE_APP_ID`
+	- Empfehlung: in "Production" und "Preview" setzen.
+
+3. Firebase Auth Domain erlauben
+	- Firebase Console → Authentication → Settings → Authorized domains
+	- Deine Vercel-Domain hinzufügen (z. B. `make-now-xyz.vercel.app`).
+
+4. Deploy ausführen
+	- Ohne globale Installation (Windows-freundlich):
+	  ```bash
+	  npx vercel
+	  npx vercel --prod
+	  ```
+
+5. Prüfung
+	- Frontend lädt: `https://<dein-project>.vercel.app`
+	- API erreichbar: POST `https://<dein-project>.vercel.app/api/estimateDuration` mit `{"taskTitle":"Test"}` liefert JSON.
+
+### Hinweise
+- Firebase Hosting wird durch Vercel ersetzt; Firestore/Auth bleiben unverändert.
+- `vercel.json` ist bereits passend konfiguriert (SPA-Rewrite + `/api/*`).
+- Wenn Auth/Sync später deaktiviert werden soll, kann der Client optional so angepasst werden, dass er ohne `VITE_FIREBASE_*` nicht abbricht.
 ```
 
 ## 📦 Project Structure

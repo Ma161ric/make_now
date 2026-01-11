@@ -24,7 +24,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <ThemeProvider>
         <AuthProvider>
           <BrowserRouter 
-          basename="/make_now"
+          basename="/"
           future={{
             v7_startTransition: true,
             v7_relativeSplatPath: true,

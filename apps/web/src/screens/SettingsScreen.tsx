@@ -31,7 +31,15 @@ export const SettingsScreen: React.FC = () => {
           <div className={styles.profileCard}>
             <div className={styles.profileInfo}>
               <div className={styles.avatar}>
-                {user?.avatar || '👤'}
+                {user?.avatar ? (
+                  <img 
+                    src={user.avatar} 
+                    alt={user.displayName}
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  '👤'
+                )}
               </div>
               <div>
                 <p className={styles.userName}>{user?.displayName}</p>
