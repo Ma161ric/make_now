@@ -17,6 +17,7 @@ export default function DailyReviewScreen() {
   const [reflection, setReflection] = useState('');
   const [mood, setMood] = useState<'great' | 'good' | 'okay' | 'tough' | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<{
     suggestions: string[];
     insight: string;
@@ -136,7 +137,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
     saveDailyReview(userId, review);
 
     setError(null);
-    navigate('/');
+    setCompleted(true);
   };
 
   const motivationText = getMotivationText(doneCount, tasks.length);
@@ -268,18 +269,35 @@ Please respond with valid JSON (no markdown, just the JSON object):
 
         {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
 
-        <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 16, gap: 8 }}>
-          <button className="button secondary" onClick={() => navigate('/today')}>
-            Später
-          </button>
-          <button
-            className="button"
-            onClick={handleComplete}
-            disabled={!allReviewed}
-          >
-            Tag abschließen
-          </button>
-        </div>
+        {completed && (
+          <div style={{ marginTop: 12, padding: 12, background: '#dcfce7', borderRadius: 0, borderLeft: '4px solid #22c55e' }}>
+            <div style={{ fontWeight: 600, color: '#166534', marginBottom: 8 }}>✅ Tag gespeichert!</div>
+            <div className="muted">Dein Review wurde erfolgreich gespeichert.</div>
+            <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 8, gap: 8 }}>
+              <button className="button secondary" onClick={() => navigate('/')}>
+                Zur Inbox
+              </button>
+              <button className="button" onClick={() => navigate('/today')}>
+                Zum Heute
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!completed && (
+          <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 16, gap: 8 }}>
+            <button className="button secondary" onClick={() => navigate('/today')}>
+              Später
+            </button>
+            <button
+              className="button"
+              onClick={handleComplete}
+              disabled={!allReviewed}
+            >
+              Tag abschließen
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
