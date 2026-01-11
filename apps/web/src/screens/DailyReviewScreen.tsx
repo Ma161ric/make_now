@@ -214,7 +214,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
           </div>
         </div>
 
-        {allReviewed && reflection && mood && !aiSuggestions && (
+        {mood && reflection && !aiSuggestions && (
           <div style={{ marginTop: 12 }}>
             <button
               className="button"

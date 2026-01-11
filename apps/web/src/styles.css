@@ -43,7 +43,7 @@
 .list-item { padding:10px 0; border-bottom:1px solid var(--border-color); }
 .badge { display:inline-block; padding:4px 8px; border-radius:8px; font-size:12px; background:var(--accent-bg); color:var(--accent-text); }
 .flex { display:flex; gap:12px; align-items:center; }
-.grid { display:grid; gap:12px; width:100%; }
+.grid { display:grid; gap:12px; width:100%; padding:16px; box-sizing:border-box; }
 .label { font-weight:600; font-size:13px; margin-bottom:4px; }
 .section-title { font-size:18px; font-weight:700; margin-bottom:8px; }
 .muted { color:var(--text-muted); }
