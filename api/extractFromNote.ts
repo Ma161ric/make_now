@@ -83,18 +83,19 @@ Return a valid JSON object with this exact structure:
         result.items.map(async (item) => {
           if (item.type === 'task' && !item.duration_min_minutes) {
             try {
-              const enrichment = await groq.messages.create({
+              const enrichment = await groq.chat.completions.create({
                 model: 'mixtral-8x7b-32768',
-                max_tokens: 300,
                 messages: [
                   {
                     role: 'user',
-                    content: `Estimate duration and deadline for this task. Return ONLY JSON:
-{"min": <5-480>, "max": <5-480>, "days": <1-30>, "conf": <0.0-1.0>}
+                    content: `Estimate duration and deadline for this task. Return ONLY valid JSON (no markdown):
+{"min_minutes": <5-480>, "max_minutes": <5-480>, "days_until_due": <1-30>, "confidence": <0.0-1.0>}
 Task: "${item.title}" ${item.description ? `(${item.description})` : ''}
 Importance: ${item.importance || 'medium'}`,
                   },
                 ],
+                temperature: 0.3,
+                max_tokens: 300,
               });
 
               const enrichContent = enrichment.choices[0]?.message?.content;
@@ -102,9 +103,9 @@ Importance: ${item.importance || 'medium'}`,
                 const jsonMatch = enrichContent.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                   const parsed = JSON.parse(jsonMatch[0]);
-                  const minMin = Math.max(5, Math.min(480, parsed.min ?? 15));
-                  const maxMin = Math.max(minMin, Math.min(480, parsed.max ?? 30));
-                  const daysUntilDue = Math.max(1, Math.min(30, parsed.days ?? 3));
+                  const minMin = Math.max(5, Math.min(480, parsed.min_minutes ?? parsed.min ?? 15));
+                  const maxMin = Math.max(minMin, Math.min(480, parsed.max_minutes ?? parsed.max ?? 30));
+                  const daysUntilDue = Math.max(1, Math.min(30, parsed.days_until_due ?? parsed.days ?? 3));
 
                   const dueDate = new Date();
                   dueDate.setDate(dueDate.getDate() + (daysUntilDue - 1));
@@ -114,7 +115,7 @@ Importance: ${item.importance || 'medium'}`,
                     duration_min_minutes: minMin,
                     duration_max_minutes: maxMin,
                     due_at: dueDate.toISOString().split('T')[0],
-                    confidence: Math.max(0, Math.min(1, parsed.conf ?? item.confidence ?? 0.7)),
+                    confidence: Math.max(0, Math.min(1, parsed.confidence ?? item.confidence ?? 0.7)),
                   };
                 }
               }
