@@ -33,6 +33,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
+    console.log('[AI] Extracting from note:', noteText.substring(0, 100) + '...');
+    const startTime = Date.now();
+
     const systemPrompt = `You are a task extraction assistant. Extract tasks, ideas, and events from user notes.
 Return a valid JSON object with this exact structure:
 {
@@ -56,8 +59,6 @@ Return a valid JSON object with this exact structure:
 }`;
 
     const userPrompt = `Extract all actionable items from this note:\n\n${noteText}`;
-
-    const startTime = Date.now();
 
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,

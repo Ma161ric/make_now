@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState, useEffect, useRef } from 'react';
-import { extractFromNoteMock, validateExtraction } from '@make-now/core';
+import { validateExtraction } from '@make-now/core';
+import { extractFromNoteCloud } from '../firebase/functionsService';
 import { addNote, listNotes } from '../storage';
 import { uuid } from '../utils';
 import { Link } from 'react-router-dom';
@@ -50,15 +51,15 @@ export default function InboxScreen() {
       return;
     }
     const noteId = uuid();
-    const extraction = extractFromNoteMock(trimmed, { timezone: preferences.timezone });
-    const validation = validateExtraction(extraction);
-    if (!validation.valid) {
-      setError('Extraktion ungültig, bitte Text anpassen.');
-      return;
-    }
-    
     setSyncing(true);
     try {
+      const extraction = await extractFromNoteCloud(trimmed);
+      const validation = validateExtraction(extraction);
+      if (!validation.valid) {
+        setError('Extraktion ungültig, bitte Text anpassen.');
+        setSyncing(false);
+        return;
+      }
       await addNote(
         userId,
         {
