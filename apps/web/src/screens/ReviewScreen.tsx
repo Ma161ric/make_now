@@ -64,7 +64,7 @@ export default function ReviewScreen() {
       confidence: 1.0,
       parsed_fields: 
         newItemType === 'task' 
-          ? { duration_min_minutes: 15, duration_max_minutes: 30, importance: 'medium' }
+          ? { duration_min_minutes: 15, duration_max_minutes: 30, estimation_source: 'default' as const, importance: 'medium' }
           : newItemType === 'event'
           ? { start_at: '', end_at: '', timezone: 'Europe/Berlin' }
           : { content: '' },
@@ -175,7 +175,7 @@ export default function ReviewScreen() {
       if (!newItem.parsed_fields) {
         console.warn('[Review] Item missing parsed_fields:', item);
         newItem.parsed_fields = item.type === 'task' 
-          ? { duration_min_minutes: 15, duration_max_minutes: 30, importance: 'medium' }
+          ? { duration_min_minutes: 15, duration_max_minutes: 30, estimation_source: 'default' as const, importance: 'medium' }
           : item.type === 'event'
           ? { start_at: '', end_at: '', timezone: 'Europe/Berlin' }
           : { content: '' };

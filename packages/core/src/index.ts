@@ -27,6 +27,9 @@ export type {
   IdeaFields,
 } from './models';
 
+// Type aliases for backward compatibility
+export type { ExtractionResponse as ExtractionOutput, PlanningResponse as PlanningOutput } from './models';
+
 export { StateTransitionError } from './models';
 
 // Groq AI Service (Production)

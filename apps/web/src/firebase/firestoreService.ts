@@ -1,5 +1,6 @@
 import { getDb } from '../firebase/firebaseConfig';
 import { Timestamp } from 'firebase/firestore';
+import type { DailyReviewData } from '../storage';
 
 export interface FirestoreTask {
   id: string;
@@ -231,14 +232,14 @@ export class FirestoreService {
     }
   }
 
-  async getDailyReview(userId: string, date: string) {
+  async getDailyReview(userId: string, date: string): Promise<DailyReviewData | null> {
     try {
       const db = await getDb();
       const { doc, getDoc } = await import('firebase/firestore');
       const reviewRef = doc(db, `users/${userId}/daily_reviews/${date}`);
       const docSnapshot = await getDoc(reviewRef);
       if (docSnapshot.exists()) {
-        return docSnapshot.data();
+        return docSnapshot.data() as DailyReviewData;
       }
       return null;
     } catch (error) {

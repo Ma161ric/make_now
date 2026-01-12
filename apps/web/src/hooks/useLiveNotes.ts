@@ -7,7 +7,7 @@ import { listNotes } from '../storage';
  */
 export function useLiveNotes(userId: string) {
   const [notes, setNotes] = useState(() => userId ? listNotes(userId) : []);
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     if (!userId) return;
