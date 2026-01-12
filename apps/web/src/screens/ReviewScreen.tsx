@@ -13,6 +13,7 @@ import { useAuth } from '../auth/authContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { useAiDurationEstimation } from '../hooks/useAiDurationEstimation';
 import { extractFromNoteCloud } from '../firebase/functionsService';
+import { uuid } from '../utils';
 
 function toEditableItems(userId: string, noteId: string): ExtractedItem[] {
   const reviewed = getReviewedItems(userId, noteId);
@@ -139,7 +140,7 @@ export default function ReviewScreen() {
     const completeItems = items.map(item => {
       if (!item.id) {
         console.warn('[Review] Item missing id:', item);
-        item.id = `item-${Date.now()}-${Math.random()}`;
+        item.id = uuid();
       }
       if (!item.parsed_fields) {
         console.warn('[Review] Item missing parsed_fields:', item);
