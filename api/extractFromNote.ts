@@ -77,6 +77,58 @@ Return a valid JSON object with this exact structure:
 
     const result: ExtractionOutput = JSON.parse(content);
 
+    // Enrich tasks with duration and deadline estimates
+    if (result.items) {
+      const enrichedItems = await Promise.all(
+        result.items.map(async (item) => {
+          if (item.type === 'task' && !item.duration_min_minutes) {
+            try {
+              const enrichment = await groq.messages.create({
+                model: 'mixtral-8x7b-32768',
+                max_tokens: 300,
+                messages: [
+                  {
+                    role: 'user',
+                    content: `Estimate duration and deadline for this task. Return ONLY JSON:
+{"min": <5-480>, "max": <5-480>, "days": <1-30>, "conf": <0.0-1.0>}
+Task: "${item.title}" ${item.description ? `(${item.description})` : ''}
+Importance: ${item.importance || 'medium'}`,
+                  },
+                ],
+              });
+
+              const enrichContent = enrichment.choices[0]?.message?.content;
+              if (enrichContent) {
+                const jsonMatch = enrichContent.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  const parsed = JSON.parse(jsonMatch[0]);
+                  const minMin = Math.max(5, Math.min(480, parsed.min ?? 15));
+                  const maxMin = Math.max(minMin, Math.min(480, parsed.max ?? 30));
+                  const daysUntilDue = Math.max(1, Math.min(30, parsed.days ?? 3));
+
+                  const dueDate = new Date();
+                  dueDate.setDate(dueDate.getDate() + (daysUntilDue - 1));
+
+                  return {
+                    ...item,
+                    duration_min_minutes: minMin,
+                    duration_max_minutes: maxMin,
+                    due_at: dueDate.toISOString().split('T')[0],
+                    confidence: Math.max(0, Math.min(1, parsed.conf ?? item.confidence ?? 0.7)),
+                  };
+                }
+              }
+            } catch (err) {
+              console.error('Error enriching task:', err);
+            }
+          }
+          return item;
+        })
+      );
+
+      result.items = enrichedItems;
+    }
+
     // Add actual processing time
     result.metadata = {
       ...result.metadata,
