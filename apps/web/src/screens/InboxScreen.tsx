@@ -87,7 +87,7 @@ export default function InboxScreen() {
       if (isMountedRef.current) {
         setSyncing(false);
         const hasItems = extraction.items && extraction.items.length > 0;
-        const aiAvailable = !extraction.extracted_metadata?.algorithm_version?.startsWith('failed-');
+        const aiAvailable = !extraction.metadata?.model_version?.startsWith('failed-');
         if (hasItems) {
           setSuccess('Gespeichert. Jetzt prüfen.');
         } else if (!aiAvailable) {

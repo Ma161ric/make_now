@@ -95,12 +95,10 @@ ${noteText}`;
       console.log('[AI] Groq returned no items - returning empty extraction');
       return res.status(200).json({
         items: [],
-        extracted_metadata: {
-          extracted_duration: null,
-          extracted_deadline: null,
-          extracted_urgency: null,
-          extracted_importance: null,
-          algorithm_version: 'groq-empty',
+        overall_confidence: 0,
+        metadata: {
+          processing_time_ms: Date.now() - startTime,
+          model_version: 'groq-empty',
         },
       });
     }

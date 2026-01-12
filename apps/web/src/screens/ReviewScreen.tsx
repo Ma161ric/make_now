@@ -190,6 +190,7 @@ export default function ReviewScreen() {
         completeItems.length > 0
           ? Math.round((completeItems.reduce((s, i) => s + (i.confidence ?? 0.5), 0) / completeItems.length) * 100) / 100
           : extraction.overall_confidence,
+      metadata: extraction.metadata || { processing_time_ms: 0 },
     };
     const validation = validateExtraction(updatedExtraction);
     if (!validation.valid) {

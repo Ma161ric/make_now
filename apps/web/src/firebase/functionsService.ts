@@ -30,12 +30,10 @@ export async function extractFromNoteCloud(noteText: string): Promise<Extraction
       console.log('[AI] API returned error, returning empty extraction for later review');
       return {
         items: [],
-        extracted_metadata: {
-          extracted_duration: null,
-          extracted_deadline: null,
-          extracted_urgency: null,
-          extracted_importance: null,
-          algorithm_version: 'failed-api',
+        overall_confidence: 0,
+        metadata: {
+          processing_time_ms: 0,
+          model_version: 'failed-api',
         },
       };
     }
@@ -48,12 +46,10 @@ export async function extractFromNoteCloud(noteText: string): Promise<Extraction
     // Return empty extraction so note is saved for later review
     return {
       items: [],
-      extracted_metadata: {
-        extracted_duration: null,
-        extracted_deadline: null,
-        extracted_urgency: null,
-        extracted_importance: null,
-        algorithm_version: 'failed-network',
+      overall_confidence: 0,
+      metadata: {
+        processing_time_ms: 0,
+        model_version: 'failed-network',
       },
     };
   }
