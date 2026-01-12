@@ -28,11 +28,41 @@ export default function DailyReviewScreen() {
   const [aiPlanSuggestions, setAiPlanSuggestions] = useState<DayPlanSuggestions | null>(null);
   const [loadingPlanAI, setLoadingPlanAI] = useState(false);
 
-  if (!dayPlan || dayPlan.status !== 'confirmed') {
+  console.log('[DailyReview] userId:', userId);
+  console.log('[DailyReview] today:', today);
+  console.log('[DailyReview] dayPlan:', dayPlan);
+  console.log('[DailyReview] dayPlan?.status:', dayPlan?.status);
+  console.log('[DailyReview] existingReview:', existingReview);
+
+  if (!userId) {
     return (
       <div className="card">
         <div className="section-title">Daily Review</div>
-        <div className="muted">Kein bestätigter Plan für heute vorhanden.</div>
+        <div className="muted">Nicht angemeldet. Bitte <button onClick={() => navigate('/login')}>anmelden</button>.</div>
+      </div>
+    );
+  }
+
+  if (!dayPlan) {
+    return (
+      <div className="card">
+        <div className="section-title">Daily Review</div>
+        <div className="muted">Keine Plan für {today} gefunden.</div>
+        <button className="button" onClick={() => navigate('/today')}>
+          ← Zurück zum Plan
+        </button>
+      </div>
+    );
+  }
+
+  if (dayPlan.status !== 'confirmed') {
+    return (
+      <div className="card">
+        <div className="section-title">Daily Review</div>
+        <div className="muted">Plan ist noch nicht bestätigt (Status: {dayPlan.status}).</div>
+        <button className="button" onClick={() => navigate('/today')}>
+          ← Zurück zum Plan
+        </button>
       </div>
     );
   }
