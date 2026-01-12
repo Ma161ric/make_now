@@ -7,6 +7,7 @@ import { useAuth } from '../auth/authContext';
 import { useDayPlanSync, useDataMigration } from '../hooks/useSyncEffect';
 import { SyncStatus } from '../components/SyncStatus';
 import { TaskReviewModal } from '../components/TaskReviewModal';
+import { EditTaskModal } from '../components/EditTaskModal';
 import { AIPlanningSection } from '../components/AIPlanningSection';
 import {
   DndContext,
@@ -26,7 +27,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableTaskItem({ task, type, onReviewClick }: { task: Task; type: 'focus' | 'mini'; onReviewClick?: (task: Task) => void }) {
+function SortableTaskItem({ task, type, onReviewClick, onEditClick }: { task: Task; type: 'focus' | 'mini'; onReviewClick?: (task: Task) => void; onEditClick?: (task: Task) => void }) {
   const {
     attributes,
     listeners,
@@ -61,13 +62,23 @@ function SortableTaskItem({ task, type, onReviewClick }: { task: Task; type: 'fo
               ca. {task.duration_min_minutes}-{task.duration_max_minutes} Min
             </div>
           </div>
-          <button 
-            className="button secondary" 
-            onClick={() => onReviewClick?.(task)}
-            style={{ marginLeft: 8, padding: '6px 12px', fontSize: '0.875rem' }}
-          >
-            📝 Review
-          </button>
+          <div className="flex" style={{ gap: 6, marginLeft: 8 }}>
+            <button 
+              className="button secondary" 
+              onClick={() => onEditClick?.(task)}
+              title="Bearbeiten"
+              style={{ padding: '6px 10px', fontSize: '0.875rem' }}
+            >
+              ✏️
+            </button>
+            <button 
+              className="button secondary" 
+              onClick={() => onReviewClick?.(task)}
+              style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+            >
+              📝 Review
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -88,13 +99,23 @@ function SortableTaskItem({ task, type, onReviewClick }: { task: Task; type: 'fo
             ca. {task.duration_min_minutes}-{task.duration_max_minutes} Min
           </div>
         </div>
-        <button 
-          className="button secondary" 
-          onClick={() => onReviewClick?.(task)}
-          style={{ padding: '6px 12px', fontSize: '0.875rem' }}
-        >
-          📝 Review
-        </button>
+        <div className="flex" style={{ gap: 6 }}>
+          <button 
+            className="button secondary" 
+            onClick={() => onEditClick?.(task)}
+            title="Bearbeiten"
+            style={{ padding: '6px 10px', fontSize: '0.875rem' }}
+          >
+            ✏️
+          </button>
+          <button 
+            className="button secondary" 
+            onClick={() => onReviewClick?.(task)}
+            style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+          >
+            📝 Review
+          </button>
+        </div>
       </div>
     </li>
   );
@@ -139,6 +160,7 @@ export default function TodayScreen() {
   const [showReplanDialog, setShowReplanDialog] = useState(false);
   const [sortedTaskIds, setSortedTaskIds] = useState<string[]>([]);
   const [selectedTaskForReview, setSelectedTaskForReview] = useState<Task | null>(null);
+  const [selectedTaskForEdit, setSelectedTaskForEdit] = useState<Task | null>(null);
 
   const items = useMemo(() => (userId ? listAllReviewedItems(userId) : []), [userId]);
 
@@ -372,7 +394,7 @@ export default function TodayScreen() {
           <SortableContext items={sortedTaskIds} strategy={verticalListSortingStrategy}>
             {focusTask && (
               <div style={{ marginBottom: 12 }}>
-                <SortableTaskItem task={focusTask} type="focus" onReviewClick={setSelectedTaskForReview} />
+                <SortableTaskItem task={focusTask} type="focus" onReviewClick={setSelectedTaskForReview} onEditClick={setSelectedTaskForEdit} />
               </div>
             )}
 
@@ -381,7 +403,7 @@ export default function TodayScreen() {
             {miniTasks.length > 0 && (
               <ul className="list">
                 {miniTasks.map((task) => 
-                  task ? <SortableTaskItem key={task.id} task={task} type="mini" onReviewClick={setSelectedTaskForReview} /> : null
+                  task ? <SortableTaskItem key={task.id} task={task} type="mini" onReviewClick={setSelectedTaskForReview} onEditClick={setSelectedTaskForEdit} /> : null
                 )}
               </ul>
             )}
@@ -470,6 +492,18 @@ export default function TodayScreen() {
             const finalStatus = status === 'done' ? 'done' : status === 'postpone' ? 'scheduled' : 'open';
             updateTaskStatus(userId, selectedTaskForReview.id, finalStatus);
             setSelectedTaskForReview(null);
+          }}
+        />
+      )}
+
+      {/* Edit Task Modal */}
+      {selectedTaskForEdit && (
+        <EditTaskModal
+          task={selectedTaskForEdit}
+          onClose={() => setSelectedTaskForEdit(null)}
+          onSave={() => {
+            // Refresh the day plan with updated task
+            setSelectedTaskForEdit(null);
           }}
         />
       )}
