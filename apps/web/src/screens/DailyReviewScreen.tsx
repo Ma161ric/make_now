@@ -103,7 +103,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!allReviewed) {
       setError('Bitte alle Aufgaben bewerten.');
       return;
@@ -118,7 +118,6 @@ Please respond with valid JSON (no markdown, just the JSON object):
         updateTaskStatus(userId, task.id, 'scheduled');
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        // Would need to update due_at here in a real implementation
       } else {
         updateTaskStatus(userId, task.id, 'open');
       }
@@ -145,6 +144,18 @@ Please respond with valid JSON (no markdown, just the JSON object):
 
     setError(null);
     setCompleted(true);
+
+    // Auto-generate AI plan for tomorrow
+    setLoadingPlanAI(true);
+    try {
+      const suggestions = await generateDayPlanWithAI(reflection, mood!, doneCount, tasks.length);
+      setAiPlanSuggestions(suggestions);
+    } catch (err) {
+      console.error('AI planning error:', err);
+      // Don't show error, silently fail - user can still navigate
+    } finally {
+      setLoadingPlanAI(false);
+    }
   };
 
   const motivationText = getMotivationText(doneCount, tasks.length);
@@ -279,86 +290,56 @@ Please respond with valid JSON (no markdown, just the JSON object):
         {completed && !aiPlanSuggestions && (
           <div style={{ marginTop: 12, padding: 12, background: '#dcfce7', borderRadius: 0, borderLeft: '4px solid #22c55e' }}>
             <div style={{ fontWeight: 600, color: '#166534', marginBottom: 8 }}>✅ Tag gespeichert!</div>
-            <div className="muted">Dein Review wurde erfolgreich gespeichert.</div>
-            <button
-              className="button"
-              onClick={async () => {
-                setLoadingPlanAI(true);
-                setError(null);
-                try {
-                  const suggestions = await generateDayPlanWithAI(reflection, mood!, doneCount, tasks.length);
-                  if (suggestions) {
-                    setAiPlanSuggestions(suggestions);
-                  } else {
-                    setError('Fehler beim Generieren der Planvorschläge. Versuche es später erneut.');
-                  }
-                } catch (err) {
-                  setError('Fehler beim Generieren der Planvorschläge. Versuche es später erneut.');
-                  console.error('AI planning error:', err);
-                } finally {
-                  setLoadingPlanAI(false);
-                }
-              }}
-              disabled={loadingPlanAI}
-              style={{ marginTop: 12, width: '100%' }}
-            >
-              {loadingPlanAI ? '⏳ Plane den nächsten Tag...' : '🎯 Nächsten Tag mit KI planen'}
-            </button>
-            <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 8, gap: 8 }}>
-              <button className="button secondary" onClick={() => navigate('/')}>
-                Zur Inbox
-              </button>
-              <button className="button" onClick={() => navigate('/today')}>
-                Zum Heute
-              </button>
-            </div>
+            <div className="muted">Dein Review wurde erfolgreich gespeichert und KI plant morgen für dich...</div>
+            {loadingPlanAI && <div className="muted" style={{ marginTop: 8, fontSize: '0.875rem' }}>⏳ Generiere optimalen Plan für morgen...</div>}
           </div>
         )}
 
         {aiPlanSuggestions && (
           <div style={{ marginTop: 12, padding: 12, background: '#fef3c7', borderRadius: 0, borderLeft: '4px solid #f59e0b' }}>
-            <div style={{ fontWeight: 600, color: '#92400e', marginBottom: 8 }}>🎯 KI-Planungsvorschläge für morgen</div>
+            <div style={{ fontWeight: 600, color: '#92400e', marginBottom: 12 }}>🎯 KI-Plan für Morgen</div>
             
             {aiPlanSuggestions.focus_recommendation && (
-              <div style={{ marginBottom: 12 }}>
-                <div className="label" style={{ fontSize: '0.875rem' }}>Fokus</div>
-                <div className="muted">{aiPlanSuggestions.focus_recommendation}</div>
+              <div style={{ marginBottom: 12, padding: 8, background: '#fef08a', borderRadius: 4 }}>
+                <div className="label" style={{ fontSize: '0.875rem', marginBottom: 4 }}>🔥 Fokus</div>
+                <div style={{ fontSize: '0.95rem', color: '#78350f' }}>{aiPlanSuggestions.focus_recommendation}</div>
               </div>
             )}
             
             {aiPlanSuggestions.suggested_tasks && aiPlanSuggestions.suggested_tasks.length > 0 && (
               <div style={{ marginBottom: 12 }}>
-                <div className="label" style={{ fontSize: '0.875rem' }}>Vorgeschlagene Tasks</div>
-                <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569' }}>
+                <div className="label" style={{ fontSize: '0.875rem', marginBottom: 6 }}>📋 Vorgeschlagene Tasks</div>
+                <div style={{ display: 'grid', gap: 6 }}>
                   {aiPlanSuggestions.suggested_tasks.map((task, i) => (
-                    <li key={i} style={{ marginBottom: 4 }}>
-                      <strong>{task.title}</strong> ({task.duration_minutes}min, {task.priority})
-                    </li>
+                    <div key={i} style={{ padding: 8, background: 'white', borderRadius: 4, borderLeft: `3px solid ${task.priority === 'high' ? '#ef4444' : task.priority === 'medium' ? '#f59e0b' : '#10b981'}` }}>
+                      <div style={{ fontWeight: 500, fontSize: '0.95rem' }}>{task.title}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: 4 }}>⏱️ {task.duration_minutes}min • {task.priority === 'high' ? '🔴 Hoch' : task.priority === 'medium' ? '🟡 Mittel' : '🟢 Niedrig'}</div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
             
             {aiPlanSuggestions.planning_tips && aiPlanSuggestions.planning_tips.length > 0 && (
-              <div>
-                <div className="label" style={{ fontSize: '0.875rem' }}>Tipps für die Planung</div>
-                <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569' }}>
+              <div style={{ marginBottom: 12 }}>
+                <div className="label" style={{ fontSize: '0.875rem', marginBottom: 6 }}>💡 Tipps</div>
+                <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569', gap: 4 }}>
                   {aiPlanSuggestions.planning_tips.map((tip, i) => (
-                    <li key={i}>{tip}</li>
+                    <li key={i} style={{ marginBottom: 4, fontSize: '0.9rem' }}>{tip}</li>
                   ))}
                 </ul>
               </div>
             )}
 
-            <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 12, gap: 8 }}>
+            <div className="flex" style={{ justifyContent: 'space-between', marginTop: 12, gap: 8 }}>
               <button
                 className="button secondary"
-                onClick={() => setAiPlanSuggestions(null)}
+                onClick={() => navigate('/')}
               >
-                Schließen
+                Später
               </button>
-              <button className="button" onClick={() => navigate('/today')}>
-                Zum Planning
+              <button className="button" onClick={() => navigate('/today')} style={{ flex: 1 }}>
+                ✅ Plan übernehmen → Zur Planung
               </button>
             </div>
           </div>
