@@ -70,6 +70,7 @@ ${noteText}`;
       ],
       temperature: 0.2,
       max_tokens: 2000,
+      timeout: 30000, // 30 second timeout
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -88,16 +89,26 @@ ${noteText}`;
     }
 
     const result: ExtractionOutput = JSON.parse(jsonStr);
-    console.log('[AI] Parsed result:', result.items.length, 'items');
+    console.log('[AI] Parsed result:', result.items?.length || 0, 'items');
 
-    // If AI returns no items, that's ok - store as empty extraction for later review
+    // If AI returns no items, that's ok - return empty extraction early
     if (!result.items || result.items.length === 0) {
-      console.log('[AI] Groq returned no items - storing for manual review');
+      console.log('[AI] Groq returned no items - returning empty extraction');
+      return res.status(200).json({
+        items: [],
+        extracted_metadata: {
+          extracted_duration: null,
+          extracted_deadline: null,
+          extracted_urgency: null,
+          extracted_importance: null,
+          algorithm_version: 'groq-empty',
+        },
+      });
+    }
 
-
-    // Enrich tasks with duration and deadline estimates
-    if (result.items) {
-      const enrichedItems = await Promise.all(
+    // Enrich tasks with duration and deadline estimates (ONLY if we have items)
+    console.log('[AI] Enriching', result.items.length, 'items...');
+    const enrichedItems = await Promise.all(
         result.items.map(async (item) => {
           if (item.type === 'task' && !item.duration_min_minutes) {
             try {
@@ -114,6 +125,7 @@ Importance: ${item.importance || 'medium'}`,
                 ],
                 temperature: 0.3,
                 max_tokens: 300,
+                timeout: 15000, // 15 second timeout for enrichment
               });
 
               const enrichContent = enrichment.choices[0]?.message?.content;
@@ -146,7 +158,6 @@ Importance: ${item.importance || 'medium'}`,
       );
 
       result.items = enrichedItems;
-    }
 
     // Add actual processing time
     result.metadata = {
