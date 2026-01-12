@@ -126,7 +126,9 @@ export default function ReviewScreen() {
     };
     const validation = validateExtraction(updatedExtraction);
     if (!validation.valid) {
-      setError('Validierung fehlgeschlagen. Bitte Felder prüfen.');
+      const errorMessages = validation.errors.map(e => `${e.path}: ${e.message}`).join('\n');
+      console.error('[Review] Validation errors:', validation.errors);
+      setError(`Validierung fehlgeschlagen:\n${errorMessages}`);
       return;
     }
     saveReviewedItems(userId, noteId, items);
@@ -135,7 +137,8 @@ export default function ReviewScreen() {
     // TODO: Save selected items to daily plan / send to scheduling
     console.log('[Review] Saving items for plan:', Array.from(selectedForPlan));
     
-    navigate('/today');
+    // Navigate back to notes after short delay
+    setTimeout(() => navigate('/'), 500);
   };
 
   return (
