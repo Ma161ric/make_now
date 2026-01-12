@@ -16,7 +16,7 @@
       "default": "Europe/Berlin"
     },
     "focus_task_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "description": "UUID der Fokus-Aufgabe (kann null sein)",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
