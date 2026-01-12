@@ -472,15 +472,22 @@ export default function TodayScreen() {
       )}
 
       {/* AI Planning Section */}
-      {isConfirmed && (
-        <AIPlanningSection
-          today={today}
-          todayTasksDone={dayPlanState?.plan ? (dayPlanState.plan.focus_task_id ? 1 : 0) + dayPlanState.plan.mini_task_ids.length : 0}
-          todayTasksTotal={dayPlanState?.plan ? (dayPlanState.plan.focus_task_id ? 1 : 0) + dayPlanState.plan.mini_task_ids.length : 0}
-          yesterdayReflection={userId ? getDailyReview(userId, formatDate(new Date(new Date().setDate(new Date().getDate() - 1))))?.reflection_note : undefined}
-          yesterdayMood={userId ? getDailyReview(userId, formatDate(new Date(new Date().setDate(new Date().getDate() - 1))))?.mood : undefined}
-        />
-      )}
+      {isConfirmed && (() => {
+        const tasksDone = sortedTasks.filter(t => t.status === 'done').length;
+        const tasksTotal = sortedTasks.length;
+        const yesterdayDate = formatDate(new Date(new Date().setDate(new Date().getDate() - 1)));
+        const yesterdayReview = userId ? getDailyReview(userId, yesterdayDate) : undefined;
+        
+        return (
+          <AIPlanningSection
+            today={today}
+            todayTasksDone={tasksDone}
+            todayTasksTotal={tasksTotal}
+            yesterdayReflection={yesterdayReview?.reflection_note}
+            yesterdayMood={yesterdayReview?.mood}
+          />
+        );
+      })()}
       </div>
     </DndContext>
   );
