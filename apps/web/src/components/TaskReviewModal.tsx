@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Task, updateTaskStatus } from '../storage';
+import { Task } from '@make-now/core';
 
 interface TaskReviewModalProps {
   task: Task;
