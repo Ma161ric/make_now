@@ -90,11 +90,9 @@ ${noteText}`;
     const result: ExtractionOutput = JSON.parse(jsonStr);
     console.log('[AI] Parsed result:', result.items.length, 'items');
 
-    // Require successful extraction from Groq
+    // If AI returns no items, that's ok - store as empty extraction for later review
     if (!result.items || result.items.length === 0) {
-      console.warn('[AI] Groq returned empty items - AI extraction unsuccessful');
-      throw new Error('AI extraction failed: No items extracted. Please ensure your note contains actionable tasks or ideas.');
-    }
+      console.log('[AI] Groq returned no items - storing for manual review');
 
 
     // Enrich tasks with duration and deadline estimates

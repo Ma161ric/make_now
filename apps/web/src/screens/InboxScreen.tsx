@@ -54,12 +54,7 @@ export default function InboxScreen() {
     setSyncing(true);
     try {
       const extraction = await extractFromNoteCloud(trimmed);
-      const validation = validateExtraction(extraction);
-      if (!validation.valid) {
-        setError('Extraktion ungültig, bitte Text anpassen.');
-        setSyncing(false);
-        return;
-      }
+      console.log('[Inbox] Extraction result:', extraction);
       await addNote(
         userId,
         {
@@ -73,7 +68,15 @@ export default function InboxScreen() {
       );
       if (isMountedRef.current) {
         setSyncing(false);
-        setSuccess('Gespeichert. Jetzt prüfen.');
+        const hasItems = extraction.items && extraction.items.length > 0;
+        const aiAvailable = !extraction.extracted_metadata?.algorithm_version?.startsWith('failed-');
+        if (hasItems) {
+          setSuccess('Gespeichert. Jetzt prüfen.');
+        } else if (!aiAvailable) {
+          setSuccess('AI nicht erreichbar, bitte in review erneut versuchen.');
+        } else {
+          setSuccess('Gespeichert. Wird beim Review analysiert.');
+        }
         setText('');
       }
     } catch (err) {

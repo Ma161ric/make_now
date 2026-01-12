@@ -11,6 +11,7 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true'
 
 /**
  * Call Vercel API to extract items from note text
+ * Returns empty extraction if API fails - stores note for later manual review
  */
 export async function extractFromNoteCloud(noteText: string): Promise<ExtractionOutput> {
   const apiUrl = import.meta.env.VITE_API_URL || 'https://make-now.vercel.app/api';
@@ -26,8 +27,17 @@ export async function extractFromNoteCloud(noteText: string): Promise<Extraction
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Extraction API failed');
+      console.log('[AI] API returned error, returning empty extraction for later review');
+      return {
+        items: [],
+        extracted_metadata: {
+          extracted_duration: null,
+          extracted_deadline: null,
+          extracted_urgency: null,
+          extracted_importance: null,
+          algorithm_version: 'failed-api',
+        },
+      };
     }
 
     const result = await response.json();
@@ -35,7 +45,17 @@ export async function extractFromNoteCloud(noteText: string): Promise<Extraction
     return result;
   } catch (error: any) {
     console.error('[AI] Extraction API error:', error);
-    throw new Error(`AI extraction failed: ${error.message}`);
+    // Return empty extraction so note is saved for later review
+    return {
+      items: [],
+      extracted_metadata: {
+        extracted_duration: null,
+        extracted_deadline: null,
+        extracted_urgency: null,
+        extracted_importance: null,
+        algorithm_version: 'failed-network',
+      },
+    };
   }
 }
 
