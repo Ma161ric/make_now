@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { scheduleDay, validatePlanning, PlanningResponse, Task } from '@make-now/core';
-import { listAllReviewedItems, getDayPlan, saveDayPlan, saveTask, listTasks, getTask } from '../storage';
+import { listAllReviewedItems, getDayPlan, saveDayPlan, saveTask, listTasks, getTask, updateTaskStatus, getDailyReview } from '../storage';
 import { formatDate, uuid } from '../utils';
 import { useAuth } from '../auth/authContext';
 import { useDayPlanSync, useDataMigration } from '../hooks/useSyncEffect';
 import { SyncStatus } from '../components/SyncStatus';
+import { TaskReviewModal } from '../components/TaskReviewModal';
+import { AIPlanningSection } from '../components/AIPlanningSection';
 import {
   DndContext,
   closestCenter,
@@ -24,7 +26,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableTaskItem({ task, type }: { task: Task; type: 'focus' | 'mini' }) {
+function SortableTaskItem({ task, type, onReviewClick }: { task: Task; type: 'focus' | 'mini'; onReviewClick?: (task: Task) => void }) {
   const {
     attributes,
     listeners,
@@ -51,15 +53,21 @@ function SortableTaskItem({ task, type }: { task: Task; type: 'focus' | 'mini' }
         className="card"
         data-focus-task
       >
-        <div className="flex" style={{ justifyContent: 'space-between' }}>
-          <div>
+        <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'start' }}>
+          <div style={{ flex: 1 }}>
             <div className="badge">🎯 FOKUS</div>
             <div style={{ fontWeight: 600, marginTop: 4 }}>{task.title}</div>
             <div className="muted" style={{ fontSize: 12 }}>
               ca. {task.duration_min_minutes}-{task.duration_max_minutes} Min
             </div>
           </div>
-          <div className="muted" style={{ fontSize: 20 }}>⋮⋮</div>
+          <button 
+            className="button secondary" 
+            onClick={() => onReviewClick?.(task)}
+            style={{ marginLeft: 8, padding: '6px 12px', fontSize: '0.875rem' }}
+          >
+            📝 Review
+          </button>
         </div>
       </div>
     );
@@ -73,14 +81,20 @@ function SortableTaskItem({ task, type }: { task: Task; type: 'focus' | 'mini' }
       {...listeners}
       className="list-item"
     >
-      <div className="flex" style={{ justifyContent: 'space-between' }}>
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div>⚡ {task.title}</div>
           <div className="muted" style={{ fontSize: 12 }}>
             ca. {task.duration_min_minutes}-{task.duration_max_minutes} Min
           </div>
         </div>
-        <div className="muted" style={{ fontSize: 20 }}>⋮⋮</div>
+        <button 
+          className="button secondary" 
+          onClick={() => onReviewClick?.(task)}
+          style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+        >
+          📝 Review
+        </button>
       </div>
     </li>
   );
@@ -124,6 +138,7 @@ export default function TodayScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showReplanDialog, setShowReplanDialog] = useState(false);
   const [sortedTaskIds, setSortedTaskIds] = useState<string[]>([]);
+  const [selectedTaskForReview, setSelectedTaskForReview] = useState<Task | null>(null);
 
   const items = useMemo(() => (userId ? listAllReviewedItems(userId) : []), [userId]);
 
@@ -354,7 +369,7 @@ export default function TodayScreen() {
           <SortableContext items={sortedTaskIds} strategy={verticalListSortingStrategy}>
             {focusTask && (
               <div style={{ marginBottom: 12 }}>
-                <SortableTaskItem task={focusTask} type="focus" />
+                <SortableTaskItem task={focusTask} type="focus" onReviewClick={setSelectedTaskForReview} />
               </div>
             )}
 
@@ -363,7 +378,7 @@ export default function TodayScreen() {
             {miniTasks.length > 0 && (
               <ul className="list">
                 {miniTasks.map((task) => 
-                  task ? <SortableTaskItem key={task.id} task={task} type="mini" /> : null
+                  task ? <SortableTaskItem key={task.id} task={task} type="mini" onReviewClick={setSelectedTaskForReview} /> : null
                 )}
               </ul>
             )}
@@ -440,6 +455,31 @@ export default function TodayScreen() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Task Review Modal */}
+      {selectedTaskForReview && (
+        <TaskReviewModal
+          task={selectedTaskForReview}
+          onClose={() => setSelectedTaskForReview(null)}
+          onSave={(reflection, mood, status) => {
+            // Update task status
+            const finalStatus = status === 'done' ? 'done' : status === 'postpone' ? 'scheduled' : 'open';
+            updateTaskStatus(userId, selectedTaskForReview.id, finalStatus);
+            setSelectedTaskForReview(null);
+          }}
+        />
+      )}
+
+      {/* AI Planning Section */}
+      {isConfirmed && (
+        <AIPlanningSection
+          today={today}
+          todayTasksDone={dayPlanState?.plan ? (dayPlanState.plan.focus_task_id ? 1 : 0) + dayPlanState.plan.mini_task_ids.length : 0}
+          todayTasksTotal={dayPlanState?.plan ? (dayPlanState.plan.focus_task_id ? 1 : 0) + dayPlanState.plan.mini_task_ids.length : 0}
+          yesterdayReflection={userId ? getDailyReview(userId, formatDate(new Date(new Date().setDate(new Date().getDate() - 1))))?.reflection_note : undefined}
+          yesterdayMood={userId ? getDailyReview(userId, formatDate(new Date(new Date().setDate(new Date().getDate() - 1))))?.mood : undefined}
+        />
       )}
       </div>
     </DndContext>
