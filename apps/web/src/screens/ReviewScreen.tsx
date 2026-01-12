@@ -116,12 +116,29 @@ export default function ReviewScreen() {
   };
 
   const handleSave = () => {
+    // Ensure all items have required fields
+    const completeItems = items.map(item => {
+      if (!item.id) {
+        console.warn('[Review] Item missing id:', item);
+        item.id = `item-${Date.now()}-${Math.random()}`;
+      }
+      if (!item.parsed_fields) {
+        console.warn('[Review] Item missing parsed_fields:', item);
+        item.parsed_fields = item.type === 'task' 
+          ? { duration_min_minutes: 15, duration_max_minutes: 30, importance: 'medium' }
+          : item.type === 'event'
+          ? { start_at: '', end_at: '', timezone: 'Europe/Berlin' }
+          : { content: '' };
+      }
+      return item;
+    });
+
     const updatedExtraction: ExtractionResponse = {
       ...extraction,
-      items,
+      items: completeItems,
       overall_confidence:
-        items.length > 0
-          ? Math.round((items.reduce((s, i) => s + (i.confidence ?? 0), 0) / items.length) * 100) / 100
+        completeItems.length > 0
+          ? Math.round((completeItems.reduce((s, i) => s + (i.confidence ?? 0.5), 0) / completeItems.length) * 100) / 100
           : extraction.overall_confidence,
     };
     const validation = validateExtraction(updatedExtraction);
@@ -131,7 +148,7 @@ export default function ReviewScreen() {
       setError(`Validierung fehlgeschlagen:\n${errorMessages}`);
       return;
     }
-    saveReviewedItems(userId, noteId, items);
+    saveReviewedItems(userId, noteId, completeItems);
     setError(null);
     
     // TODO: Save selected items to daily plan / send to scheduling
