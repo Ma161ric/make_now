@@ -36,47 +36,60 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     console.log('[AI] Extracting from note:', noteText.substring(0, 100) + '...');
     const startTime = Date.now();
 
-    const systemPrompt = `You are a task extraction assistant. Extract tasks, ideas, and events from user notes.
-Return a valid JSON object with this exact structure:
+    const systemPrompt = `You are a task extraction assistant. 
+Extract actionable items (tasks, ideas, events) from user notes.
+IMPORTANT: Return ONLY valid JSON, no other text.
+Return this exact JSON structure:
 {
   "items": [
     {
-      "type": "task" | "idea" | "event",
-      "title": "string (max 100 chars)",
-      "description": "string (optional, max 500 chars)",
-      "due_at": "ISO date string (optional)",
-      "duration_min_minutes": number (optional, 5-480),
-      "duration_max_minutes": number (optional, 5-480),
-      "confidence": number (0.0-1.0),
-      "importance": "high" | "medium" | "low",
-      "energy_type": "deep_work" | "admin" | "creative"
+      "type": "task",
+      "title": "brief title",
+      "description": "optional details",
+      "importance": "high" or "medium" or "low",
+      "energy_type": "deep_work" or "admin" or "creative",
+      "confidence": 0.85
     }
   ],
   "metadata": {
-    "processing_time_ms": number,
-    "algorithm_version": "string"
+    "processing_time_ms": 0,
+    "algorithm_version": "groq"
   }
 }`;
 
-    const userPrompt = `Extract all actionable items from this note:\n\n${noteText}`;
+    const userPrompt = `Extract items from this note. Return ONLY valid JSON:
 
+${noteText}`;
+
+    console.log('[AI] Calling Groq with prompt...');
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      temperature: 0.3,
+      temperature: 0.2,
       max_tokens: 2000,
-      response_format: { type: 'json_object' },
     });
 
     const content = completion.choices[0]?.message?.content;
+    console.log('[AI] Raw response:', content?.substring(0, 200));
+    
     if (!content) {
       throw new Error('No response from Groq API');
     }
 
-    const result: ExtractionOutput = JSON.parse(content);
+    // Extract JSON from response (might have extra text)
+    let jsonStr = content;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+      console.log('[AI] Extracted JSON');
+    }
+
+    const result: ExtractionOutput = JSON.parse(jsonStr);
+    console.log('[AI] Parsed result:', result.items.length, 'items');
+
 
     // Enrich tasks with duration and deadline estimates
     if (result.items) {
