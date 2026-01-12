@@ -284,9 +284,20 @@ Please respond with valid JSON (no markdown, just the JSON object):
               className="button"
               onClick={async () => {
                 setLoadingPlanAI(true);
-                const suggestions = await generateDayPlanWithAI(reflection, mood!, doneCount, tasks.length);
-                setAiPlanSuggestions(suggestions);
-                setLoadingPlanAI(false);
+                setError(null);
+                try {
+                  const suggestions = await generateDayPlanWithAI(reflection, mood!, doneCount, tasks.length);
+                  if (suggestions) {
+                    setAiPlanSuggestions(suggestions);
+                  } else {
+                    setError('Fehler beim Generieren der Planvorschläge. Versuche es später erneut.');
+                  }
+                } catch (err) {
+                  setError('Fehler beim Generieren der Planvorschläge. Versuche es später erneut.');
+                  console.error('AI planning error:', err);
+                } finally {
+                  setLoadingPlanAI(false);
+                }
               }}
               disabled={loadingPlanAI}
               style={{ marginTop: 12, width: '100%' }}
