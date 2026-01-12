@@ -490,7 +490,7 @@ export default function TodayScreen() {
           onSave={(reflection, mood, status) => {
             // Update task status
             const finalStatus = status === 'done' ? 'done' : status === 'postpone' ? 'scheduled' : 'open';
-            updateTaskStatus(userId, selectedTaskForReview.id, finalStatus);
+            updateTaskStatus(userId, selectedTaskForReview.id, finalStatus, firebaseUser);
             setSelectedTaskForReview(null);
           }}
         />

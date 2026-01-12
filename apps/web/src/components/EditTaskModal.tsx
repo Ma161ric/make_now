@@ -60,7 +60,7 @@ export function EditTaskModal({ task, onClose, onSave }: EditTaskModalProps) {
     setLoading(true);
     try {
       // Delete by marking as cancelled
-      await updateTaskStatus(userId, task.id, 'cancelled');
+      await updateTaskStatus(userId, task.id, 'cancelled', firebaseUser);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Fehler beim Löschen');
