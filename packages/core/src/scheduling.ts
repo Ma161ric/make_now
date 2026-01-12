@@ -378,6 +378,8 @@ export function scheduleDay(
       reasoning = `1 Fokus-Task für heute geplant.`;
     } else if (miniTasks.length > 0) {
       reasoning = `${miniTasks.length} Mini-Tasks für heute geplant.`;
+    } else {
+      reasoning = `Keine offenen Aufgaben verfügbar. Morgen planen?`;
     }
   }
 
