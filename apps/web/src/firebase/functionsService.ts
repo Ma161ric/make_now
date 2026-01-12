@@ -10,19 +10,31 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true'
 }
 
 /**
- * Call Cloud Function to extract items from note text
+ * Call Vercel API to extract items from note text
  */
 export async function extractFromNoteCloud(noteText: string): Promise<ExtractionOutput> {
-  const callable = httpsCallable<{ noteText: string }, ExtractionOutput>(
-    functions,
-    'extractFromNote'
-  );
-
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://make-now.vercel.app/api';
+  
   try {
-    const result = await callable({ noteText });
-    return result.data;
+    console.log('[AI] Calling extractFromNote API...');
+    const response = await fetch(`${apiUrl}/extractFromNote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ noteText }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Extraction API failed');
+    }
+
+    const result = await response.json();
+    console.log('[AI] Extraction API response:', result);
+    return result;
   } catch (error: any) {
-    console.error('Cloud function error:', error);
+    console.error('[AI] Extraction API error:', error);
     throw new Error(`AI extraction failed: ${error.message}`);
   }
 }
