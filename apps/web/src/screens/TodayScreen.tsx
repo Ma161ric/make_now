@@ -231,7 +231,10 @@ export default function TodayScreen() {
       }
       const validation = validatePlanning(generated);
       if (!validation.valid) {
-        setError('Plan ungültig laut Schema.');
+        console.error('[TodayScreen] Plan validation failed:', validation.errors);
+        console.error('[TodayScreen] Generated plan:', generated);
+        const errorMessages = validation.errors.map(e => `${e.path}: ${e.message}`).join('\n');
+        setError(`Plan ungültig: ${errorMessages}`);
         return;
       }
       
