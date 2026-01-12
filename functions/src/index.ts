@@ -11,7 +11,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-const GROQ_MODEL = 'mixtral-8x7b-32768';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 /**
  * Cloud Function: Extract items from note text

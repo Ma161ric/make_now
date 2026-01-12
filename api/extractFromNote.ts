@@ -6,7 +6,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-const GROQ_MODEL = 'mixtral-8x7b-32768';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 /**
  * Fallback extraction when Groq doesn't return items
@@ -18,24 +18,34 @@ function extractItemsFallback(noteText: string): any[] {
   for (const line of lines) {
     const trimmed = line.trim();
     
-    // Skip empty lines and headings
+    // Skip empty lines and very short lines
     if (!trimmed || trimmed.length < 3) continue;
 
-    // Detect if it's a task (starts with -, *, •, TODO, [ ], etc)
-    const isTask = /^[\-\*•]\s|^TODO|^\[\s?\]|^task|^do:|^finish|^complete/i.test(trimmed);
+    // Only create items for lines with task markers or reasonable length
+    const hasTaskMarker = /^[\-\*•]\s|^TODO|^\[\s?\]|^task:|^do:|^finish|^implement|^fix|^complete/i.test(trimmed);
+    const isReasonableLength = trimmed.length > 10; // At least 10 chars for an idea
+    
+    if (!hasTaskMarker && !isReasonableLength) {
+      continue; // Skip single words or very short lines without markers
+    }
+
+    // Detect if it's a task (has markers or action words)
+    const isTask = hasTaskMarker || /^(implement|fix|finish|complete|do|build|create|add|update|review|test|check|verify)/i.test(trimmed);
     
     // Detect urgency
-    const isUrgent = /urgent|asap|today|now|immediately|critical|deadline/i.test(trimmed);
-    const isImportant = /important|priority|key|main|focus/i.test(trimmed);
+    const isUrgent = /urgent|asap|today|now|immediately|critical|deadline|must|important\!/i.test(trimmed);
+    const isImportant = /important|priority|key|main|focus|essential/i.test(trimmed);
     
     // Build item
     const item = {
       type: isTask ? 'task' : 'idea',
-      title: trimmed.replace(/^[\-\*•]\s+|^TODO\s+|^\[\s?\]\s+|^task\s+|^do:\s+|^finish\s+|^complete\s+/i, '').substring(0, 100),
+      title: trimmed
+        .replace(/^[\-\*•]\s+|^TODO\s+|^\[\s?\]\s+|^task:\s+|^do:\s+|^finish\s+|^implement\s+|^fix\s+|^complete\s+/i, '')
+        .substring(0, 100),
       description: null,
       importance: isUrgent ? 'high' : isImportant ? 'medium' : 'low',
-      energy_type: /meeting|call|email|review|read/i.test(trimmed) ? 'admin' : 'deep_work',
-      confidence: 0.6, // Lower confidence for fallback
+      energy_type: /meeting|call|email|review|read|discuss|presentation/i.test(trimmed) ? 'admin' : /design|create|write|build/i.test(trimmed) ? 'creative' : 'deep_work',
+      confidence: 0.55, // Lower confidence for fallback
     };
 
     items.push(item);
