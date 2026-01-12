@@ -107,7 +107,7 @@ export interface DayPlan {
   id: string; // UUID
   date: Date; // Today's date
   timezone: string;
-  focus_task_id?: string;
+  focus_task_id: string | null;
   mini_task_ids: string[]; // max 2
   suggested_blocks: TimeBlock[];
   reasoning: string;
@@ -186,7 +186,7 @@ export interface ExtractionResponse {
 export interface PlanningResponse {
   date: string; // ISO 8601 date
   timezone: string;
-  focus_task_id?: string;
+  focus_task_id: string | null;
   mini_task_ids: string[];
   suggested_blocks: TimeBlock[];
   reasoning_brief: string;

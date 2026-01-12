@@ -291,7 +291,7 @@ export function scheduleDay(
     return {
       date: today.toISOString().split('T')[0],
       timezone: config.timezone,
-      focus_task_id: undefined,
+      focus_task_id: null,
       mini_task_ids: [],
       suggested_blocks: [],
       reasoning_brief: 'Keine offenen Aufgaben für heute.',
@@ -352,7 +352,7 @@ export function scheduleDay(
         return {
           date: today.toISOString().split('T')[0],
           timezone: config.timezone,
-          focus_task_id: undefined,
+          focus_task_id: null,
           mini_task_ids: [],
           suggested_blocks: [],
           reasoning_brief: 'Heute kein Platz für neue Tasks. Morgen planen?',
@@ -384,7 +384,7 @@ export function scheduleDay(
   return {
     date: today.toISOString().split('T')[0],
     timezone: config.timezone,
-    focus_task_id: focusTask?.id,
+    focus_task_id: focusTask?.id ?? null,
     mini_task_ids: miniTasks.map((m) => m.id),
     suggested_blocks: blocks,
     reasoning_brief: reasoning,

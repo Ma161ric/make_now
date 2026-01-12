@@ -119,7 +119,7 @@ function mapToTasks(items: ReturnType<typeof listAllReviewedItems>): Task[] {
         duration_max_minutes: fields.duration_max_minutes || 30,
         importance: fields.importance || 'medium',
         energy_type: fields.energy_type || 'mixed',
-        due_at: fields.due_at ? new Date(fields.due_at) : undefined,
+        due_at: fields.due_at ? new Date(fields.due_at) : null,
       } as Task;
     });
 }
