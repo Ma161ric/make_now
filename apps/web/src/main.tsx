@@ -6,6 +6,7 @@ import InboxScreen from './screens/InboxScreen';
 import ReviewScreen from './screens/ReviewScreen';
 import TodayScreen from './screens/TodayScreen';
 import WeekCalendarScreen from './screens/WeekCalendarScreen';
+import TasksOverviewScreen from './screens/TasksOverviewScreen';
 import DailyReviewScreen from './screens/DailyReviewScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
@@ -44,6 +45,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="review/:id" element={<ProtectedRoute><OnboardingGuard><ReviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="week" element={<ProtectedRoute><OnboardingGuard><WeekCalendarScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="today" element={<ProtectedRoute><OnboardingGuard><TodayScreen /></OnboardingGuard></ProtectedRoute>} />
+                <Route path="tasks" element={<ProtectedRoute><OnboardingGuard><TasksOverviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="daily-review" element={<ProtectedRoute><OnboardingGuard><DailyReviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="settings" element={<ProtectedRoute><OnboardingGuard><SettingsScreen /></OnboardingGuard></ProtectedRoute>} />
               </Route>

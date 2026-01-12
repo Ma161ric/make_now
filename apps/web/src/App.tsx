@@ -23,6 +23,7 @@ export default function App() {
               <Link className={location.pathname === '/' ? 'active' : ''} to="/">Inbox</Link>
               <Link className={location.pathname === '/today' ? 'active' : ''} to="/today">Today</Link>
               <Link className={location.pathname === '/week' ? 'active' : ''} to="/week">Calendar</Link>
+              <Link className={location.pathname === '/tasks' ? 'active' : ''} to="/tasks">Tasks</Link>
             </nav>
           )}
           <div className={styles.headerRight}>
