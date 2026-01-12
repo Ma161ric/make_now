@@ -115,6 +115,25 @@ export default function ReviewScreen() {
     }
   };
 
+  const handleAddToPlan = () => {
+    const itemsForPlan = items.filter(item => selectedForPlan.has(item.id));
+    if (itemsForPlan.length === 0) {
+      setError('Bitte wähle mindestens ein Item zum Plan hinzu.');
+      return;
+    }
+    
+    // Save selected items for daily planning
+    console.log('[Review] Adding to plan:', itemsForPlan);
+    setSuccess(`${itemsForPlan.length} Item(s) zum Tagesplan hinzugefügt!`);
+    setTimeout(() => setSuccess(null), 3000);
+    
+    // Mark note as "planned"
+    saveReviewedItems(userId, noteId, items);
+    
+    // Navigate to Today/Planning view
+    setTimeout(() => navigate('/today'), 500);
+  };
+
   const handleSave = () => {
     // Ensure all items have required fields
     const completeItems = items.map(item => {
@@ -150,9 +169,6 @@ export default function ReviewScreen() {
     }
     saveReviewedItems(userId, noteId, completeItems);
     setError(null);
-    
-    // TODO: Save selected items to daily plan / send to scheduling
-    console.log('[Review] Saving items for plan:', Array.from(selectedForPlan));
     
     // Navigate back to notes after short delay
     setTimeout(() => navigate('/'), 500);
@@ -265,13 +281,24 @@ export default function ReviewScreen() {
           >
             ← Zurück
           </button>
-          <button
-            className="button"
-            onClick={handleSave}
-            title={selectedForPlan.size > 0 ? `${selectedForPlan.size} Items in Plan` : 'Speichern ohne Plan'}
-          >
-            Speichern {selectedForPlan.size > 0 ? `(${selectedForPlan.size})` : ''}
-          </button>
+          {selectedForPlan.size > 0 && (
+            <button
+              className="button"
+              onClick={handleAddToPlan}
+              title="Ausgewählte Items zum Tagesplan hinzufügen"
+            >
+              ✓ In Plan ({selectedForPlan.size})
+            </button>
+          )}
+          {selectedForPlan.size === 0 && (
+            <button
+              className="button"
+              onClick={handleSave}
+              title="Items speichern ohne zum Plan hinzuzufügen"
+            >
+              Speichern
+            </button>
+          )}
         </div>
       </div>
     </div>

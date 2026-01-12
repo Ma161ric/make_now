@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { estimateDurationCloud } from '../firebase/functionsService';
 
 interface DurationEstimate {
   min_minutes: number;
@@ -16,33 +15,27 @@ export function useAiDurationEstimationGroq() {
     setError(null);
 
     try {
-      const result = await estimateDurationCloud(taskTitle);
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://make-now.vercel.app/api';
+      const response = await fetch(`${apiUrl}/estimateDuration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskTitle }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Duration estimation failed');
+      }
+
+      const result = await response.json();
       return {
-        min_minutes: result.min,
-        max_minutes: result.max,
-        confidence: result.confidence
+        min_minutes: result.duration_min_minutes || result.min_minutes,
+        max_minutes: result.duration_max_minutes || result.max_minutes,
+        confidence: result.confidence || 0.85,
       };
     } catch (err) {
       const errorMessage = err instanceof Error 
         ? err.message 
-        : 'Unbekannter Fehler bei der Zeitschätzung';
-      
-      setError(errorMessage);
-      console.error('AI duration estimation error:', err);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return {
-    estimate,
-    loading,
-    error,
-  };
-}
-          ? err.message 
-          : 'Unbekannter Fehler bei der Schätzung';
+        : 'Duration estimation failed';
       
       setError(errorMessage);
       console.error('Duration estimation error:', err);
@@ -53,7 +46,7 @@ export function useAiDurationEstimationGroq() {
   }, []);
 
   return {
-    estimateDuration: estimate,
+    estimate,
     loading,
     error,
   };

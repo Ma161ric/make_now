@@ -7,33 +7,28 @@ const groq = new Groq({
 
 async function estimateDurationAI(taskTitle: string) {
   try {
-    const message = await groq.messages.create({
+    const completion = await groq.chat.completions.create({
       model: 'mixtral-8x7b-32768',
-      max_tokens: 200,
       messages: [
         {
           role: 'user',
-          content: `Estimate the duration for this task in minutes. Return ONLY valid JSON:
-{"min_minutes": <number 5-480>, "max_minutes": <number 5-480>, "confidence": <0.0-1.0>}
+          content: `Estimate duration for this task. Return ONLY JSON (no other text):
+{"min_minutes": <5-480>, "max_minutes": <5-480>}
 
-Task: "${taskTitle}"
-
-Rules:
-- min_minutes must be >= 5 and <= max_minutes
-- max_minutes must be <= 480
-- confidence is 0.0-1.0 based on how certain you are
-- Return ONLY the JSON object, nothing else`,
+Task: "${taskTitle}"`,
         },
       ],
+      temperature: 0.2,
+      max_tokens: 100,
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type');
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from API');
     }
 
     // Parse JSON response
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('No JSON found in response');
     }
@@ -43,12 +38,11 @@ Rules:
     // Validate response
     const minMin = Math.max(5, Math.min(480, parsed.min_minutes ?? 15));
     const maxMin = Math.max(minMin, Math.min(480, parsed.max_minutes ?? 30));
-    const confidence = Math.max(0, Math.min(1, parsed.confidence ?? 0.7));
 
     return {
       duration_min_minutes: minMin,
       duration_max_minutes: maxMin,
-      confidence,
+      confidence: 0.85,
     };
   } catch (error) {
     console.error('AI estimation error:', error);
@@ -86,7 +80,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
+    console.log('[Duration] Estimating for:', taskTitle);
     const result = await estimateDurationAI(taskTitle);
+    console.log('[Duration] Result:', result);
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Duration estimation error:', error);
