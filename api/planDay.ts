@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { PlanningInput, PlanningOutput } from '../functions/src/types.js';
+import { validatePlanning } from '../packages/core/src/validation.js';
 
 // Mock planning function - returns empty day plan
 function planFromItemsMock(items: PlanningInput['items']): PlanningOutput {
@@ -45,6 +46,26 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     // For MVP, use mock planning algorithm
     // Later: integrate with Groq for AI-powered planning
     const result: PlanningOutput = planFromItemsMock(items);
+
+    // CRITICAL: Validate planning output against schema
+    const validation = validatePlanning(result);
+    if (!validation.valid) {
+      console.error('[Planning] Validation failed:', validation.errors);
+      // Return fallback plan B
+      return res.status(200).json({
+        date: date || new Date().toISOString().split('T')[0],
+        timezone: timezone || 'Europe/Berlin',
+        focus_task_id: null,
+        mini_task_ids: [],
+        suggested_blocks: [],
+        reasoning_brief: 'Validation failed - returning empty plan',
+        confidence: 0,
+        metadata: {
+          processing_time_ms: 0,
+          algorithm_version: 'validation-failed',
+        },
+      });
+    }
 
     return res.status(200).json(result);
   } catch (error: any) {

@@ -148,3 +148,26 @@ describe('Idea State Transitions', () => {
     expect(() => transitionIdeaStatus(idea, 'active')).toThrow(StateTransitionError);
   });
 });
+
+describe('Idempotent Transitions', () => {
+  it('should return unchanged task if already in target status', () => {
+    const task = createTestTask({ status: 'done' });
+    const updated = transitionTaskStatus(task, 'done');
+    expect(updated).toBe(task); // Same object reference
+    expect(updated.status).toBe('done');
+  });
+
+  it('should return unchanged event if already in target status', () => {
+    const event = createTestEvent({ status: 'confirmed' });
+    const updated = transitionEventStatus(event, 'confirmed');
+    expect(updated).toBe(event); // Same object reference
+    expect(updated.status).toBe('confirmed');
+  });
+
+  it('should return unchanged idea if already in target status', () => {
+    const idea = createTestIdea({ status: 'archived' });
+    const updated = transitionIdeaStatus(idea, 'archived');
+    expect(updated).toBe(idea); // Same object reference
+    expect(updated.status).toBe('archived');
+  });
+});

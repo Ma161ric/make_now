@@ -57,8 +57,14 @@ const VALID_INBOXNOTE_TRANSITIONS: Record<InboxNoteStatus, InboxNoteStatus[]> = 
 
 /**
  * Transition a task to a new status with validation
+ * IMPORTANT: Idempotent - returns unchanged task if already in target state
  */
 export function transitionTaskStatus(task: Task, newStatus: TaskStatus): Task {
+  // Idempotency: If already in target state, return unchanged
+  if (task.status === newStatus) {
+    return task;
+  }
+
   const validNextStates = VALID_TASK_TRANSITIONS[task.status];
 
   if (!validNextStates.includes(newStatus)) {
@@ -89,8 +95,14 @@ export function transitionTaskStatus(task: Task, newStatus: TaskStatus): Task {
 
 /**
  * Transition an event to a new status with validation
+ * IMPORTANT: Idempotent - returns unchanged event if already in target state
  */
 export function transitionEventStatus(event: Event, newStatus: EventStatus): Event {
+  // Idempotency: If already in target state, return unchanged
+  if (event.status === newStatus) {
+    return event;
+  }
+
   const validNextStates = VALID_EVENT_TRANSITIONS[event.status];
 
   if (!validNextStates.includes(newStatus)) {
@@ -106,8 +118,14 @@ export function transitionEventStatus(event: Event, newStatus: EventStatus): Eve
 
 /**
  * Transition an idea to a new status with validation
+ * IMPORTANT: Idempotent - returns unchanged idea if already in target state
  */
 export function transitionIdeaStatus(idea: Idea, newStatus: IdeaStatus): Idea {
+  // Idempotency: If already in target state, return unchanged
+  if (idea.status === newStatus) {
+    return idea;
+  }
+
   const validNextStates = VALID_IDEA_TRANSITIONS[idea.status];
 
   if (!validNextStates.includes(newStatus)) {
@@ -129,12 +147,18 @@ export function transitionIdeaStatus(idea: Idea, newStatus: IdeaStatus): Idea {
 
 /**
  * Transition an inbox note to a new status with validation
+ * IMPORTANT: Idempotent - returns unchanged note if already in target state
  */
 export function transitionInboxNoteStatus(
   note: InboxNote,
   newStatus: InboxNoteStatus,
   errorMessage?: string
 ): InboxNote {
+  // Idempotency: If already in target state, return unchanged
+  if (note.status === newStatus) {
+    return note;
+  }
+
   const validNextStates = VALID_INBOXNOTE_TRANSITIONS[note.status];
 
   if (!validNextStates.includes(newStatus)) {

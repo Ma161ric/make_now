@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import Groq from 'groq-sdk';
 import { ExtractionOutput } from '../functions/src/types.js';
+import { validateExtraction } from '../packages/core/src/validation.js';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -87,8 +88,23 @@ ${noteText}`;
       console.log('[AI] Extracted JSON');
     }
 
-    const result: ExtractionOutput = JSON.parse(jsonStr);
+    let result: ExtractionOutput = JSON.parse(jsonStr);
     console.log('[AI] Parsed result:', result.items?.length || 0, 'items');
+
+    // CRITICAL: Validate AI output against schema
+    const validation = validateExtraction(result);
+    if (!validation.valid) {
+      console.error('[AI] Validation failed:', validation.errors);
+      // Return empty extraction as fallback (don't crash)
+      return res.status(200).json({
+        items: [],
+        overall_confidence: 0,
+        metadata: {
+          processing_time_ms: Date.now() - startTime,
+          model_version: 'validation-failed',
+        },
+      });
+    }
 
     // If AI returns no items, that's ok - return empty extraction early
     if (!result.items || result.items.length === 0) {
