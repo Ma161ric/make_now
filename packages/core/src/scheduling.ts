@@ -14,6 +14,17 @@ import type {
 } from './models.js';
 
 /**
+ * Format date to ISO date string (YYYY-MM-DD) in local timezone
+ * Avoids UTC conversion issues with toISOString()
+ */
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Configuration for scheduling
  */
 export interface SchedulingConfig {
@@ -289,7 +300,7 @@ export function scheduleDay(
   if (preparedTasks.length === 0) {
     // No tasks to schedule
     return {
-      date: today.toISOString().split('T')[0],
+      date: formatLocalDate(today),
       timezone: config.timezone,
       focus_task_id: null,
       mini_task_ids: [],
@@ -350,7 +361,7 @@ export function scheduleDay(
       } else {
         // Can't fit anything
         return {
-          date: today.toISOString().split('T')[0],
+          date: formatLocalDate(today),
           timezone: config.timezone,
           focus_task_id: null,
           mini_task_ids: [],
@@ -384,7 +395,7 @@ export function scheduleDay(
   }
 
   return {
-    date: today.toISOString().split('T')[0],
+    date: formatLocalDate(today),
     timezone: config.timezone,
     focus_task_id: focusTask?.id ?? null,
     mini_task_ids: miniTasks.map((m) => m.id),
