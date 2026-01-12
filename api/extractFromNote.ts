@@ -8,6 +8,42 @@ const groq = new Groq({
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
+/**
+ * Fallback extraction when Groq doesn't return items
+ */
+function extractItemsFallback(noteText: string): any[] {
+  const items: any[] = [];
+  const lines = noteText.split('\n').filter(l => l.trim());
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    // Skip empty lines and headings
+    if (!trimmed || trimmed.length < 3) continue;
+
+    // Detect if it's a task (starts with -, *, •, TODO, [ ], etc)
+    const isTask = /^[\-\*•]\s|^TODO|^\[\s?\]|^task|^do:|^finish|^complete/i.test(trimmed);
+    
+    // Detect urgency
+    const isUrgent = /urgent|asap|today|now|immediately|critical|deadline/i.test(trimmed);
+    const isImportant = /important|priority|key|main|focus/i.test(trimmed);
+    
+    // Build item
+    const item = {
+      type: isTask ? 'task' : 'idea',
+      title: trimmed.replace(/^[\-\*•]\s+|^TODO\s+|^\[\s?\]\s+|^task\s+|^do:\s+|^finish\s+|^complete\s+/i, '').substring(0, 100),
+      description: null,
+      importance: isUrgent ? 'high' : isImportant ? 'medium' : 'low',
+      energy_type: /meeting|call|email|review|read/i.test(trimmed) ? 'admin' : 'deep_work',
+      confidence: 0.6, // Lower confidence for fallback
+    };
+
+    items.push(item);
+  }
+
+  return items;
+}
+
 export default async (req: VercelRequest, res: VercelResponse) => {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -89,6 +125,13 @@ ${noteText}`;
 
     const result: ExtractionOutput = JSON.parse(jsonStr);
     console.log('[AI] Parsed result:', result.items.length, 'items');
+
+    // If Groq returned empty items, use fallback extraction
+    if (!result.items || result.items.length === 0) {
+      console.log('[AI] No items from Groq, using fallback extraction...');
+      result.items = extractItemsFallback(noteText);
+      console.log('[AI] Fallback extracted:', result.items.length, 'items');
+    }
 
 
     // Enrich tasks with duration and deadline estimates
