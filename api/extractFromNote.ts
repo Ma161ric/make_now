@@ -8,52 +8,6 @@ const groq = new Groq({
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
-/**
- * Fallback extraction when Groq doesn't return items
- */
-function extractItemsFallback(noteText: string): any[] {
-  const items: any[] = [];
-  const lines = noteText.split('\n').filter(l => l.trim());
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    
-    // Skip empty lines and very short lines
-    if (!trimmed || trimmed.length < 3) continue;
-
-    // Only create items for lines with task markers or reasonable length
-    const hasTaskMarker = /^[\-\*•]\s|^TODO|^\[\s?\]|^task:|^do:|^finish|^implement|^fix|^complete/i.test(trimmed);
-    const isReasonableLength = trimmed.length > 10; // At least 10 chars for an idea
-    
-    if (!hasTaskMarker && !isReasonableLength) {
-      continue; // Skip single words or very short lines without markers
-    }
-
-    // Detect if it's a task (has markers or action words)
-    const isTask = hasTaskMarker || /^(implement|fix|finish|complete|do|build|create|add|update|review|test|check|verify)/i.test(trimmed);
-    
-    // Detect urgency
-    const isUrgent = /urgent|asap|today|now|immediately|critical|deadline|must|important\!/i.test(trimmed);
-    const isImportant = /important|priority|key|main|focus|essential/i.test(trimmed);
-    
-    // Build item
-    const item = {
-      type: isTask ? 'task' : 'idea',
-      title: trimmed
-        .replace(/^[\-\*•]\s+|^TODO\s+|^\[\s?\]\s+|^task:\s+|^do:\s+|^finish\s+|^implement\s+|^fix\s+|^complete\s+/i, '')
-        .substring(0, 100),
-      description: null,
-      importance: isUrgent ? 'high' : isImportant ? 'medium' : 'low',
-      energy_type: /meeting|call|email|review|read|discuss|presentation/i.test(trimmed) ? 'admin' : /design|create|write|build/i.test(trimmed) ? 'creative' : 'deep_work',
-      confidence: 0.55, // Lower confidence for fallback
-    };
-
-    items.push(item);
-  }
-
-  return items;
-}
-
 export default async (req: VercelRequest, res: VercelResponse) => {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -136,11 +90,10 @@ ${noteText}`;
     const result: ExtractionOutput = JSON.parse(jsonStr);
     console.log('[AI] Parsed result:', result.items.length, 'items');
 
-    // If Groq returned empty items, use fallback extraction
+    // Require successful extraction from Groq
     if (!result.items || result.items.length === 0) {
-      console.log('[AI] No items from Groq, using fallback extraction...');
-      result.items = extractItemsFallback(noteText);
-      console.log('[AI] Fallback extracted:', result.items.length, 'items');
+      console.warn('[AI] Groq returned empty items - AI extraction unsuccessful');
+      throw new Error('AI extraction failed: No items extracted. Please ensure your note contains actionable tasks or ideas.');
     }
 
 
