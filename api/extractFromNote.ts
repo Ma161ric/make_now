@@ -62,6 +62,9 @@ Return this exact JSON structure:
 ${noteText}`;
 
     console.log('[AI] Calling Groq with prompt...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
       messages: [
@@ -70,8 +73,10 @@ ${noteText}`;
       ],
       temperature: 0.2,
       max_tokens: 2000,
-      timeout: 30000, // 30 second timeout
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     const content = completion.choices[0]?.message?.content;
     console.log('[AI] Raw response:', content?.substring(0, 200));
@@ -112,6 +117,9 @@ ${noteText}`;
         result.items.map(async (item) => {
           if (item.type === 'task' && !item.duration_min_minutes) {
             try {
+              const enrichController = new AbortController();
+              const enrichTimeoutId = setTimeout(() => enrichController.abort(), 15000); // 15 second timeout
+              
               const enrichment = await groq.chat.completions.create({
                 model: 'mixtral-8x7b-32768',
                 messages: [
@@ -125,8 +133,10 @@ Importance: ${item.importance || 'medium'}`,
                 ],
                 temperature: 0.3,
                 max_tokens: 300,
-                timeout: 15000, // 15 second timeout for enrichment
+                signal: enrichController.signal,
               });
+              
+              clearTimeout(enrichTimeoutId);
 
               const enrichContent = enrichment.choices[0]?.message?.content;
               if (enrichContent) {
