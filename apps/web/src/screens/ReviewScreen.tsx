@@ -90,7 +90,7 @@ export default function ReviewScreen() {
     
     // Validate limits
     const tasks = items.filter(it => it.type === 'task' && newSelected.has(it.id));
-    const limits = preferences.schedulingLimits;
+    const limits = preferences?.schedulingLimits || { max_long_tasks: 3, max_middle_tasks: 6, max_short_tasks: 8 };
     
     let longCount = 0, middleCount = 0, shortCount = 0;
     for (const task of tasks) {
@@ -138,19 +138,20 @@ export default function ReviewScreen() {
   const handleSave = () => {
     // Ensure all items have required fields
     const completeItems = items.map(item => {
-      if (!item.id) {
+      const newItem = { ...item };
+      if (!newItem.id) {
         console.warn('[Review] Item missing id:', item);
-        item.id = uuid();
+        newItem.id = uuid();
       }
-      if (!item.parsed_fields) {
+      if (!newItem.parsed_fields) {
         console.warn('[Review] Item missing parsed_fields:', item);
-        item.parsed_fields = item.type === 'task' 
+        newItem.parsed_fields = item.type === 'task' 
           ? { duration_min_minutes: 15, duration_max_minutes: 30, importance: 'medium' }
           : item.type === 'event'
           ? { start_at: '', end_at: '', timezone: 'Europe/Berlin' }
           : { content: '' };
       }
-      return item;
+      return newItem;
     });
 
     const updatedExtraction: ExtractionResponse = {
