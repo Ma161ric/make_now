@@ -13,6 +13,42 @@ DayFlow ist eine Mobile App, die aus Freitext-Notizen automatisch strukturierte 
 5. **MVP ohne Kalender Write**: Kalender Read-only ist optional in V1. Keine Terminblöcke schreiben.
 6. **WhatsApp als Eingang**: Optional im MVP, aber sauber spezifiziert für Phase V1.
 
+## Einzigartige Positionierung (USPs)
+
+DayFlow unterscheidet sich von Konkurrenten durch:
+
+### 🌟 Reflection Loop (Einzigartig)
+- Einzige App mit **Mood + Reflection** nach täglicher Ausführung
+- Psychologischer Vorteil: Lerne was funktioniert, feiere Siege
+- Motion (Auto-Scheduler) und Trevor.ai (Time-Tracker) haben keine Reflexion
+- **Impact**: Höhere emotionale Bindung, psychologische Nachhaltigkeit
+
+### 📝 Natural Language Input (Einzigartig)
+- Erfasse Gedanken via Notizen, Voice, WhatsApp
+- KI extrahiert automatisch Struktur (keine Formulare)
+- Motion und Trevor erfordern explizites Erstellen von Tasks
+- **Impact**: Schnelleres Erfassen, niedrigere Reibung
+
+### 🤝 Human-in-the-Loop Scheduling
+- AI schlägt Tagesplan vor → Du bestätigst
+- vs Motion: Algo entscheidet für dich
+- vs Trevor: Gar keine Planung
+- **Impact**: Nutzer fühlen sich kontrollierend, nicht fremdbestimmt
+
+### 🔒 Privacy & Ownership
+- Self-hostable Architektur geplant
+- Kein Vendor Lock-In (Firebase entkoppelt)
+- Motion/Trevor: SaaS-only, Daten gesperrt
+- **Impact**: Enterprise- und Privacy-bewusste Nutzer
+
+### 🐾 Gamification + Emotional Appeal
+- Niedlicher Pet-Charakter geplant (V2.4)
+- Streaks, Badges, Mood-Tracking
+- Motion/Trevor: Rein funktional, kein Character
+- **Impact**: Automatismusbildung, tägliches Ritual
+
+Siehe [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md) für detaillierten Vergleich mit Motion und Trevor.ai.
+
 ## Glossar
 
 | Begriff | Definition |

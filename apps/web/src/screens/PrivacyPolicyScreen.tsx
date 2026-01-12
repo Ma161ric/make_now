@@ -16,7 +16,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <section>
           <h2>1. Überblick</h2>
           <p>
-            Make Now ("wir", "uns", "unser") nimmt den Schutz Ihrer persönlichen Daten sehr ernst.
+            DayFlow ("wir", "uns", "unser") nimmt den Schutz Ihrer persönlichen Daten sehr ernst.
             Diese Datenschutzerklärung erklärt, welche Daten wir sammeln, wie wir sie verwenden und
             welche Rechte Sie haben.
           </p>

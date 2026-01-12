@@ -50,7 +50,7 @@ export const OnboardingScreen: React.FC = () => {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <div className={styles.logo}>Make Now</div>
+          <div className={styles.logo}>DayFlow</div>
           <button className={styles.skipButton} onClick={handleSkip}>
             Überspringen
           </button>

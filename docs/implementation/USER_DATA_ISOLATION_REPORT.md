@@ -4,7 +4,7 @@
 
 **Status: ✅ COMPLETED - 100% Test Coverage Achieved**
 
-Successfully implemented complete user-scoped data isolation for the Make-Now task planning application. All users' data (tasks, notes, day plans, reviews) is now completely separated and inaccessible to other users.
+Successfully implemented complete user-scoped data isolation for the DayFlow task planning application. All users' data (tasks, notes, day plans, reviews) is now completely separated and inaccessible to other users.
 
 **Test Results: 64/64 Tests Passing (100% Pass Rate)**
 
@@ -46,7 +46,7 @@ getReviewedItems(userId, noteId) ✓
 listAllReviewedItems(userId) ✓
 
 // Helper
-getStorageKey(userId) → "make-now-state-{userId}" ✓
+getStorageKey(userId) → "dayflow-state-{userId}" ✓
 ```
 
 ### Screen Components Updated

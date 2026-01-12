@@ -23,7 +23,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <h3 className={styles.title}>{title}</h3>
       {description && <p className={styles.description}>{description}</p>}
       {action && (
-        <button className={styles.actionButton} onClick={action.onClick}>
+        <button 
+          className={styles.actionButton} 
+          onClick={action.onClick}
+          aria-label={action.label}
+        >
           {action.label}
         </button>
       )}

@@ -4,6 +4,7 @@ import { addNote, listNotes } from '../storage';
 import { uuid } from '../utils';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { useDataMigration } from '../hooks/useSyncEffect';
 import { useLiveNotes } from '../hooks/useLiveNotes';
 import { SyncStatus } from '../components/SyncStatus';
@@ -14,6 +15,7 @@ export default function InboxScreen() {
   const [success, setSuccess] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const { user, firebaseUser } = useAuth();
+  const { preferences } = usePreferences();
   const userId = user?.id || firebaseUser?.uid || '';
   const isMountedRef = useRef(true);
   
@@ -48,7 +50,7 @@ export default function InboxScreen() {
       return;
     }
     const noteId = uuid();
-    const extraction = extractFromNoteMock(trimmed, { timezone: 'Europe/Berlin' });
+    const extraction = extractFromNoteMock(trimmed, { timezone: preferences.timezone });
     const validation = validateExtraction(extraction);
     if (!validation.valid) {
       setError('Extraktion ungültig, bitte Text anpassen.');
@@ -56,21 +58,29 @@ export default function InboxScreen() {
     }
     
     setSyncing(true);
-    await addNote(
-      userId,
-      {
-        id: noteId,
-        raw_text: trimmed,
-        created_at: new Date().toISOString(),
-        status: 'unprocessed',
-      },
-      extraction,
-      firebaseUser
-    );
-    if (isMountedRef.current) {
-      setSyncing(false);
-      setSuccess('Gespeichert. Jetzt prüfen.');
-      setText('');
+    try {
+      await addNote(
+        userId,
+        {
+          id: noteId,
+          raw_text: trimmed,
+          created_at: new Date().toISOString(),
+          status: 'unprocessed',
+        },
+        extraction,
+        firebaseUser
+      );
+      if (isMountedRef.current) {
+        setSyncing(false);
+        setSuccess('Gespeichert. Jetzt prüfen.');
+        setText('');
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        setSyncing(false);
+        const errorMsg = err instanceof Error ? err.message : 'Fehler beim Speichern';
+        setError(`Speichern fehlgeschlagen: ${errorMsg}. Bitte später versuchen.`);
+      }
     }
   };
 
@@ -78,7 +88,12 @@ export default function InboxScreen() {
     <div className="grid" style={{ gap: 16 }}>
       <div className="card">
         <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div className="section-title">Inbox Capture</div>
+          <div>
+            <div className="section-title">Inbox Capture</div>
+            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '4px' }}>
+              🔬 Demo Mode - KI-Extraktion simuliert
+            </div>
+          </div>
           <SyncStatus syncing={syncing} />
         </div>
         <form onSubmit={handleSubmit} className="grid" style={{ gap: 12 }}>
@@ -95,10 +110,29 @@ export default function InboxScreen() {
           <div className="muted" style={{ fontSize: 12 }}>
             {text.length}/2000 Zeichen
           </div>
-          {error && <div className="muted" style={{ color: '#b91c1c' }}>{error}</div>}
-          {success && <div className="muted" style={{ color: '#15803d' }}>{success}</div>}
+          {error && (
+            <div style={{ color: '#7f1d1d', padding: '12px', backgroundColor: '#fee2e2', borderRadius: '6px', borderLeft: '4px solid #dc2626' }}>
+              <div>{error}</div>
+              <button 
+                className="button" 
+                onClick={(e) => { e.preventDefault(); setError(null); }}
+                style={{ marginTop: '8px', fontSize: '0.875rem', backgroundColor: '#dc2626' }}
+                aria-label="Notiz-Eingabe erneut versuchen"
+              >
+                🔄 Nochmal versuchen
+              </button>
+            </div>
+          )}
+          {success && <div style={{ color: '#166534', padding: '12px', backgroundColor: '#dcfce7', borderRadius: '6px', borderLeft: '4px solid #22c55e' }}>{success}</div>}
           <div className="flex" style={{ justifyContent: 'flex-end' }}>
-            <button className="button" type="submit">Speichern</button>
+            <button 
+              className="button" 
+              type="submit" 
+              disabled={syncing}
+              aria-label={syncing ? 'Notiz wird gespeichert' : 'Notiz speichern'}
+            >
+              Speichern
+            </button>
           </div>
         </form>
       </div>

@@ -32,7 +32,7 @@ describe('Scheduling Engine - Core Cases', () => {
 
     expect(result).toBeDefined();
     expect(result!.suggested_blocks).toHaveLength(0);
-    expect(result!.focus_task_id).toBeUndefined();
+    expect(result!.focus_task_id).toBeNull();
     expect(result!.mini_task_ids).toHaveLength(0);
     expect(result!.confidence).toBe(1.0);
   });
@@ -131,7 +131,7 @@ describe('Scheduling Engine - Core Cases', () => {
     const result = scheduleDay(tasks, today);
 
     expect(result).toBeDefined();
-    expect(result!.focus_task_id).toBeUndefined();
+    expect(result!.focus_task_id).toBeNull();
     expect(result!.mini_task_ids.length).toBeGreaterThan(0);
   });
 

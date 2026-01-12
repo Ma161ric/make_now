@@ -27,7 +27,12 @@ export default function App() {
             </nav>
           )}
           <div className={styles.headerRight}>
-            <button className="theme-toggle" onClick={toggleTheme} title="Theme togglen">
+            <button 
+              className="theme-toggle" 
+              onClick={toggleTheme} 
+              title="Theme togglen"
+              aria-label={theme === 'light' ? 'Zum dunklen Modus wechseln' : 'Zum hellen Modus wechseln'}
+            >
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
             {isAuthenticated && user && (
@@ -35,6 +40,7 @@ export default function App() {
                 className={styles.userButton}
                 onClick={() => navigate('/settings')}
                 title={`Einstellungen für ${user.displayName}`}
+                aria-label={`Benutzereinstellungen öffnen (angemeldet als ${user.displayName})`}
               >
                 <span className={styles.userAvatar}>
                   {user.avatar ? (

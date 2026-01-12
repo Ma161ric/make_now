@@ -43,6 +43,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
               className={`button ${status === 'done' ? '' : 'secondary'}`}
               onClick={() => setStatus('done')}
               style={{ flex: 1 }}
+              aria-label={`Task "${task.title}" als erledigt markieren`}
             >
               ✅ Erledigt
             </button>
@@ -50,6 +51,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
               className={`button ${status === 'postpone' ? '' : 'secondary'}`}
               onClick={() => setStatus('postpone')}
               style={{ flex: 1 }}
+              aria-label={`Task "${task.title}" auf morgen verschieben`}
             >
               ➡️ Morgen
             </button>
@@ -57,6 +59,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
               className={`button ${status === 'keep-open' ? '' : 'secondary'}`}
               onClick={() => setStatus('keep-open')}
               style={{ flex: 1 }}
+              aria-label={`Task "${task.title}" offen lassen`}
             >
               ⏸️ Offen
             </button>
@@ -70,6 +73,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
               className={`button ${mood === 'great' ? '' : 'secondary'}`}
               onClick={() => setMood('great')}
               title="Super!"
+              aria-label="Stimmung: Toll"
             >
               😊 Toll
             </button>
@@ -77,6 +81,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
               className={`button ${mood === 'good' ? '' : 'secondary'}`}
               onClick={() => setMood('good')}
               title="Gut"
+              aria-label="Stimmung: Gut"
             >
               🙂 Gut
             </button>
@@ -84,6 +89,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
               className={`button ${mood === 'okay' ? '' : 'secondary'}`}
               onClick={() => setMood('okay')}
               title="Okay"
+              aria-label="Stimmung: Okay"
             >
               😐 Okay
             </button>
@@ -91,6 +97,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
               className={`button ${mood === 'tough' ? '' : 'secondary'}`}
               onClick={() => setMood('tough')}
               title="Schwierig"
+              aria-label="Stimmung: Schwierig"
             >
               😔 Tough
             </button>
@@ -119,10 +126,18 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
         {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
 
         <div className="flex" style={{ justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-          <button className="button secondary" onClick={onClose}>
+          <button 
+            className="button secondary" 
+            onClick={onClose}
+            aria-label="Task Review Dialog abbrechen"
+          >
             Abbrechen
           </button>
-          <button className="button" onClick={handleSave}>
+          <button 
+            className="button" 
+            onClick={handleSave}
+            aria-label="Task Review speichern"
+          >
             Speichern
           </button>
         </div>

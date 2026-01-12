@@ -67,7 +67,11 @@ export default function WeekCalendarScreen() {
         plan: dayPlan?.plan,
         focusTask,
         miniTasks,
-        blocks: dayPlan?.plan?.suggested_blocks || [],
+        blocks: (dayPlan?.plan?.suggested_blocks || []).map(b => ({
+          start_at: typeof b.start_at === 'string' ? b.start_at : b.start_at.toISOString(),
+          end_at: typeof b.end_at === 'string' ? b.end_at : b.end_at.toISOString(),
+          block_type: b.block_type,
+        })),
       });
     }
 
@@ -98,7 +102,11 @@ export default function WeekCalendarScreen() {
         plan: dayPlan?.plan,
         focusTask,
         miniTasks,
-        blocks: dayPlan?.plan?.suggested_blocks || [],
+        blocks: (dayPlan?.plan?.suggested_blocks || []).map(b => ({
+          start_at: typeof b.start_at === 'string' ? b.start_at : b.start_at.toISOString(),
+          end_at: typeof b.end_at === 'string' ? b.end_at : b.end_at.toISOString(),
+          block_type: b.block_type,
+        })),
       });
     }
 
@@ -125,9 +133,21 @@ export default function WeekCalendarScreen() {
     <div className="grid" style={{ gap: 16 }}>
       <div className="card">
         <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <button className="button secondary" onClick={prevWeek}>← Vorherige Woche</button>
+          <button 
+            className="button secondary" 
+            onClick={prevWeek}
+            aria-label="Zur vorherigen Woche navigieren"
+          >
+            ← Vorherige Woche
+          </button>
           <div className="section-title" style={{ margin: 0 }}>Wochenansicht</div>
-          <button className="button secondary" onClick={nextWeek}>Nächste Woche →</button>
+          <button 
+            className="button secondary" 
+            onClick={nextWeek}
+            aria-label="Zur nächsten Woche navigieren"
+          >
+            Nächste Woche →
+          </button>
         </div>
         <div className="muted" style={{ marginBottom: 16 }}>
           Woche vom {formatDateShort(formatDate(weekStart))} - {formatDateShort(formatDate(new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)))}
@@ -167,7 +187,7 @@ export default function WeekCalendarScreen() {
                   <div style={{ fontSize: 12, color: '#6b7280' }}>
                     {formatDateShort(day.date)}
                   </div>
-                  {day.plan?.status === 'confirmed' && (
+                  {day.date && getDayPlan(userId, day.date)?.status === 'confirmed' && (
                     <div style={{ fontSize: 10, color: '#059669', marginTop: 4 }}>✓ Plan bestätigt</div>
                   )}
                 </div>

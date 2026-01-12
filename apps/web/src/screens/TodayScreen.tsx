@@ -66,7 +66,8 @@ function SortableTaskItem({ task, type, onReviewClick, onEditClick }: { task: Ta
             <button 
               className="button secondary" 
               onClick={() => onEditClick?.(task)}
-              title="Bearbeiten"
+              title="Bearbeite diese Aufgabe"
+              aria-label={`Bearbeite Fokus-Aufgabe: ${task.title}`}
               style={{ padding: '6px 10px', fontSize: '0.875rem' }}
             >
               ✏️
@@ -74,6 +75,8 @@ function SortableTaskItem({ task, type, onReviewClick, onEditClick }: { task: Ta
             <button 
               className="button secondary" 
               onClick={() => onReviewClick?.(task)}
+              title="Review diese Aufgabe"
+              aria-label={`Review Fokus-Aufgabe: ${task.title}`}
               style={{ padding: '6px 12px', fontSize: '0.875rem' }}
             >
               📝 Review
@@ -213,9 +216,9 @@ export default function TodayScreen() {
       ...dayPlanState,
       plan: {
         ...dayPlanState.plan,
-        focus_task_id: newFocusTaskId || undefined,
+        focus_task_id: newFocusTaskId || null,
         mini_task_ids: newMiniTaskIds,
-      },
+      } as any, // Type cast needed due to focus_task_id nullable
     };
 
     setDayPlanState(updatedPlan);
@@ -260,9 +263,12 @@ export default function TodayScreen() {
         return;
       }
       
+      const now = Date.now();
       const newDayPlan = {
-        id: `plan-${today}-${Date.now()}`,
+        id: `plan-${today}-${now}`,
         date: today,
+        version: 1,
+        timestamp: now,
         status: 'suggested' as const,
         replan_count: 0,
         plan: generated,
@@ -329,9 +335,12 @@ export default function TodayScreen() {
       await saveDayPlan(userId, { ...dayPlanState, status: 'replanned' }, firebaseUser);
       
       // Create new plan
+      const now = Date.now();
       const replanState = {
-        id: `plan-${today}-${Date.now()}`,
+        id: `plan-${today}-${now}`,
         date: today,
+        version: 1,
+        timestamp: now,
         status: 'suggested' as const,
         replan_count: dayPlanState.replan_count + 1,
         original_plan_id: dayPlanState.original_plan_id || dayPlanState.id,
@@ -381,7 +390,11 @@ export default function TodayScreen() {
             <div className="flex" style={{ gap: '1rem', alignItems: 'center' }}>
               <SyncStatus syncing={syncing} />
               {canReplan && (
-                <button className="button secondary" onClick={() => setShowReplanDialog(true)}>
+                <button 
+                  className="button secondary" 
+                  onClick={() => setShowReplanDialog(true)}
+                  aria-label="Plan B: Alternative Tagesplanung erstellen"
+                >
                   🔄 Plan B
                 </button>
               )}
@@ -441,7 +454,12 @@ export default function TodayScreen() {
               <div className="muted">Plan aktiv</div>
             </>
           ) : (
-            <button className="button" onClick={handleConfirm} style={{ flex: 1 }}>
+            <button 
+              className="button" 
+              onClick={handleConfirm} 
+              style={{ flex: 1 }}
+              aria-label="Tagesplan bestätigen und aktivieren"
+            >
               Plan bestätigen
             </button>
           )}
@@ -458,24 +476,31 @@ export default function TodayScreen() {
             <button
               className="button secondary"
               onClick={() => handleReplan('other_focus')}
+              aria-label="Neu planen: Andere Fokus-Aufgabe wählen"
             >
               🎯 Andere Fokus-Aufgabe
             </button>
             <button
               className="button secondary"
               onClick={() => handleReplan('mini_only')}
+              aria-label="Neu planen: Nur noch Mini-Aufgaben"
             >
               ⚡ Nur noch Mini-Aufgaben
             </button>
             <button
               className="button secondary"
               onClick={() => handleReplan('less_time')}
+              aria-label="Neu planen: Mit weniger Zeit planen"
             >
               🕐 Mit weniger Zeit planen
             </button>
           </div>
           <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 12, gap: 8 }}>
-            <button className="button secondary" onClick={() => setShowReplanDialog(false)}>
+            <button 
+              className="button secondary" 
+              onClick={() => setShowReplanDialog(false)}
+              aria-label="Neuplan-Dialog abbrechen"
+            >
               Abbrechen
             </button>
           </div>
@@ -510,7 +535,7 @@ export default function TodayScreen() {
 
       {/* AI Planning Section */}
       {isConfirmed && (() => {
-        const tasksDone = sortedTasks.filter(t => t.status === 'done').length;
+        const tasksDone = sortedTasks.filter((t): t is Task => !!t && t.status === 'done').length;
         const tasksTotal = sortedTasks.length;
         const yesterdayDate = formatDate(new Date(new Date().setDate(new Date().getDate() - 1)));
         const yesterdayReview = userId ? getDailyReview(userId, yesterdayDate) : undefined;

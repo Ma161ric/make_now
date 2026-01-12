@@ -16,7 +16,7 @@ export const TermsOfServiceScreen: React.FC = () => {
         <section>
           <h2>1. Akzeptanz der Bedingungen</h2>
           <p>
-            Durch die Nutzung von Make Now ("Dienst", "App", "wir", "uns") stimmen Sie diesen
+            Durch die Nutzung von DayFlow ("Dienst", "App", "wir", "uns") stimmen Sie diesen
             Nutzungsbedingungen zu. Wenn Sie nicht einverstanden sind, nutzen Sie den Dienst bitte
             nicht.
           </p>
@@ -25,7 +25,7 @@ export const TermsOfServiceScreen: React.FC = () => {
         <section>
           <h2>2. Beschreibung des Dienstes</h2>
           <p>
-            Make Now ist eine KI-gestützte Aufgabenplanungs-App, die Ihnen hilft, aus
+            DayFlow ist eine KI-gestützte Aufgabenplanungs-App, die Ihnen hilft, aus
             Freitext-Notizen strukturierte Aufgaben zu erstellen und Ihren Tag zu planen.
           </p>
           <p>Der Dienst umfasst:</p>
@@ -116,7 +116,7 @@ export const TermsOfServiceScreen: React.FC = () => {
         <section>
           <h2>8. Zahlungen und Abonnements</h2>
           <p>
-            Aktuell ist Make Now kostenlos. Sollten wir zukünftig kostenpflichtige Features
+            Aktuell ist DayFlow kostenlos. Sollten wir zukünftig kostenpflichtige Features
             einführen, werden Sie im Voraus informiert.
           </p>
         </section>

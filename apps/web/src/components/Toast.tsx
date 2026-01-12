@@ -40,7 +40,11 @@ export const Toast: React.FC<ToastProps> = ({
     >
       <span className={styles.icon}>{icons[type]}</span>
       <span className={styles.message}>{message}</span>
-      <button className={styles.closeButton} onClick={() => setIsVisible(false)}>
+      <button 
+        className={styles.closeButton} 
+        onClick={() => setIsVisible(false)}
+        aria-label="Benachrichtigung schließen"
+      >
         ×
       </button>
     </div>

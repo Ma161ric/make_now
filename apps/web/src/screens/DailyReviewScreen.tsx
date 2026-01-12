@@ -38,7 +38,7 @@ export default function DailyReviewScreen() {
     return (
       <div className="card">
         <div className="section-title">Daily Review</div>
-        <div className="muted">Nicht angemeldet. Bitte <button onClick={() => navigate('/login')}>anmelden</button>.</div>
+        <div className="muted">Nicht angemeldet. Bitte <button onClick={() => navigate('/login')} aria-label="Zur Login-Seite gehen">anmelden</button>.</div>
       </div>
     );
   }
@@ -48,7 +48,11 @@ export default function DailyReviewScreen() {
       <div className="card">
         <div className="section-title">Daily Review</div>
         <div className="muted">Keine Plan für {today} gefunden.</div>
-        <button className="button" onClick={() => navigate('/today')}>
+        <button 
+          className="button" 
+          onClick={() => navigate('/today')}
+          aria-label="Zurück zum Tagesplan"
+        >
           ← Zurück zum Plan
         </button>
       </div>
@@ -60,7 +64,11 @@ export default function DailyReviewScreen() {
       <div className="card">
         <div className="section-title">Daily Review</div>
         <div className="muted">Plan ist noch nicht bestätigt (Status: {dayPlan.status}).</div>
-        <button className="button" onClick={() => navigate('/today')}>
+        <button 
+          className="button" 
+          onClick={() => navigate('/today')}
+          aria-label="Zurück zum Tagesplan"
+        >
           ← Zurück zum Plan
         </button>
       </div>
@@ -203,6 +211,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
                   className={`button ${taskStates[task.id] === 'done' ? '' : 'secondary'}`}
                   onClick={() => setTaskStates(prev => ({ ...prev, [task.id]: 'done' }))}
                   style={{ flex: 1 }}
+                  aria-label={`Task "${task.title}" als erledigt markieren`}
                 >
                   ✅ Erledigt
                 </button>
@@ -210,6 +219,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
                   className={`button ${taskStates[task.id] === 'postpone' ? '' : 'secondary'}`}
                   onClick={() => setTaskStates(prev => ({ ...prev, [task.id]: 'postpone' }))}
                   style={{ flex: 1 }}
+                  aria-label={`Task "${task.title}" auf morgen verschieben`}
                 >
                   ➡️ Morgen
                 </button>
@@ -217,6 +227,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
                   className={`button ${taskStates[task.id] === 'keep-open' ? '' : 'secondary'}`}
                   onClick={() => setTaskStates(prev => ({ ...prev, [task.id]: 'keep-open' }))}
                   style={{ flex: 1 }}
+                  aria-label={`Task "${task.title}" offen lassen`}
                 >
                   ⏸️ Offen
                 </button>
@@ -252,6 +263,8 @@ Please respond with valid JSON (no markdown, just the JSON object):
                 className={`button ${mood === m ? '' : 'secondary'}`}
                 onClick={() => setMood(m)}
                 style={{ flex: 1 }}
+                aria-label={`Stimmung: ${m === 'great' ? 'Ausgezeichnet' : m === 'good' ? 'Gut' : m === 'okay' ? 'Okay' : 'Schwierig'}`}
+                title={m === 'great' ? 'Ausgezeichnet' : m === 'good' ? 'Gut' : m === 'okay' ? 'Okay' : 'Schwierig'}
               >
                 {getMoodEmoji(m)}
               </button>
@@ -266,6 +279,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
               onClick={handleGenerateAISuggestions}
               disabled={loadingAI}
               style={{ width: '100%' }}
+              aria-label={loadingAI ? 'KI-Vorschläge werden generiert' : 'KI-Vorschläge generieren'}
             >
               {loadingAI ? '⏳ KI analysiert...' : '✨ KI-Vorschläge generieren'}
             </button>
@@ -305,6 +319,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
               className="button secondary"
               onClick={() => setAiSuggestions(null)}
               style={{ marginTop: 8, width: '100%' }}
+              aria-label="KI-Vorschläge schließen"
             >
               Schließen
             </button>
@@ -361,10 +376,16 @@ Please respond with valid JSON (no markdown, just the JSON object):
               <button
                 className="button secondary"
                 onClick={() => navigate('/')}
+                aria-label="Später zum Startbildschirm"
               >
                 Später
               </button>
-              <button className="button" onClick={() => navigate('/today')} style={{ flex: 1 }}>
+              <button 
+                className="button" 
+                onClick={() => navigate('/today')} 
+                style={{ flex: 1 }}
+                aria-label="Plan übernehmen und zur Planung gehen"
+              >
                 ✅ Plan übernehmen → Zur Planung
               </button>
             </div>
@@ -373,13 +394,18 @@ Please respond with valid JSON (no markdown, just the JSON object):
 
         {!completed && (
           <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 16, gap: 8 }}>
-            <button className="button secondary" onClick={() => navigate('/today')}>
+            <button 
+              className="button secondary" 
+              onClick={() => navigate('/today')}
+              aria-label="Später zum Tagesplan"
+            >
               Später
             </button>
             <button
               className="button"
               onClick={handleComplete}
               disabled={!allReviewed}
+              aria-label={allReviewed ? 'Review abschließen und Tag fertig machen' : 'Alle Aufgaben bewerten, um fortfahren zu können'}
             >
               Tag abschließen
             </button>

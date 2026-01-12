@@ -15,6 +15,12 @@ service cloud.firestore {
     function isValidTimestamp(value) {
       return value is timestamp;
     }
+
+    // Rate limiting: max 10 writes per minute per user
+    function checkRateLimit(userId) {
+      let lastWriteTime = get(/users/{userId}).data.last_write_time;
+      return request.time.seconds - lastWriteTime.seconds > 6;  // At least 6 seconds between bulk writes
+    }
     
     // User data - only accessible by the user themselves
     match /users/{userId} {
@@ -27,50 +33,58 @@ service cloud.firestore {
       match /day_plans/{planId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId) 
-          && request.resource.data.keys().hasAll(['date', 'plan', 'status'])
+          && request.resource.data.keys().hasAll(['date', 'plan', 'status', 'created_at', 'updated_at'])
           && request.resource.data.date is string
-          && request.resource.data.status in ['draft', 'confirmed', 'completed'];
+          && request.resource.data.status in ['draft', 'confirmed', 'completed']
+          && isValidTimestamp(request.resource.data.created_at)
+          && isValidTimestamp(request.resource.data.updated_at)
+          && request.resource.data.updated_at >= request.time;  // Prevent backdated updates
       }
       
       // Tasks / Items (stored under 'items' collection)
       match /items/{taskId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId)
-          && request.resource.data.keys().hasAll(['title', 'status'])
+          && request.resource.data.keys().hasAll(['title', 'status', 'created_at', 'updated_at'])
           && request.resource.data.title is string
           && request.resource.data.title.size() > 0
           && request.resource.data.title.size() <= 200
-          && request.resource.data.status in ['open', 'scheduled', 'in_progress', 'done', 'cancelled'];
+          && request.resource.data.status in ['open', 'scheduled', 'in_progress', 'done', 'cancelled']
+          && isValidTimestamp(request.resource.data.created_at)
+          && isValidTimestamp(request.resource.data.updated_at);
       }
       
       // Inbox Notes
       match /inbox_notes/{noteId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId)
-          && request.resource.data.keys().hasAll(['raw_text', 'status'])
+          && request.resource.data.keys().hasAll(['raw_text', 'status', 'created_at'])
           && request.resource.data.raw_text is string
           && request.resource.data.raw_text.size() >= 3
           && request.resource.data.raw_text.size() <= 2000
-          && request.resource.data.status in ['unprocessed', 'processed', 'archived'];
+          && request.resource.data.status in ['unprocessed', 'processed', 'archived']
+          && isValidTimestamp(request.resource.data.created_at);
       }
       
       // Extractions (linked to inbox notes)
       match /extractions/{extractionId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId)
-          && request.resource.data.keys().hasAll(['note_id', 'items', 'overall_confidence'])
+          && request.resource.data.keys().hasAll(['note_id', 'items', 'overall_confidence', 'created_at'])
           && request.resource.data.overall_confidence >= 0.0
-          && request.resource.data.overall_confidence <= 1.0;
+          && request.resource.data.overall_confidence <= 1.0
+          && isValidTimestamp(request.resource.data.created_at);
       }
       
       // Daily Reviews
       match /daily_reviews/{reviewId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId)
-          && request.resource.data.keys().hasAll(['date', 'day_plan_id', 'tasks_done', 'tasks_total'])
+          && request.resource.data.keys().hasAll(['date', 'day_plan_id', 'tasks_done', 'tasks_total', 'created_at'])
           && request.resource.data.tasks_done >= 0
           && request.resource.data.tasks_total >= 0
-          && request.resource.data.tasks_done <= request.resource.data.tasks_total;
+          && request.resource.data.tasks_done <= request.resource.data.tasks_total
+          && isValidTimestamp(request.resource.data.created_at);
       }
     }
     

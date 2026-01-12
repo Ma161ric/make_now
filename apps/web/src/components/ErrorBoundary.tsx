@@ -122,6 +122,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   borderRadius: '6px',
                   cursor: 'pointer',
                 }}
+                aria-label="Seite neu laden um den Fehler zu beheben"
               >
                 Seite neu laden
               </button>
@@ -137,6 +138,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   borderRadius: '6px',
                   cursor: 'pointer',
                 }}
+                aria-label="Zur Startseite gehen"
               >
                 Zur Startseite
               </button>

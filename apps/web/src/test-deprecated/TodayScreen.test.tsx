@@ -133,6 +133,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'suggested',
       replan_count: 0,
       plan: {
@@ -200,6 +202,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'suggested',
       replan_count: 0,
       plan: {
@@ -253,6 +257,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'confirmed',
       replan_count: 0,
       plan: {
@@ -298,6 +304,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'confirmed',
       replan_count: 0,
       plan: {
@@ -360,6 +368,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'confirmed',
       replan_count: 0,
       plan: {
@@ -417,6 +427,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'confirmed',
       replan_count: 3,
       plan: {
@@ -463,6 +475,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'confirmed',
       replan_count: 0,
       plan: {
@@ -510,6 +524,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'suggested',
       replan_count: 0,
       plan: {
@@ -594,6 +610,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'suggested',
       replan_count: 0,
       plan: {
@@ -821,7 +839,7 @@ describe('TodayScreen', () => {
     });
 
     // Update task status
-    const updatedTask = { ...task, status: 'completed' as const };
+    const updatedTask = { ...task, status: 'done' as const };
     storage.saveTask(testUserId, updatedTask);
 
     expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -845,6 +863,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'confirmed',
       replan_count: 0,
       plan: {
@@ -901,6 +921,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'confirmed',
       replan_count: 0,
       plan: {
@@ -957,6 +979,8 @@ describe('TodayScreen', () => {
     const dayPlan: storage.DayPlanState = {
       id: 'plan-1',
       date: today,
+      version: 1,
+      timestamp: Date.now(),
       status: 'confirmed',
       replan_count: 0,
       plan: {
@@ -996,4 +1020,5 @@ describe('TodayScreen', () => {
     expect(screen.queryByRole('button', { name: /Andere Fokus-Aufgabe/ })).not.toBeInTheDocument();
   });
 });
+
 

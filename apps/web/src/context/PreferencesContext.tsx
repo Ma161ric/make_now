@@ -3,16 +3,21 @@ import { useAuth } from '../auth/authContext';
 
 interface UserPreferences {
   defaultScreen: 'notes' | 'today' | 'week';
+  timezone: string;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   defaultScreen: 'today',
+  timezone: typeof Intl !== 'undefined' 
+    ? Intl.DateTimeFormat().resolvedOptions().timeZone 
+    : 'Europe/Berlin',
 };
 
 interface PreferencesContextType {
   preferences: UserPreferences;
   setPreferences: (prefs: UserPreferences) => void;
   updateDefaultScreen: (screen: 'notes' | 'today' | 'week') => void;
+  updateTimezone: (tz: string) => void;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -46,8 +51,12 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     setPreferences({ ...preferences, defaultScreen: screen as 'notes' | 'today' | 'week' });
   };
 
+  const updateTimezone = (tz: string) => {
+    setPreferences({ ...preferences, timezone: tz });
+  };
+
   return (
-    <PreferencesContext.Provider value={{ preferences, setPreferences, updateDefaultScreen }}>
+    <PreferencesContext.Provider value={{ preferences, setPreferences, updateDefaultScreen, updateTimezone }}>
       {children}
     </PreferencesContext.Provider>
   );

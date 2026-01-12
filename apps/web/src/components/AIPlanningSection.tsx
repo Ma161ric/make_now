@@ -75,6 +75,7 @@ export function AIPlanningSection({
             onClick={handleGenerateTodayPlan}
             disabled={loading}
             style={{ width: '100%' }}
+            aria-label={loading ? 'Tagesplan wird generiert' : 'KI-Plan für heute basierend auf gestern generieren'}
           >
             {loading ? '⏳ Generiere Plan...' : '✨ Heute planen basierend auf gestern'}
           </button>
@@ -93,6 +94,7 @@ export function AIPlanningSection({
             onClick={handleGenerateTomorrowPlan}
             disabled={loading}
             style={{ width: '100%' }}
+            aria-label={loading ? 'Morgenplan wird generiert' : 'KI-Plan für morgen generieren'}
           >
             {loading ? '⏳ Generiere Plan...' : '🌟 Morgen planen basierend auf heute'}
           </button>
@@ -151,7 +153,12 @@ function PlanDisplay({
         </div>
       )}
 
-      <button className="button secondary" onClick={onClose} style={{ width: '100%', marginTop: 8 }}>
+      <button 
+        className="button secondary" 
+        onClick={onClose} 
+        style={{ width: '100%', marginTop: 8 }}
+        aria-label="KI-Planungs-Dialog schließen"
+      >
         Schließen
       </button>
     </div>

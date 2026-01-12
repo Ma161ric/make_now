@@ -162,6 +162,7 @@ export function EditTaskModal({ task, onClose, onSave }: EditTaskModalProps) {
             onClick={handleDelete}
             disabled={loading}
             style={{ flex: 0 }}
+            aria-label={`Task "${task.title}" löschen`}
           >
             🗑️ Löschen
           </button>
@@ -170,6 +171,7 @@ export function EditTaskModal({ task, onClose, onSave }: EditTaskModalProps) {
               className="button secondary"
               onClick={onClose}
               disabled={loading}
+              aria-label="Edit Task Dialog abbrechen"
             >
               Abbrechen
             </button>
@@ -178,6 +180,7 @@ export function EditTaskModal({ task, onClose, onSave }: EditTaskModalProps) {
               onClick={handleSave}
               disabled={loading}
               style={{ flex: 1 }}
+              aria-label={loading ? 'Task wird gespeichert' : 'Task speichern'}
             >
               {loading ? '⏳ Speichert...' : '💾 Speichern'}
             </button>

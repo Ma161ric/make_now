@@ -149,13 +149,3 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     return res.status(200).json(DEFAULT_PLAN);
   }
 };
-    return res.status(200).json({
-      suggested_tasks: [
-        { title: 'Keep momentum going', duration_minutes: 45, priority: 'high' },
-        { title: 'Focus on one key priority', duration_minutes: 30, priority: 'high' },
-      ],
-      focus_recommendation: 'Build on what worked yesterday',
-      planning_tips: ['Plan your day the night before', 'Be realistic with your time'],
-    });
-  }
-};

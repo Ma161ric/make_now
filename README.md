@@ -1,4 +1,4 @@
-# 🎯 Make Now
+# 🎯 DayFlow
 
 > AI-powered day planner that transforms notes into structured daily plans
 
@@ -9,7 +9,7 @@
 
 ## 🌟 Vision
 
-Make Now helps you capture thoughts effortlessly and turn them into actionable plans. Using AI-powered extraction and intelligent scheduling, it creates realistic daily plans that you can actually complete.
+DayFlow helps you capture thoughts effortlessly and turn them into actionable plans. Using AI-powered extraction and intelligent scheduling, it creates realistic daily plans that you can actually complete.
 
 ## ✨ Core Features
 

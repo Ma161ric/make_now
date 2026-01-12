@@ -22,6 +22,8 @@ export interface StoredNote {
 export interface DayPlanState {
   id: string;
   date: string;
+  version: number; // For conflict resolution (Last-Write-Wins)
+  timestamp: number; // Unix timestamp for comparison
   status: 'suggested' | 'confirmed' | 'replanned' | 'completed';
   replan_count: number;
   original_plan_id?: string;
@@ -162,6 +164,16 @@ export async function updateTaskStatus(userId: string, taskId: string, status: T
 
 export async function saveDayPlan(userId: string, dayPlanState: DayPlanState, user?: User | null) {
   const state = loadState(userId);
+  const existing = state.dayPlans[dayPlanState.date];
+  
+  // MUST-003: Increment version and update timestamp for conflict detection
+  if (existing && !dayPlanState.version) {
+    dayPlanState.version = (existing.version || 0) + 1;
+  } else if (!dayPlanState.version) {
+    dayPlanState.version = 1;
+  }
+  dayPlanState.timestamp = Date.now();
+  
   state.dayPlans[dayPlanState.date] = dayPlanState;
   saveState(userId, state);
   
@@ -192,9 +204,12 @@ export function getDailyReview(userId: string, date: string): DailyReviewData | 
 
 export async function savePlan(userId: string, date: string, plan: PlanningResponse, user?: User | null) {
   const state = loadState(userId);
+  const now = Date.now();
   const dayPlanState: DayPlanState = {
-    id: `plan-${date}-${Date.now()}`,
+    id: `plan-${date}-${now}`,
     date,
+    version: 1, // Initial version for new plan
+    timestamp: now, // MUST-003: Track creation time for conflict detection
     status: 'suggested',
     replan_count: 0,
     plan,
@@ -211,4 +226,40 @@ export async function savePlan(userId: string, date: string, plan: PlanningRespo
 export function getPlan(userId: string, date: string): PlanningResponse | undefined {
   const dayPlan = loadState(userId).dayPlans[date];
   return dayPlan?.plan;
+}
+
+/**
+ * MUST-003: Conflict Resolution for Multi-Tab/Multi-Device Sync
+ * Uses Last-Write-Wins (LWW) strategy with timestamp comparison.
+ * 
+ * Scenario: User opens two tabs, plans in both, both hit Firestore.
+ * Without conflict resolution: Indeterminate which version wins.
+ * With LWW: Latest timestamp always wins (deterministic, simple).
+ * 
+ * Trade-off: Loses earlier changes, but consistent state preferred over conflicted state.
+ * Alternative: Merge strategy (complex, requires 3-way merge logic).
+ */
+export function resolvePlanConflict(
+  local: DayPlanState | null,
+  remote: DayPlanState | null
+): DayPlanState | null {
+  // Case 1: Only one version exists
+  if (!local) return remote;
+  if (!remote) return local;
+
+  // Case 2: Both exist, compare timestamps
+  const localTime = local.timestamp || 0;
+  const remoteTime = remote.timestamp || 0;
+
+  if (remoteTime > localTime) {
+    console.log(
+      `[Sync Conflict] Remote version wins (${new Date(remoteTime).toISOString()} > ${new Date(localTime).toISOString()})`
+    );
+    return remote;
+  } else {
+    console.log(
+      `[Sync Conflict] Local version wins (${new Date(localTime).toISOString()} >= ${new Date(remoteTime).toISOString()})`
+    );
+    return local;
+  }
 }
