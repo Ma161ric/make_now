@@ -1,9 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../auth/authContext';
 
+interface SchedulingLimits {
+  max_long_tasks: number;    // 60-120 min
+  max_middle_tasks: number;  // 20-60 min
+  max_short_tasks: number;   // 5-20 min
+}
+
 interface UserPreferences {
   defaultScreen: 'notes' | 'today' | 'week';
   timezone: string;
+  schedulingLimits: SchedulingLimits;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -11,6 +18,11 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   timezone: typeof Intl !== 'undefined' 
     ? Intl.DateTimeFormat().resolvedOptions().timeZone 
     : 'Europe/Berlin',
+  schedulingLimits: {
+    max_long_tasks: 3,
+    max_middle_tasks: 6,
+    max_short_tasks: 8,
+  },
 };
 
 interface PreferencesContextType {
@@ -18,6 +30,7 @@ interface PreferencesContextType {
   setPreferences: (prefs: UserPreferences) => void;
   updateDefaultScreen: (screen: 'notes' | 'today' | 'week') => void;
   updateTimezone: (tz: string) => void;
+  updateSchedulingLimits: (limits: SchedulingLimits) => void;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -55,8 +68,12 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     setPreferences({ ...preferences, timezone: tz });
   };
 
+  const updateSchedulingLimits = (limits: SchedulingLimits) => {
+    setPreferences({ ...preferences, schedulingLimits: limits });
+  };
+
   return (
-    <PreferencesContext.Provider value={{ preferences, setPreferences, updateDefaultScreen, updateTimezone }}>
+    <PreferencesContext.Provider value={{ preferences, setPreferences, updateDefaultScreen, updateTimezone, updateSchedulingLimits }}>
       {children}
     </PreferencesContext.Provider>
   );
