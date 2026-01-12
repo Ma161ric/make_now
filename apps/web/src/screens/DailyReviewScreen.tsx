@@ -28,12 +28,6 @@ export default function DailyReviewScreen() {
   const [aiPlanSuggestions, setAiPlanSuggestions] = useState<DayPlanSuggestions | null>(null);
   const [loadingPlanAI, setLoadingPlanAI] = useState(false);
 
-  console.log('[DailyReview] userId:', userId);
-  console.log('[DailyReview] today:', today);
-  console.log('[DailyReview] dayPlan:', dayPlan);
-  console.log('[DailyReview] dayPlan?.status:', dayPlan?.status);
-  console.log('[DailyReview] existingReview:', existingReview);
-
   if (!userId) {
     return (
       <div className="card">
