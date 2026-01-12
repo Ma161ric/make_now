@@ -1,7 +1,6 @@
 import { extractFromNoteMock, planFromItemsMock } from './mockAi';
 import type { ExtractionResponse, PlanningResponse } from './models';
-import { validateExtraction, validatePlanning } from './validation';
-import type { ValidationResult } from './validation';
+import { validateExtraction, validatePlanning, type ValidationResult } from './validation';
 
 export interface AiServiceConfig {
   apiKey?: string;

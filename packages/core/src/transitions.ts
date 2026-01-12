@@ -4,17 +4,17 @@
  * Enforces valid state transitions and prevents invalid ones
  */
 
-import type {
-  Task,
-  TaskStatus,
-  Event,
-  EventStatus,
-  Idea,
-  IdeaStatus,
-  InboxNote,
-  InboxNoteStatus,
+import {
+  type Task,
+  type TaskStatus,
+  type Event,
+  type EventStatus,
+  type Idea,
+  type IdeaStatus,
+  type InboxNote,
+  type InboxNoteStatus,
+  StateTransitionError,
 } from './models';
-import { StateTransitionError } from './models';
 
 /**
  * Valid Task state transitions

@@ -118,6 +118,35 @@ export class SyncLayer {
     }
     return this.getFromLocalStorage('dailyReview', date);
   }
+
+  // Helper methods for localStorage access
+  private saveToLocalStorage(key: string, ...args: any[]): void {
+    // This is a placeholder - actual implementation is in storage.ts
+    // In production, we'd import the specific save functions from storage
+    const keyMap: Record<string, string> = {
+      note: 'note',
+      task: 'task',
+      dayPlan: 'dayPlan',
+      dailyReview: 'dailyReview',
+    };
+    const storageKey = keyMap[key] || key;
+    localStorage.setItem(storageKey, JSON.stringify(args));
+  }
+
+  private getFromLocalStorage(key: string, identifier?: string): any {
+    // This is a placeholder - actual implementation is in storage.ts
+    const item = localStorage.getItem(key);
+    if (!item) return undefined;
+    try {
+      const data = JSON.parse(item);
+      if (identifier && Array.isArray(data)) {
+        return data.find((d: any) => d.date === identifier || d.id === identifier);
+      }
+      return data;
+    } catch {
+      return undefined;
+    }
+  }
 }
 
 export const syncLayer = new SyncLayer();

@@ -26,7 +26,7 @@
     "prefer-const": "warn",
     "no-var": "error",
     "eqeqeq": ["error", "always"],
-    "no-duplicate-imports": "error"
+    "no-duplicate-imports": ["error", { "includeExports": false }]
   },
   "overrides": [
     {

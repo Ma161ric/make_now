@@ -88,7 +88,7 @@ ${noteText}`;
       console.log('[AI] Extracted JSON');
     }
 
-    let result: ExtractionOutput = JSON.parse(jsonStr);
+    const result: ExtractionOutput = JSON.parse(jsonStr);
     console.log('[AI] Parsed result:', result.items?.length || 0, 'items');
 
     // CRITICAL: Validate AI output against schema

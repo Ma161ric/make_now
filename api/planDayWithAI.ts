@@ -108,7 +108,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     }
 
     // Try to extract JSON - handle various formats
-    let jsonMatch = content.match(/\{[\s\S]*\}/);
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.warn('No JSON found in Groq response:', content.substring(0, 100));
       return res.status(200).json(DEFAULT_PLAN);

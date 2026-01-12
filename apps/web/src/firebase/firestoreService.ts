@@ -79,7 +79,7 @@ export class FirestoreService {
         }
       });
     })();
-    return () => { try { unsubscribe(); } catch {} }
+    return () => { try { unsubscribe(); } catch { /* ignore unsubscribe errors */ } }
   }
 
   async saveTask(userId: string, taskData: any) {
@@ -161,7 +161,7 @@ export class FirestoreService {
         callback(tasks);
       });
     })();
-    return () => { try { unsubscribe(); } catch {} }
+    return () => { try { unsubscribe(); } catch { /* ignore unsubscribe errors */ } }
   }
 
   async saveInboxNote(userId: string, noteText: string) {
@@ -213,7 +213,7 @@ export class FirestoreService {
         callback(notes);
       });
     })();
-    return () => { try { unsubscribe(); } catch {} }
+    return () => { try { unsubscribe(); } catch { /* ignore unsubscribe errors */ } }
   }
 
   async saveDailyReview(userId: string, review: any) {

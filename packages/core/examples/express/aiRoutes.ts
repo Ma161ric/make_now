@@ -1,5 +1,4 @@
-import type { NextFunction, Request, Response } from 'express';
-import { Router } from 'express';
+import { Router, type NextFunction, type Request, type Response } from 'express';
 import {
   AiHttpError,
   AiResponseParseError,
@@ -8,7 +7,7 @@ import {
   AiValidationError,
   type ExtractionRequest,
   type PlanDayRequest,
-} from '../../src/aiService';
+} from '@make-now/core';
 
 const ai = new AiService({
   apiKey: process.env.GROQ_API_KEY,

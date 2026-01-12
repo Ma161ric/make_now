@@ -1,6 +1,7 @@
-import { expect, afterEach, vi } from 'vitest';
+import { expect as _expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import React from 'react';
 
 // Mock Firebase Auth
 vi.mock('../firebase/firebaseConfig', () => ({

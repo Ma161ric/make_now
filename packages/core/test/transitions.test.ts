@@ -4,13 +4,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { Task, Event, Idea } from '../src/models';
+import { type Task, type Event, type Idea, StateTransitionError } from '../src/models';
 import {
   transitionTaskStatus,
   transitionEventStatus,
   transitionIdeaStatus,
 } from '../src/transitions';
-import { StateTransitionError } from '../src/models';
 
 function createTestTask(overrides: Partial<Task> = {}): Task {
   return {
