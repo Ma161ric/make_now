@@ -287,8 +287,8 @@ export default function TodayScreen() {
     
     // Mark selected tasks as scheduled
     const allTaskIds = [
-      ...(dayPlanState.plan.focus_task_id ? [dayPlanState.plan.focus_task_id] : []),
-      ...dayPlanState.plan.mini_task_ids,
+      ...(dayPlanState.plan?.focus_task_id ? [dayPlanState.plan.focus_task_id] : []),
+      ...(dayPlanState.plan?.mini_task_ids || []),
     ];
     
     for (const id of allTaskIds) {

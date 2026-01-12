@@ -96,8 +96,8 @@ export default function DailyReviewScreen() {
 
   const plan = dayPlan.plan;
   const allTaskIds = [
-    ...(plan.focus_task_id ? [plan.focus_task_id] : []),
-    ...plan.mini_task_ids,
+    ...(plan?.focus_task_id ? [plan.focus_task_id] : []),
+    ...(plan?.mini_task_ids || []),
   ];
   const tasks = allTaskIds.map(id => listTasks(userId, t => t.id === id)[0]).filter(Boolean);
 
