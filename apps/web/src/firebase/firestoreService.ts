@@ -180,6 +180,18 @@ export class FirestoreService {
     }
   }
 
+  async deleteInboxNote(userId: string, noteId: string) {
+    try {
+      const db = await getDb();
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      const noteRef = doc(db, `users/${userId}/inbox_notes/${noteId}`);
+      return deleteDoc(noteRef);
+    } catch (error) {
+      console.error('Error deleting inbox note:', error);
+      throw error;
+    }
+  }
+
   onInboxNotesSnapshot(
     userId: string,
     callback: (notes: any[]) => void

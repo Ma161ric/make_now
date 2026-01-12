@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState, useEffect, useRef } from 'react';
 import { validateExtraction } from '@make-now/core';
 import { extractFromNoteCloud } from '../firebase/functionsService';
-import { addNote, listNotes } from '../storage';
+import { addNote, listNotes, deleteNote } from '../storage';
 import { uuid } from '../utils';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
@@ -19,6 +19,7 @@ export default function InboxScreen() {
   const { preferences } = usePreferences();
   const userId = user?.id || firebaseUser?.uid || '';
   const isMountedRef = useRef(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   // Use live notes hook for real-time updates
   const notes = useLiveNotes(userId);
@@ -32,6 +33,23 @@ export default function InboxScreen() {
       isMountedRef.current = false;
     };
   }, []);
+
+  const handleDelete = async (noteId: string, notePreview: string) => {
+    const confirmed = confirm(`Notiz löschen?\n\n"${notePreview}"`);
+    if (!confirmed) return;
+    
+    try {
+      setDeletingId(noteId);
+      await deleteNote(userId, noteId, firebaseUser);
+      setSuccess('Notiz gelöscht.');
+      setTimeout(() => setSuccess(null), 2000);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Fehler beim Löschen';
+      setError(`Löschen fehlgeschlagen: ${errorMsg}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -147,12 +165,23 @@ export default function InboxScreen() {
         <ul className="list">
           {notes.map((note) => (
             <li key={note.id} className="list-item">
-              <div className="flex" style={{ justifyContent: 'space-between' }}>
-                <div>
+              <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ flex: 1 }}>
                   <div>{note.raw_text.slice(0, 80) || '(leer)'}</div>
                   <div className="muted" style={{ fontSize: 12 }}>{new Date(note.created_at).toLocaleString()}</div>
                 </div>
-                <Link className="button secondary" to={`/review/${note.id}`}>Review</Link>
+                <div className="flex" style={{ gap: 8 }}>
+                  <Link className="button secondary" to={`/review/${note.id}`}>Review</Link>
+                  <button 
+                    className="button secondary"
+                    onClick={() => handleDelete(note.id, note.raw_text.slice(0, 60))}
+                    disabled={deletingId === note.id}
+                    style={{ color: '#b91c1c' }}
+                    title="Notiz löschen"
+                  >
+                    {deletingId === note.id ? '⏳' : '🗑️'}
+                  </button>
+                </div>
               </div>
             </li>
           ))}

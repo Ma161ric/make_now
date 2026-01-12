@@ -102,6 +102,19 @@ export function getNote(userId: string, id: string): StoredNote | undefined {
   return loadState(userId).notes.find((n) => n.id === id);
 }
 
+export async function deleteNote(userId: string, noteId: string, user?: User | null) {
+  const state = loadState(userId);
+  state.notes = state.notes.filter((n) => n.id !== noteId);
+  delete state.extractions[noteId];
+  delete state.reviewedItems[noteId];
+  saveState(userId, state);
+  
+  // Sync to Firestore if user is logged in
+  if (user) {
+    await firestoreService.deleteInboxNote(user.uid, noteId);
+  }
+}
+
 export function getExtraction(userId: string, id: string): ExtractionResponse | undefined {
   return loadState(userId).extractions[id];
 }

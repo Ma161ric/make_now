@@ -42,12 +42,41 @@ export default function ReviewScreen() {
   const [error, setError] = useState<string | null>(null);
   const [reextracting, setReextracting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [newItemType, setNewItemType] = useState<'task' | 'event' | 'idea'>('task');
+  const [newItemTitle, setNewItemTitle] = useState('');
 
   const extraction: ExtractionResponse | undefined = useMemo(() => userId ? getExtraction(userId, noteId) : undefined, [noteId, userId]);
 
   if (!note || !extraction) {
     return <div className="card">Notiz nicht gefunden.</div>;
   }
+
+  const handleAddManualItem = () => {
+    if (!newItemTitle.trim()) {
+      setError('Bitte geben Sie einen Titel ein.');
+      return;
+    }
+
+    const newItem: ExtractedItem = {
+      id: uuid(),
+      type: newItemType,
+      title: newItemTitle,
+      confidence: 1.0,
+      parsed_fields: 
+        newItemType === 'task' 
+          ? { duration_min_minutes: 15, duration_max_minutes: 30, importance: 'medium' }
+          : newItemType === 'event'
+          ? { start_at: '', end_at: '', timezone: 'Europe/Berlin' }
+          : { content: '' },
+    };
+
+    setItems([...items, newItem]);
+    setNewItemTitle('');
+    setNewItemType('task');
+    setError(null);
+    setSuccess('Item hinzugefügt.');
+    setTimeout(() => setSuccess(null), 2000);
+  };
 
   const updateItem = (id: string, updater: (item: ExtractedItem) => ExtractedItem) => {
     setItems((prev) => prev.map((it) => (it.id === id ? updater(it) : it)));
@@ -206,7 +235,41 @@ export default function ReviewScreen() {
         {error && <div style={{ color: '#b91c1c', marginBottom: 8, padding: '8px', backgroundColor: '#fee2e2', borderRadius: '4px' }}>{error}</div>}
         {success && <div style={{ color: '#15803d', marginBottom: 8, padding: '8px', backgroundColor: '#dcfce7', borderRadius: '4px' }}>{success}</div>}
         
-        {items.length === 0 && <div className="muted">Keine Items - nutze KI-Button oder erstelle manuell.</div>}
+        {items.length === 0 && (
+          <div className="card" style={{ borderColor: '#fbbf24', borderLeft: '4px solid #fbbf24', backgroundColor: '#fffbeb' }}>
+            <div className="label" style={{ marginBottom: 12 }}>🆕 Item manuell erstellen</div>
+            <div className="grid" style={{ gap: 8, marginBottom: 12 }}>
+              <div>
+                <div className="label">Titel</div>
+                <input
+                  className="input"
+                  value={newItemTitle}
+                  onChange={(e) => setNewItemTitle(e.target.value)}
+                  placeholder="z.B. Brot kaufen"
+                />
+              </div>
+              <div>
+                <div className="label">Typ</div>
+                <select
+                  className="input"
+                  value={newItemType}
+                  onChange={(e) => setNewItemType(e.target.value as any)}
+                >
+                  <option value="task">Task</option>
+                  <option value="event">Event</option>
+                  <option value="idea">Idea</option>
+                </select>
+              </div>
+            </div>
+            <button
+              className="button"
+              onClick={handleAddManualItem}
+              style={{ width: '100%' }}
+            >
+              ✓ Hinzufügen
+            </button>
+          </div>
+        )}
         
         <div className="grid" style={{ gap: 12, marginBottom: 16 }}>
           {items.map((item) => (
