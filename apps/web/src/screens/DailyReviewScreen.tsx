@@ -4,7 +4,7 @@ import { getDayPlan, getDailyReview, saveDailyReview, listTasks, updateTaskStatu
 import { formatDate } from '../utils';
 import { useAuth } from '../auth/authContext';
 import { generateReviewAnalysis } from '../utils/aiReview';
-import { generateDayPlanWithAI } from '../utils/aiDayPlanning';
+import { generateDayPlanWithAI, type DayPlanSuggestions } from '../utils/aiDayPlanning';
 
 export default function DailyReviewScreen() {
   const navigate = useNavigate();
@@ -25,11 +25,7 @@ export default function DailyReviewScreen() {
     tomorrow_focus: string;
   } | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [aiPlanSuggestions, setAiPlanSuggestions] = useState<{
-    suggested_tasks: Array<{ title: string; duration_minutes: number; priority: string }>;
-    focus_recommendation: string;
-    planning_tips: string[];
-  } | null>(null);
+  const [aiPlanSuggestions, setAiPlanSuggestions] = useState<DayPlanSuggestions | null>(null);
   const [loadingPlanAI, setLoadingPlanAI] = useState(false);
 
   if (!dayPlan || dayPlan.status !== 'confirmed') {
