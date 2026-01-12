@@ -85,3 +85,7 @@ export {
 } from './aiService';
 export type { AiServiceConfig, AiCallOptions, AiCallResult, ExtractionRequest, PlanDayRequest } from './aiService';
 export { MOCK_EXTRACTION_RESPONSE, MOCK_PLANNING_RESPONSE } from './mockResponses';
+
+// Feature Flags
+export { FEATURES, isFeatureEnabled, requireFeature, withFeature } from './featureFlags';
+export type { FeatureFlag } from './featureFlags';
