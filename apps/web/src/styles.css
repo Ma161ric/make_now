@@ -30,49 +30,56 @@ html, body {
 }
 
 /*
- * Two palettes, each "two calm base colors + one surprising accent":
- *   dark  = Egyptian Blue #051F3E + Stone Blue #649BC8, accent Scarlet Red #EC2F36
- *   light = Soft Sand #F1E4DE + Mocha Green #4A4329, accent Watermelon Pink #FE74B6
- * --hero-* is the second base color, used for the "Jetzt" card and active nav.
+ * Two palettes, each "two calm base colors + one rare highlight":
+ *   dark  = Egyptian Blue #051F3E + white, Stone Blue #649BC8 for actions,
+ *           Scarlet Red #EC2F36 only as a tiny highlight
+ *   light = Soft Sand #F1E4DE + black, Mocha Green #4A4329 for actions,
+ *           Watermelon Pink #FE74B6 only as a tiny highlight
+ * --hero-*      the "Jetzt" card and the active nav item
+ * --accent-*    buttons, progress, links, selected states
+ * --highlight   brand dot and the now-marker dot, nothing else
  */
 :root[data-theme="dark"] {
   --bg-primary: #051f3e;
   --bg-secondary: #0a2a50;
   --bg-tertiary: #11355f;
-  --text-primary: #eef3fa;
-  --text-secondary: #c9d8ea;
-  --text-muted: #9bb5d3;
+  --text-primary: #ffffff;
+  --text-secondary: #d9e5f2;
+  --text-muted: #a3bcd8;
   --border-color: #143a68;
-  --border-strong: #24508a;
+  --border-strong: #2a5585;
   --shadow: rgba(0, 0, 0, 0.35);
 
-  --hero-bg: #649bc8;
+  --hero-bg: #ffffff;
   --hero-text: #051f3e;
-  --hero-muted: #1b3d63;
-  --hero-track: rgba(5, 31, 62, 0.25);
+  --hero-muted: #3d5a7c;
+  --hero-track: rgba(5, 31, 62, 0.12);
+  --hero-accent: #649bc8;
+  --hero-on-accent: #051f3e;
 
-  --accent-primary: #dc2b31;      /* Scarlet, a touch deeper so white text passes contrast */
-  --accent-primary-hover: #ec2f36;
-  --on-accent: #ffffff;
-  --accent-line: #ec2f36;
-  --accent-bg: #3a1220;
-  --accent-text: #ff7b80;
+  --accent-primary: #649bc8;
+  --accent-primary-hover: #80b1d9;
+  --on-accent: #051f3e;
+  --accent-line: #649bc8;
+  --accent-bg: #0f3a63;
+  --accent-text: #9cc4e4;
+  --highlight: #ec2f36;
 
   --task-bg: #11355f;
-  --task-border: #24508a;
-  --task-text: #eef3fa;
-  --sport-bg: #4a1018;
-  --sport-border: #7f1d27;
-  --sport-text: #ffe1e2;
-  --sport-muted: #ffa3a7;
+  --task-border: #2a5585;
+  --task-text: #ffffff;
+  --sport-bg: #1f4e7a;
+  --sport-border: #649bc8;
+  --sport-text: #ffffff;
+  --sport-muted: #cfe1f2;
   --free-bg: #0d3b52;
   --free-border: #1b5a78;
-  --free-text: #d8f0fb;
-  --free-muted: #9fd3ea;
-  --busy-border: #24508a;
+  --free-text: #e3f4fb;
+  --free-muted: #a9d6ea;
+  --busy-border: #2a5585;
   --event-bg: #0a2a50;
-  --event-border: #649bc8;
-  --event-text: #eef3fa;
+  --event-border: #d9e5f2;
+  --event-text: #ffffff;
   --danger: #ff7b80;
 }
 
@@ -80,40 +87,43 @@ html, body {
   --bg-primary: #f1e4de;
   --bg-secondary: #f8f0ec;
   --bg-tertiary: #e9dad2;
-  --text-primary: #2b2717;
-  --text-secondary: #4a4329;
-  --text-muted: #675f45;
+  --text-primary: #141414;
+  --text-secondary: #3a3527;
+  --text-muted: #5f5848;
   --border-color: #e2d1c8;
-  --border-strong: #cdb8ad;
-  --shadow: rgba(74, 67, 41, 0.08);
+  --border-strong: #c9b4a9;
+  --shadow: rgba(20, 20, 20, 0.08);
 
-  --hero-bg: #4a4329;
+  --hero-bg: #141414;
   --hero-text: #f8f0ec;
-  --hero-muted: #d6cbb3;
-  --hero-track: rgba(248, 240, 236, 0.2);
+  --hero-muted: #c2b9ae;
+  --hero-track: rgba(248, 240, 236, 0.18);
+  --hero-accent: #f1e4de;
+  --hero-on-accent: #141414;
 
-  --accent-primary: #fe74b6;
-  --accent-primary-hover: #ff8cc3;
-  --on-accent: #3b0b24;
-  --accent-line: #fe74b6;
-  --accent-bg: #ffdcec;
-  --accent-text: #a8216a;
+  --accent-primary: #4a4329;
+  --accent-primary-hover: #5d5535;
+  --on-accent: #f8f0ec;
+  --accent-line: #4a4329;
+  --accent-bg: #e3decb;
+  --accent-text: #4a4329;
+  --highlight: #fe74b6;
 
   --task-bg: #f8f0ec;
   --task-border: #e2d1c8;
-  --task-text: #2b2717;
-  --sport-bg: #ffd5e9;
-  --sport-border: #fca4cd;
-  --sport-text: #5e0f36;
-  --sport-muted: #8e1d55;
+  --task-text: #141414;
+  --sport-bg: #4a4329;
+  --sport-border: #4a4329;
+  --sport-text: #f8f0ec;
+  --sport-muted: #d6cbb3;
   --free-bg: #e3decb;
   --free-border: #c9c1a2;
   --free-text: #2f2b18;
   --free-muted: #4a4329;
-  --busy-border: #cdb8ad;
+  --busy-border: #c9b4a9;
   --event-bg: #ffffff;
-  --event-border: #e2d1c8;
-  --event-text: #2b2717;
+  --event-border: #141414;
+  --event-text: #141414;
   --danger: #c0262d;
 }
 
@@ -152,7 +162,7 @@ html, body {
   text-decoration: none;
   margin-right: var(--space-4);
 }
-.brand-dot { color: var(--accent-line); }
+.brand-dot { color: var(--highlight); }
 
 .nav { display: flex; align-items: center; gap: var(--space-1); }
 .nav a {
