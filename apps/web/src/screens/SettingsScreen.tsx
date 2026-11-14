@@ -4,6 +4,7 @@ import { useAuth } from '../auth/authContext';
 import { useTheme } from '../theme/themeContext';
 import { usePreferences } from '../context/PreferencesContext';
 import styles from './SettingsScreen.module.css';
+import { CalendarSettings } from '../components/CalendarSettings';
 
 export const SettingsScreen: React.FC = () => {
   const { user, logout } = useAuth();
@@ -199,6 +200,9 @@ export const SettingsScreen: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Google Calendar */}
+        <CalendarSettings />
 
         {/* About Section */}
         <div className={styles.section}>

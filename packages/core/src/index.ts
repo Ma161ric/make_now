@@ -64,6 +64,18 @@ export type { DurationDefault } from './rules';
 export { scheduleDay, getDefaultSchedulingConfig } from './scheduling';
 export type { SchedulingConfig } from './scheduling';
 
+// Calendar-aware scheduling (free gaps around existing events)
+export {
+  planIntoFreeSlots,
+  computeFreeSlots,
+  orderTasksForPlanning,
+  zonedTimeToUtc,
+  localDateString,
+  addDays,
+  DEFAULT_FREE_SLOT_CONFIG,
+} from './freeSlotScheduling';
+export type { BusyInterval, FreeSlotConfig, FreeSlotPlan, PlannedBlock } from './freeSlotScheduling';
+
 // Validation
 export { validateExtraction, validatePlanning, formatValidationErrors } from './validation';
 export type { ValidationError, ValidationResult } from './validation';
