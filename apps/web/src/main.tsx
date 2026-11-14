@@ -41,7 +41,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="signup" element={<SignupScreen />} />
                 <Route path="onboarding" element={<ProtectedRoute><OnboardingScreen /></ProtectedRoute>} />
                 <Route path="privacy" element={<PrivacyPolicyScreen />} />
-                <Route path="terms" element={<PrivacyPolicyScreen />} />
+                <Route path="terms" element={<TermsOfServiceScreen />} />
                 <Route index element={<ProtectedRoute><OnboardingGuard><InboxScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="review/:id" element={<ProtectedRoute><OnboardingGuard><ReviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="week" element={<ProtectedRoute><OnboardingGuard><WeekCalendarScreen /></OnboardingGuard></ProtectedRoute>} />

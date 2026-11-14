@@ -42,6 +42,20 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   schedulingLimits: calculateTaskLimits(8),
 };
 
+/**
+ * Preferences saved by older app versions can lack fields (e.g.
+ * schedulingLimits). Fill gaps with defaults so screens never read undefined.
+ */
+function normalizePreferences(stored: Partial<UserPreferences> | null | undefined): UserPreferences {
+  const prefs = { ...DEFAULT_PREFERENCES, ...(stored && typeof stored === 'object' ? stored : {}) };
+  const hours = typeof prefs.maxHoursPerDay === 'number' ? Math.max(1, Math.min(12, prefs.maxHoursPerDay)) : 8;
+  return {
+    ...prefs,
+    maxHoursPerDay: hours,
+    schedulingLimits: { ...calculateTaskLimits(hours), ...(stored?.schedulingLimits || {}) },
+  };
+}
+
 interface PreferencesContextType {
   preferences: UserPreferences;
   setPreferences: (prefs: UserPreferences) => void;
@@ -63,7 +77,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       const stored = localStorage.getItem(`prefs-${user.id}`);
       if (stored) {
         try {
-          setPreferencesState(JSON.parse(stored));
+          setPreferencesState(normalizePreferences(JSON.parse(stored)));
         } catch (e) {
           setPreferencesState(DEFAULT_PREFERENCES);
         }
