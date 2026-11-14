@@ -172,6 +172,13 @@ export async function updateTaskStatus(userId: string, taskId: string, status: T
     if (user) {
       await firestoreService.saveTask(user.uid, task);
     }
+  } else if (user) {
+    // Task only exists in Firestore (e.g. created on another device): update it there
+    await firestoreService.updateTask(user.uid, taskId, {
+      status,
+      updated_at: new Date(),
+      ...(status === 'done' ? { completed_at: new Date() } : {}),
+    });
   }
 }
 

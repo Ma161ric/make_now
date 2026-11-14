@@ -164,3 +164,24 @@ export async function insertEvent(
     }),
   });
 }
+
+export interface CalendarEvent {
+  id: string;
+  summary?: string;
+  start: { dateTime?: string; date?: string };
+  end: { dateTime?: string; date?: string };
+  extendedProperties?: { private?: Record<string, string> };
+}
+
+/** Events of one calendar in [timeMin, timeMax), recurring ones expanded. */
+export async function listEvents(accessToken: string, calendarId: string, timeMin: Date, timeMax: Date): Promise<CalendarEvent[]> {
+  const params = new URLSearchParams({
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    maxResults: '100',
+  });
+  const out = await api<{ items: CalendarEvent[] }>(accessToken, `/calendars/${encodeURIComponent(calendarId)}/events?${params}`);
+  return out.items || [];
+}

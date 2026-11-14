@@ -3,6 +3,7 @@ import { useTheme } from './theme/themeContext';
 import { useAuth } from './auth/authContext';
 import styles from './App.module.css';
 import './styles.css';
+import { IconToday, IconInbox, IconChat, IconWeek, IconTasks, IconSun, IconMoon, IconSettings } from './components/Icons';
 
 export default function App() {
   const location = useLocation();
@@ -13,45 +14,50 @@ export default function App() {
   // Hide header on auth pages
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
   
+  const navItems = [
+    { to: '/today', label: 'Heute', icon: <IconToday /> },
+    { to: '/', label: 'Inbox', icon: <IconInbox /> },
+    { to: '/chat', label: 'Chat', icon: <IconChat /> },
+    { to: '/week', label: 'Woche', icon: <IconWeek /> },
+    { to: '/tasks', label: 'Aufgaben', icon: <IconTasks /> },
+  ];
+  const isActive = (to: string) => location.pathname === to;
+
   return (
     <div className="app-shell">
       {!isAuthPage && (
         <header className="app-header">
-          <div className="brand">Dayflow</div>
+          <Link to="/today" className="brand" aria-label="DayFlow, zu Heute">
+            dayflow<span className="brand-dot">.</span>
+          </Link>
           {isAuthenticated && (
-            <nav className="nav">
-              <Link className={location.pathname === '/' ? 'active' : ''} to="/">Inbox</Link>
-              <Link className={location.pathname === '/chat' ? 'active' : ''} to="/chat">Chat</Link>
-              <Link className={location.pathname === '/today' ? 'active' : ''} to="/today">Today</Link>
-              <Link className={location.pathname === '/week' ? 'active' : ''} to="/week">Calendar</Link>
-              <Link className={location.pathname === '/tasks' ? 'active' : ''} to="/tasks">Tasks</Link>
+            <nav className="nav" aria-label="Hauptnavigation">
+              {navItems.map((item) => (
+                <Link key={item.to} className={isActive(item.to) ? 'active' : ''} to={item.to} aria-current={isActive(item.to) ? 'page' : undefined}>
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           )}
-          <div className={styles.headerRight}>
-            <button 
-              className="theme-toggle" 
-              onClick={toggleTheme} 
-              title="Theme togglen"
+          <div className="header-right">
+            <button
+              className="icon-button"
+              onClick={toggleTheme}
               aria-label={theme === 'light' ? 'Zum dunklen Modus wechseln' : 'Zum hellen Modus wechseln'}
             >
-              {theme === 'light' ? '🌙' : '☀️'}
+              {theme === 'light' ? <IconMoon /> : <IconSun />}
             </button>
             {isAuthenticated && user && (
               <button
                 className={styles.userButton}
                 onClick={() => navigate('/settings')}
-                title={`Einstellungen für ${user.displayName}`}
-                aria-label={`Benutzereinstellungen öffnen (angemeldet als ${user.displayName})`}
+                aria-label={`Einstellungen öffnen (angemeldet als ${user.displayName})`}
               >
                 <span className={styles.userAvatar}>
                   {user.avatar ? (
-                    <img 
-                      src={user.avatar} 
-                      alt={user.displayName}
-                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                    />
+                    <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                   ) : (
-                    '👤'
+                    <IconSettings size={16} />
                   )}
                 </span>
                 <span className={styles.userName}>{user.displayName}</span>
@@ -63,6 +69,16 @@ export default function App() {
       <main className="app-main">
         <Outlet />
       </main>
+      {!isAuthPage && isAuthenticated && (
+        <nav className="bottom-nav" aria-label="Hauptnavigation">
+          {navItems.map((item) => (
+            <Link key={item.to} className={isActive(item.to) ? 'active' : ''} to={item.to} aria-current={isActive(item.to) ? 'page' : undefined}>
+              {item.icon}
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }

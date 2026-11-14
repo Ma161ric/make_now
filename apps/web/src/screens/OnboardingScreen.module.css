@@ -4,7 +4,7 @@
   justify-content: center;
   min-height: 100vh;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-primary);
 }
 
 .card {
@@ -28,7 +28,7 @@
 .logo {
   font-size: 20px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--accent-text);
 }
 
 .skipButton {
@@ -104,7 +104,7 @@
 .dotActive {
   width: 24px;
   border-radius: 4px;
-  background: #667eea;
+  background: var(--accent-primary);
 }
 
 .nextButton {
@@ -112,8 +112,8 @@
   padding: 16px;
   font-size: 18px;
   font-weight: 600;
-  color: white;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: var(--on-accent);
+  background: var(--accent-primary);
   border: none;
   border-radius: 12px;
   cursor: pointer;

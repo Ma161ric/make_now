@@ -183,3 +183,88 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
   await ref.update({ last_plan: { ...result, at: FieldValue.serverTimestamp() }, status: 'ok' });
   return result;
 }
+
+export type TimelineKind = 'task' | 'sport' | 'free' | 'busy';
+
+export interface TimelineItem {
+  start: string;
+  end: string;
+  kind: TimelineKind;
+  title: string;
+  task_id?: string;
+}
+
+export interface Timeline {
+  connected: boolean;
+  status?: 'ok' | 'needs_reauth';
+  date?: string;
+  timezone?: string;
+  window?: { start: string; end: string };
+  items: TimelineItem[];
+}
+
+/**
+ * Today's timeline for the "Heute" screen: DayFlow blocks (tasks, sport,
+ * free time) plus busy times from the user's other calendars. Other
+ * calendars only expose free/busy (scope), so those items say "Termin".
+ */
+export async function getTimeline(uid: string, now = new Date()): Promise<Timeline> {
+  const snap = await connectionRef(uid).get();
+  const conn = snap.data() as CalendarConnection | undefined;
+  if (!conn?.refresh_token) return { connected: false, items: [] };
+  if (conn.status === 'needs_reauth') return { connected: true, status: 'needs_reauth', items: [] };
+
+  const settings = { ...DEFAULT_SETTINGS, ...(conn.settings || {}) };
+  const tz = conn.timezone || DEFAULT_FREE_SLOT_CONFIG.timezone;
+  const date = localDateString(now, tz);
+  const dayStart = zonedTimeToUtc(date, 0, 0, tz);
+  const dayEnd = zonedTimeToUtc(addDays(date, 1), 0, 0, tz);
+
+  let accessToken: string;
+  try {
+    accessToken = await google.refreshAccessToken(conn.refresh_token);
+  } catch (e) {
+    if (e instanceof google.GoogleAuthRevokedError) {
+      await connectionRef(uid).update({ status: 'needs_reauth' });
+      return { connected: true, status: 'needs_reauth', items: [] };
+    }
+    throw e;
+  }
+
+  const calendarIds = (await google.listVisibleCalendarIds(accessToken)).filter((id) => id !== conn.calendar_id);
+  const [own, busy] = await Promise.all([
+    conn.calendar_id ? google.listEvents(accessToken, conn.calendar_id, dayStart, dayEnd) : Promise.resolve([]),
+    google.freeBusy(accessToken, calendarIds, dayStart, dayEnd),
+  ]);
+
+  const items: TimelineItem[] = [];
+  for (const e of own) {
+    if (!e.start.dateTime || !e.end.dateTime) continue; // all-day: not a block
+    const taskId = e.extendedProperties?.private?.dayflow_task_id;
+    const kind: TimelineKind = taskId === 'sport' ? 'sport' : taskId === 'free_time' ? 'free' : taskId ? 'task' : 'busy';
+    const title = (e.summary || '').replace(/^[^\p{L}\p{N}]+/u, '').trim() || 'Block';
+    items.push({
+      start: new Date(e.start.dateTime).toISOString(),
+      end: new Date(e.end.dateTime).toISOString(),
+      kind,
+      title,
+      ...(kind === 'task' ? { task_id: taskId } : {}),
+    });
+  }
+  for (const b of busy) {
+    items.push({ start: b.start.toISOString(), end: b.end.toISOString(), kind: 'busy', title: 'Termin' });
+  }
+  items.sort((a, b) => a.start.localeCompare(b.start));
+
+  return {
+    connected: true,
+    status: 'ok',
+    date,
+    timezone: tz,
+    window: {
+      start: zonedTimeToUtc(date, settings.windowStartHour, 0, tz).toISOString(),
+      end: zonedTimeToUtc(date, settings.windowEndHour, 0, tz).toISOString(),
+    },
+    items,
+  };
+}

@@ -1,6 +1,6 @@
 import { usePreferences } from '../context/PreferencesContext';
 import InboxScreen from '../screens/InboxScreen';
-import TodayScreen from '../screens/TodayScreen';
+import { HeuteScreen } from '../screens/HeuteScreen';
 import WeekCalendarScreen from '../screens/WeekCalendarScreen';
 
 export function DefaultScreenRouter() {
@@ -9,7 +9,7 @@ export function DefaultScreenRouter() {
   // Show the user's preferred default screen
   switch (preferences.defaultScreen) {
     case 'today':
-      return <TodayScreen />;
+      return <HeuteScreen />;
     case 'week':
       return <WeekCalendarScreen />;
     case 'notes':
