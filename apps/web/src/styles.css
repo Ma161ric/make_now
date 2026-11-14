@@ -30,105 +30,105 @@ html, body {
 }
 
 /*
- * Two palettes, each "two calm base colors + one rare highlight":
- *   dark  = Egyptian Blue #051F3E + white, Stone Blue #649BC8 for actions,
- *           Scarlet Red (#DC2B31, one shade for every red so white text stays readable)
- *   light = Soft Sand #F1E4DE + black, Mocha Green #4A4329 for actions,
- *           Watermelon Pink #FE74B6 only as a tiny highlight
+ * Two palettes, both "calm ground + sage + one warm accent":
+ *   dark  = Graphit & Salbei: graphite #121413, sage #B5C4AE for actions and
+ *           to-dos, apricot #F2A65A for your own calendar events
+ *   light = Leinen & Salbei: linen #EFECE5, deep sage #3F5A47 for actions,
+ *           honey #F0C062 for your own calendar events
  * --hero-*      the "Jetzt" card and the active nav item
  * --accent-*    buttons, progress, links, selected states
- * --highlight   brand dot and the now-marker dot, nothing else
+ * --highlight   brand dot and the now-marker, nothing else
  */
 :root[data-theme="dark"] {
-  --bg-primary: #051f3e;
-  --bg-secondary: #0a2a50;
-  --bg-tertiary: #11355f;
-  --text-primary: #ffffff;
-  --text-secondary: #f4f7fb;
-  --text-muted: #e3ebf4;
-  --border-color: #143a68;
-  --border-strong: #2a5585;
-  --shadow: rgba(0, 0, 0, 0.35);
+  --bg-primary: #121413;
+  --bg-secondary: #1a1d1b;
+  --bg-tertiary: #232724;
+  --text-primary: #f2f2ee;
+  --text-secondary: #ecece7;
+  --text-muted: #c9cec7;
+  --border-color: #2a2e2b;
+  --border-strong: #3a403b;
+  --shadow: rgba(0, 0, 0, 0.4);
 
-  --hero-bg: #649bc8;
-  --hero-text: #051f3e;
-  --hero-muted: #1b3d63;
-  --hero-track: rgba(5, 31, 62, 0.2);
-  --hero-accent: #051f3e;
-  --hero-on-accent: #ffffff;
+  --hero-bg: #b5c4ae;
+  --hero-text: #121413;
+  --hero-muted: #3f4a3b;
+  --hero-track: rgba(18, 20, 19, 0.18);
+  --hero-accent: #121413;
+  --hero-on-accent: #f2f2ee;
 
-  --accent-primary: #649bc8;
-  --accent-primary-hover: #80b1d9;
-  --on-accent: #051f3e;
-  --accent-line: #649bc8;
-  --accent-bg: #0f3a63;
-  --accent-text: #ffffff;
-  --highlight: #dc2b31;
-  --highlight-on-hero: #051f3e;   /* red on stone blue fails contrast: title in navy */
-  --highlight-on-sport: #dc2b31;  /* title on the blue sport card */
+  --accent-primary: #b5c4ae;
+  --accent-primary-hover: #c6d3c0;
+  --on-accent: #121413;
+  --accent-line: #b5c4ae;
+  --accent-bg: #26302a;
+  --accent-text: #f2f2ee;
+  --highlight: #f2a65a;
+  --highlight-on-hero: #121413;   /* apricot on sage is too weak: title in graphite */
+  --highlight-on-sport: #121413;
 
-  --task-bg: #649bc8;
-  --task-border: #649bc8;
-  --task-text: #051f3e;
-  --sport-bg: #649bc8;
-  --sport-border: #649bc8;
-  --sport-text: #051f3e;
-  --sport-muted: #1b3d63;
-  --free-bg: #11355f;
-  --free-border: #11355f;
-  --free-text: #ffffff;
-  --free-muted: #e3ebf4;
-  --busy-border: #2a5585;
-  --event-bg: #dc2b31;
-  --event-border: #dc2b31;
-  --event-text: #ffffff;
-  --danger: #ff7b80;
+  --task-bg: #b5c4ae;
+  --task-border: #b5c4ae;
+  --task-text: #121413;
+  --sport-bg: #b5c4ae;
+  --sport-border: #b5c4ae;
+  --sport-text: #121413;
+  --sport-muted: #3f4a3b;
+  --free-bg: #232724;
+  --free-border: #232724;
+  --free-text: #f2f2ee;
+  --free-muted: #c9cec7;
+  --busy-border: #3a403b;
+  --event-bg: #f2a65a;
+  --event-border: #f2a65a;
+  --event-text: #121413;
+  --danger: #ff8a7a;
 }
 
 :root[data-theme="light"] {
-  --bg-primary: #f1e4de;
-  --bg-secondary: #f8f0ec;
-  --bg-tertiary: #e9dad2;
-  --text-primary: #141414;
-  --text-secondary: #1c1c1c;
-  --text-muted: #3a3a3a;
-  --border-color: #e2d1c8;
-  --border-strong: #c9b4a9;
-  --shadow: rgba(20, 20, 20, 0.08);
+  --bg-primary: #efece5;
+  --bg-secondary: #faf8f3;
+  --bg-tertiary: #e4dfd3;
+  --text-primary: #1c1f1a;
+  --text-secondary: #22261f;
+  --text-muted: #4f554a;
+  --border-color: #ded9ce;
+  --border-strong: #c8c1b2;
+  --shadow: rgba(28, 31, 26, 0.08);
 
-  --hero-bg: #141414;
-  --hero-text: #f8f0ec;
-  --hero-muted: #c2b9ae;
-  --hero-track: rgba(248, 240, 236, 0.18);
-  --hero-accent: #f1e4de;
-  --hero-on-accent: #141414;
+  --hero-bg: #3f5a47;
+  --hero-text: #f4f1ea;
+  --hero-muted: #c4d0c3;
+  --hero-track: rgba(244, 241, 234, 0.2);
+  --hero-accent: #f0c062;
+  --hero-on-accent: #1c1f1a;
 
-  --accent-primary: #4a4329;
-  --accent-primary-hover: #5d5535;
-  --on-accent: #f8f0ec;
-  --accent-line: #4a4329;
-  --accent-bg: #e3decb;
-  --accent-text: #141414;
-  --highlight: #fe74b6;
-  --highlight-on-hero: #fe74b6;   /* title on the black card */
-  --highlight-on-sport: #fe74b6;  /* title on the mocha sport card */
+  --accent-primary: #3f5a47;
+  --accent-primary-hover: #4c6b55;
+  --on-accent: #f4f1ea;
+  --accent-line: #3f5a47;
+  --accent-bg: #dde5d8;
+  --accent-text: #1c1f1a;
+  --highlight: #d99a2b;
+  --highlight-on-hero: #f0c062;   /* honey title on the sage card */
+  --highlight-on-sport: #24352a;
 
-  --task-bg: #4a4329;
-  --task-border: #4a4329;
-  --task-text: #f8f0ec;
-  --sport-bg: #4a4329;
-  --sport-border: #4a4329;
-  --sport-text: #f8f0ec;
-  --sport-muted: #d6cbb3;
-  --free-bg: #e9dad2;
-  --free-border: #e9dad2;
-  --free-text: #141414;
-  --free-muted: #3a3a3a;
-  --busy-border: #c9b4a9;
-  --event-bg: #fe74b6;
-  --event-border: #fe74b6;
-  --event-text: #3b0b24;
-  --danger: #c0262d;
+  --task-bg: #dde5d8;
+  --task-border: #dde5d8;
+  --task-text: #24352a;
+  --sport-bg: #dde5d8;
+  --sport-border: #dde5d8;
+  --sport-text: #24352a;
+  --sport-muted: #4f5f52;
+  --free-bg: #e4dfd3;
+  --free-border: #e4dfd3;
+  --free-text: #1c1f1a;
+  --free-muted: #4f554a;
+  --busy-border: #c8c1b2;
+  --event-bg: #f0c062;
+  --event-border: #f0c062;
+  --event-text: #2b1e03;
+  --danger: #b3261e;
 }
 
 /* ---------- App shell ---------- */
