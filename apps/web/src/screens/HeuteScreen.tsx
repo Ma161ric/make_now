@@ -37,7 +37,7 @@ interface Timeline {
 }
 
 const MIN = 60_000;
-const PX_PER_MIN = 1.1;
+const PX_PER_MIN = 0.9;
 
 const hhmm = (d: Date | string) => new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
@@ -403,8 +403,10 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
     return <p className={styles.empty}>Für den Rest des Tages ist nichts eingetragen.</p>;
   }
 
-  // From the current full hour to the end of the planning window / last block
-  const from = new Date(now);
+  // From the current full hour (or shortly before the first block, if that is
+  // much later, e.g. at night) to the end of the planning window / last block
+  const firstStart = Math.min(...upcoming.map((i) => new Date(i.start).getTime()));
+  const from = new Date(Math.max(now, firstStart - 30 * MIN));
   from.setMinutes(0, 0, 0);
   const fromT = from.getTime();
   const lastEnd = Math.max(...upcoming.map((i) => new Date(i.end).getTime()), windowEnd ? new Date(windowEnd).getTime() : 0);
@@ -443,7 +445,7 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
           </div>
         );
       })}
-      <div className={styles.nowLine} style={{ top: y(now) }} aria-hidden="true" />
+      {now >= fromT && <div className={styles.nowLine} style={{ top: y(now) }} aria-hidden="true" />}
     </div>
   );
 };

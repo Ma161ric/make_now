@@ -144,12 +144,13 @@ html, body {
   --highlight-on-sport: var(--p-sage);   /* honey can't be read on light sage */
   --highlight-on-free: var(--p-sage);
 
-  --task-bg: var(--p-sage-2);
-  --task-border: var(--p-sage-2);
-  --task-text: var(--p-sage);
-  --sport-bg: var(--p-sage-2);
-  --sport-border: var(--p-sage-2);
-  --sport-text: var(--p-sage);
+  /* to-do blocks: clearly sage, not just a hint of it */
+  --task-bg: color-mix(in srgb, var(--p-sage) 32%, var(--p-surface));
+  --task-border: var(--task-bg);
+  --task-text: var(--p-ink);
+  --sport-bg: var(--task-bg);
+  --sport-border: var(--task-bg);
+  --sport-text: var(--p-ink);
   --sport-muted: color-mix(in srgb, var(--p-sage) 80%, var(--p-sage-2));
   --free-bg: var(--p-raised);
   --free-border: var(--p-raised);

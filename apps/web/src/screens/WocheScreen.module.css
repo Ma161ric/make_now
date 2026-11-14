@@ -54,7 +54,8 @@
 .connectHint a { text-decoration: none; display: inline-flex; align-items: center; }
 
 .scroller {
-  overflow-x: auto;
+  overflow: hidden;
+  padding-bottom: 12px;
   border-radius: 20px;
   border: 1px solid var(--border-color);
   background: var(--bg-secondary);
@@ -122,4 +123,9 @@
 @media (max-width: 768px) {
   .page { padding: var(--space-4); }
   .h1 { font-size: 22px; }
+}
+
+/* Narrow screens: swipe sideways through the week, never scroll up/down inside */
+@media (max-width: 900px) {
+  .scroller { overflow-x: auto; overflow-y: hidden; }
 }
