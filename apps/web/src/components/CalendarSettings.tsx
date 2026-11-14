@@ -17,6 +17,7 @@ interface Settings {
   sportEveryDays: number;
   sportMinutes: number;
   sportLabel: string;
+  bufferBeforeEventsMinutes?: number;
 }
 
 interface PlanBlock {
@@ -229,6 +230,24 @@ export const CalendarSettings: React.FC = () => {
                 <select value={s.maxBlocks} onChange={(e) => save({ maxBlocks: Number(e.target.value) })} disabled={busy}>
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <option key={n} value={n}>{n} {n === 1 ? 'Block' : 'Blöcke'}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.setting}>
+                <div className={styles.settingInfo}>
+                  <p className={styles.settingLabel}>Puffer vor Terminen</p>
+                  <p className={styles.settingDescription}>
+                    So lange bleibt vor jedem Termin aus deinem Kalender frei, z. B. für den Weg zur Uni.
+                  </p>
+                </div>
+                <select
+                  value={s.bufferBeforeEventsMinutes ?? 30}
+                  onChange={(e) => save({ bufferBeforeEventsMinutes: Number(e.target.value) })}
+                  disabled={busy}
+                >
+                  {[0, 15, 30, 45, 60, 90].map((m) => (
+                    <option key={m} value={m}>{m === 0 ? 'kein Puffer' : `${m} min`}</option>
                   ))}
                 </select>
               </div>

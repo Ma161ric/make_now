@@ -35,6 +35,8 @@ export interface CalendarSettings {
   sportEveryDays: number;
   sportMinutes: number;
   sportLabel: string;
+  /** Kept free before every appointment from a calendar (way to uni etc.) */
+  bufferBeforeEventsMinutes: number;
 }
 
 export const DEFAULT_FREE_TIME_IDEAS = ['Sport / Gym', 'Spaziergang', 'Freunde treffen', 'Lesen', 'Kochen', 'Musik / Hobby'];
@@ -51,7 +53,31 @@ export const DEFAULT_SETTINGS: CalendarSettings = {
   sportEveryDays: 2,
   sportMinutes: 120,
   sportLabel: 'Sport / Gym',
+  bufferBeforeEventsMinutes: 30,
 };
+
+/**
+ * Times DayFlow must not plan into: appointments from the user's other
+ * calendars plus appointments the user added via the assistant (DayFlow
+ * calendar, no task id). Each starts `bufferBefore` minutes earlier.
+ */
+async function fixedBusy(
+  accessToken: string,
+  calendarId: string,
+  from: Date,
+  to: Date,
+  bufferBefore: number,
+  own?: google.CalendarEvent[]
+): Promise<{ start: Date; end: Date }[]> {
+  const calendarIds = (await google.listVisibleCalendarIds(accessToken)).filter((id) => id !== calendarId);
+  const external = await google.freeBusy(accessToken, calendarIds, from, to);
+  const ownEvents = own ?? (await google.listEvents(accessToken, calendarId, from, to));
+  const appointments = ownEvents
+    .filter((e) => e.start.dateTime && e.end.dateTime && !e.extendedProperties?.private?.dayflow_task_id && e.transparency !== 'transparent')
+    .map((e) => ({ start: new Date(e.start.dateTime!), end: new Date(e.end.dateTime!) }));
+  const ms = bufferBefore * 60_000;
+  return [...external, ...appointments].map((b) => ({ start: new Date(b.start.getTime() - ms), end: b.end }));
+}
 
 export interface CalendarConnection {
   refresh_token: string;
@@ -139,8 +165,10 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
   const previous = await google.listPlannedEventIds(accessToken, calendarId, date);
   for (const id of previous) await google.deleteEvent(accessToken, calendarId, id);
 
-  const calendarIds = (await google.listVisibleCalendarIds(accessToken)).filter((id) => id !== calendarId);
-  const [busy, tasks] = await Promise.all([google.freeBusy(accessToken, calendarIds, dayStart, dayEnd), loadOpenTasks(uid)]);
+  const [busy, tasks] = await Promise.all([
+    fixedBusy(accessToken, calendarId, dayStart, dayEnd, settings.bufferBeforeEventsMinutes),
+    loadOpenTasks(uid),
+  ]);
 
   const config: FreeSlotConfig = {
     ...DEFAULT_FREE_SLOT_CONFIG,
@@ -439,4 +467,97 @@ export async function addAppointment(uid: string, ev: { title: string; start: Da
   if (!conn?.refresh_token || !conn.calendar_id) throw new Error('Kalender ist nicht verbunden');
   const accessToken = await google.refreshAccessToken(conn.refresh_token);
   return google.insertAppointment(accessToken, conn.calendar_id, { ...ev, timeZone: conn.timezone || DEFAULT_FREE_SLOT_CONFIG.timezone });
+}
+
+export interface ExtendResult {
+  end: string;
+  /** minutes actually added (less than asked when an appointment is in the way) */
+  added: number;
+  moved: number;
+  dropped: string[];
+}
+
+/**
+ * "Brauche länger": the running block of this task gets longer and the DayFlow
+ * blocks after it move back. Appointments (other calendars and ones added via
+ * the assistant) never move and keep their buffer. Blocks pushed past the
+ * planning window are removed; their tasks stay open for tomorrow.
+ */
+export async function extendTask(uid: string, taskId: string, minutes: number, now = new Date()): Promise<ExtendResult> {
+  const snap = await connectionRef(uid).get();
+  const conn = snap.data() as CalendarConnection | undefined;
+  if (!conn?.refresh_token || !conn.calendar_id) throw new Error('Kalender ist nicht verbunden');
+  const settings = { ...DEFAULT_SETTINGS, ...(conn.settings || {}) };
+  const tz = conn.timezone || DEFAULT_FREE_SLOT_CONFIG.timezone;
+  const calendarId = conn.calendar_id;
+  const accessToken = await google.refreshAccessToken(conn.refresh_token);
+
+  const date = localDateString(now, tz);
+  const dayStart = zonedTimeToUtc(date, 0, 0, tz);
+  const dayEnd = zonedTimeToUtc(addDays(date, 1), 0, 0, tz);
+  const windowEnd = zonedTimeToUtc(date, settings.windowEndHour, 0, tz).getTime();
+  const gap = DEFAULT_FREE_SLOT_CONFIG.bufferMinutes * 60_000;
+
+  const own = (await google.listEvents(accessToken, calendarId, dayStart, dayEnd)).filter((e) => e.start.dateTime && e.end.dateTime);
+  const startOf = (e: google.CalendarEvent) => new Date(e.start.dateTime!).getTime();
+  const endOf = (e: google.CalendarEvent) => new Date(e.end.dateTime!).getTime();
+  const taskOf = (e: google.CalendarEvent) => e.extendedProperties?.private?.dayflow_task_id;
+  const t = now.getTime();
+
+  const block = own
+    .filter((e) => taskOf(e) === taskId && endOf(e) > t)
+    .sort((a, b) => startOf(a) - startOf(b))[0];
+  if (!block) throw new Error('Kein Block für diese Aufgabe gefunden');
+
+  const fixed = (await fixedBusy(accessToken, calendarId, now, dayEnd, settings.bufferBeforeEventsMinutes, own))
+    .map((b) => ({ start: b.start.getTime(), end: b.end.getTime() }))
+    .sort((a, b) => a.start - b.start);
+  const clash = (s: number, e: number) => fixed.find((f) => s < f.end && e > f.start);
+
+  // 1) Longer block, but never into an appointment (or its buffer)
+  let newEnd = endOf(block) + minutes * 60_000;
+  const hit = clash(endOf(block), newEnd);
+  if (hit) newEnd = Math.max(endOf(block), hit.start);
+  const added = Math.round((newEnd - endOf(block)) / 60_000);
+  if (added > 0) await google.patchEventTimes(accessToken, calendarId, block.id, new Date(startOf(block)), new Date(newEnd), tz);
+
+  // 2) Following DayFlow blocks (tasks, sport) move back as needed
+  const movable = own
+    .filter((e) => e.id !== block.id && taskOf(e) && taskOf(e) !== 'free_time' && startOf(e) >= startOf(block))
+    .sort((a, b) => startOf(a) - startOf(b));
+  let cursor = newEnd + gap;
+  let moved = 0;
+  const dropped: string[] = [];
+  const placed: { start: number; end: number }[] = [{ start: startOf(block), end: newEnd }];
+  for (const e of movable) {
+    const dur = endOf(e) - startOf(e);
+    let s = Math.max(startOf(e), cursor);
+    for (let f = clash(s, s + dur); f; f = clash(s, s + dur)) s = f.end + gap;
+    if (s + dur > windowEnd) {
+      await google.deleteEvent(accessToken, calendarId, e.id);
+      dropped.push((e.summary || '').replace(/^[^\p{L}\p{N}]+/u, '').trim() || 'Block');
+      continue;
+    }
+    if (s !== startOf(e)) {
+      await google.patchEventTimes(accessToken, calendarId, e.id, new Date(s), new Date(s + dur), tz);
+      moved++;
+    }
+    placed.push({ start: s, end: s + dur });
+    cursor = s + dur + gap;
+  }
+
+  // 3) Free time gives way to whatever now overlaps it
+  for (const e of own.filter((x) => taskOf(x) === 'free_time')) {
+    let fs = startOf(e);
+    let fe = endOf(e);
+    for (const p of placed) {
+      if (p.end <= fs || p.start >= fe) continue;
+      if (p.start - fs >= fe - p.end) fe = p.start;
+      else fs = p.end;
+    }
+    if (fe - fs < 15 * 60_000) await google.deleteEvent(accessToken, calendarId, e.id);
+    else if (fs !== startOf(e) || fe !== endOf(e)) await google.patchEventTimes(accessToken, calendarId, e.id, new Date(fs), new Date(fe), tz);
+  }
+
+  return { end: new Date(newEnd).toISOString(), added, moved, dropped };
 }

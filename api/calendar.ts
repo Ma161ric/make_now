@@ -11,6 +11,7 @@
  *   GET  /api/calendar/week?start=YYYY-MM-DD -> 7 days for the week view (auth)
  *   POST /api/calendar/settings    { windowStartHour, windowEndHour, maxBlocks, maxPlannedMinutes, enabled, timezone } (auth)
  *   POST /api/calendar/plan        { day: 'today' | 'tomorrow' } -> plan (auth)
+ *   POST /api/calendar/extend      { task_id, minutes } -> running block longer, later DayFlow blocks move back (auth)
  *   POST /api/calendar/event       { title, start_at, end_at, location? } -> appointment in DayFlow calendar (auth)
  *   POST /api/calendar/disconnect  revoke + delete connection (auth)
  */
@@ -19,7 +20,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
 import { createState, verifyState } from './_lib/oauthState.js';
-import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
+import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 
 function appUrl(path: string): string {
   const base = process.env.APP_URL || '';
@@ -58,6 +59,7 @@ function sanitizeSettings(input: any, current: CalendarSettings): CalendarSettin
     sportMinutes: int(input?.sportMinutes, 30, 240, current.sportMinutes),
     sportLabel:
       typeof input?.sportLabel === 'string' && input.sportLabel.trim() ? input.sportLabel.trim().slice(0, 40) : current.sportLabel,
+    bufferBeforeEventsMinutes: int(input?.bufferBeforeEventsMinutes, 0, 120, current.bufferBeforeEventsMinutes ?? 30),
   };
   if (s.windowEndHour <= s.windowStartHour) throw new HttpError(400, 'Ende muss nach dem Start liegen');
   return s;
@@ -163,6 +165,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const day = req.body?.day === 'today' ? 'today' : 'tomorrow';
         const result = await planForUser(uid, day);
         return res.status(200).json(result);
+      }
+
+      case 'extend': {
+        const taskId = req.body?.task_id;
+        const minutes = Number(req.body?.minutes);
+        if (typeof taskId !== 'string' || !taskId || taskId === 'free_time') throw new HttpError(400, 'task_id fehlt');
+        if (![15, 30, 60].includes(minutes)) throw new HttpError(400, 'minutes: 15, 30 oder 60');
+        return res.status(200).json(await extendTask(uid, taskId, minutes));
       }
 
       case 'event': {

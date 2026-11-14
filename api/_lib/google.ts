@@ -211,3 +211,11 @@ export async function insertAppointment(
     }),
   });
 }
+
+/** Moves an event to new start/end times (keeps everything else). */
+export async function patchEventTimes(accessToken: string, calendarId: string, eventId: string, start: Date, end: Date, timeZone: string) {
+  return api(accessToken, `/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ start: { dateTime: start.toISOString(), timeZone }, end: { dateTime: end.toISOString(), timeZone } }),
+  });
+}
