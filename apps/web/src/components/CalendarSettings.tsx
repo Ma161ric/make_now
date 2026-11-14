@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { auth } from '../firebase/firebaseConfig';
+import { API_BASE } from '../utils/apiAuth';
 import styles from '../screens/SettingsScreen.module.css';
 
 interface Settings {
@@ -38,7 +39,7 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
   const user = auth.currentUser;
   if (!user) throw new Error('Nicht angemeldet');
   const token = await user.getIdToken();
-  const res = await fetch(`/api/calendar/${path}`, {
+  const res = await fetch(`${API_BASE}/calendar/${path}`, {
     method: body === undefined ? 'GET' : 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { authHeaders } from '../utils/apiAuth';
 
 interface DurationEstimate {
   min_minutes: number;
@@ -18,7 +19,7 @@ export function useAiDurationEstimationGroq() {
       const apiUrl = import.meta.env.VITE_API_URL || 'https://make-now.vercel.app/api';
       const response = await fetch(`${apiUrl}/estimateDuration`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({ taskTitle }),
       });
 
