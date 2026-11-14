@@ -10,8 +10,8 @@ import type { ExtractionResponse, PlanningResponse } from './models';
 
 // Import schemas - these are loaded from /spec directory
 // Using direct imports with resolveJsonModule in TypeScript config
-import extractionSchema from '../../../spec/50_ai/extraction_schema.json' assert { type: 'json' };
-import planningSchema from '../../../spec/50_ai/planning_schema.json' assert { type: 'json' };
+import extractionSchema from '../../../spec/50_ai/extraction_schema.json' with { type: 'json' };
+import planningSchema from '../../../spec/50_ai/planning_schema.json' with { type: 'json' };
 
 // Patch extraction schema to relax oneOf on parsed_fields to anyOf
 // This avoids ambiguity because IdeaFields matches many shapes and breaks oneOf
