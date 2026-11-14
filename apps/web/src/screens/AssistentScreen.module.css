@@ -426,6 +426,11 @@
     gap: 12px;
   }
 
+  /* on the phone the empty panel would only push the chat down */
+  .panelIdle {
+    display: none;
+  }
+
   .panel {
     order: -1;
     margin-bottom: 0;

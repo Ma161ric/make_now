@@ -386,7 +386,7 @@ export const AssistentScreen: React.FC = () => {
         </form>
       </section>
 
-      <aside className={styles.panel} aria-label="Vorschläge">
+      <aside className={`${styles.panel} ${suggestions.length === 0 ? styles.panelIdle : ''}`} aria-label="Vorschläge">
         <div className={styles.panelHead}>
           <h2>Vorschläge</h2>
           {suggestions.length > 0 && <span className={styles.count}>{suggestions.length}</span>}
