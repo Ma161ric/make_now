@@ -69,7 +69,8 @@
   justify-content: space-between;
   gap: var(--space-6);
 }
-.nowInner .eyebrow { color: var(--hero-text); }
+.nowInner .eyebrow { color: var(--hero-text); display: inline-flex; align-items: center; gap: 8px; }
+.nowInner .eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--highlight); }
 .nowInner .muted, .nowInner .nowSub { color: var(--hero-muted); }
 .nowInner.sport { background: var(--sport-bg); color: var(--sport-text); }
 .nowInner.free { background: var(--free-bg); color: var(--free-text); }
@@ -120,14 +121,15 @@
   background: var(--hero-track);
   overflow: hidden;
 }
-.progress > div { height: 100%; background: var(--accent-line); transition: width 1s linear; }
+.progress > div { height: 100%; background: var(--hero-accent); transition: width 1s linear; }
 .nowInner.sport .progress { background: rgba(0, 0, 0, 0.2); }
 .nowInner.sport .progress > div { background: var(--sport-muted); }
 .nowInner.free .progress { background: rgba(0, 0, 0, 0.2); }
 .nowInner.free .progress > div { background: var(--free-muted); }
 
 .actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
-.actions :global(.button) { min-height: 52px; padding: 14px 24px; font-size: 15px; border-radius: 14px; }
+.actions :global(.button) { min-height: 52px; padding: 14px 24px; font-size: 15px; border-radius: 14px; background: var(--hero-accent); color: var(--hero-on-accent); }
+.actions :global(.button):hover { filter: brightness(1.05); }
 
 .doneLabel {
   display: inline-flex;
@@ -239,7 +241,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent-line);
+  background: var(--highlight);
 }
 
 /* ---------- Quick capture ---------- */
