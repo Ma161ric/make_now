@@ -56,8 +56,8 @@
   min-height: 480px;
   display: flex;
   border-radius: var(--radius-lg);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: var(--hero-bg);
+  color: var(--hero-text);
   overflow: hidden;
 }
 
@@ -69,6 +69,8 @@
   justify-content: space-between;
   gap: var(--space-6);
 }
+.nowInner .eyebrow { color: var(--hero-text); }
+.nowInner .muted, .nowInner .nowSub { color: var(--hero-muted); }
 .nowInner.sport { background: var(--sport-bg); color: var(--sport-text); }
 .nowInner.free { background: var(--free-bg); color: var(--free-text); }
 .nowInner.sport .eyebrow, .nowInner.sport .muted, .nowInner.sport .nowSub { color: var(--sport-muted); }
@@ -115,10 +117,10 @@
 .progress {
   height: 6px;
   border-radius: var(--radius-pill);
-  background: var(--bg-tertiary);
+  background: var(--hero-track);
   overflow: hidden;
 }
-.progress > div { height: 100%; background: var(--accent-primary); transition: width 1s linear; }
+.progress > div { height: 100%; background: var(--accent-line); transition: width 1s linear; }
 .nowInner.sport .progress { background: rgba(0, 0, 0, 0.2); }
 .nowInner.sport .progress > div { background: var(--sport-muted); }
 .nowInner.free .progress { background: rgba(0, 0, 0, 0.2); }
@@ -133,7 +135,7 @@
   gap: var(--space-2);
   min-height: 52px;
   font-weight: 600;
-  color: var(--accent-text);
+  color: var(--hero-text);
 }
 
 /* ---------- Right column ---------- */
@@ -217,7 +219,7 @@
   border: 1px dashed var(--busy-border);
   color: var(--text-muted);
 }
-.blockNow { box-shadow: 0 0 0 2px var(--accent-primary); }
+.blockNow { box-shadow: 0 0 0 2px var(--accent-line); }
 .blockDone { opacity: 0.5; }
 .blockDone .blockTitle { text-decoration: line-through; }
 
@@ -226,7 +228,7 @@
   left: -8px;
   right: 0;
   height: 2px;
-  background: var(--accent-primary);
+  background: var(--accent-line);
   pointer-events: none;
 }
 .nowLine::before {
@@ -237,7 +239,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent-primary);
+  background: var(--accent-line);
 }
 
 /* ---------- Quick capture ---------- */

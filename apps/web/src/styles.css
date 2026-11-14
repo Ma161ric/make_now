@@ -29,75 +29,92 @@ html, body {
   --bottom-nav-height: 64px;
 }
 
+/*
+ * Two palettes, each "two calm base colors + one surprising accent":
+ *   dark  = Egyptian Blue #051F3E + Stone Blue #649BC8, accent Scarlet Red #EC2F36
+ *   light = Soft Sand #F1E4DE + Mocha Green #4A4329, accent Watermelon Pink #FE74B6
+ * --hero-* is the second base color, used for the "Jetzt" card and active nav.
+ */
 :root[data-theme="dark"] {
-  --bg-primary: #0c0a09;
-  --bg-secondary: #1c1917;
-  --bg-tertiary: #292524;
-  --text-primary: #e7e5e4;
-  --text-secondary: #d6d3d1;
-  --text-muted: #a8a29e;
-  --border-color: #292524;
-  --border-strong: #44403c;
-  --shadow: rgba(0, 0, 0, 0.4);
+  --bg-primary: #051f3e;
+  --bg-secondary: #0a2a50;
+  --bg-tertiary: #11355f;
+  --text-primary: #eef3fa;
+  --text-secondary: #c9d8ea;
+  --text-muted: #9bb5d3;
+  --border-color: #143a68;
+  --border-strong: #24508a;
+  --shadow: rgba(0, 0, 0, 0.35);
 
-  --accent-primary: #a3e635;
-  --accent-primary-hover: #bef264;
-  --on-accent: #0c0a09;
-  --accent-bg: #1a2e05;
-  --accent-text: #a3e635;
+  --hero-bg: #649bc8;
+  --hero-text: #051f3e;
+  --hero-muted: #1b3d63;
+  --hero-track: rgba(5, 31, 62, 0.25);
 
-  /* block types (task / sport / free time / other appointments) */
-  --task-bg: #1c1917;
-  --task-border: #292524;
-  --task-text: #e7e5e4;
-  --sport-bg: #431407;
-  --sport-border: #7c2d12;
-  --sport-text: #ffedd5;
-  --sport-muted: #fdba74;
-  --free-bg: #052e16;
-  --free-border: #14532d;
-  --free-text: #dcfce7;
-  --free-muted: #86efac;
-  --busy-border: #44403c;
-  --event-bg: #1e293b;
-  --event-border: #334155;
-  --event-text: #e2e8f0;
-  --danger: #f87171;
+  --accent-primary: #dc2b31;      /* Scarlet, a touch deeper so white text passes contrast */
+  --accent-primary-hover: #ec2f36;
+  --on-accent: #ffffff;
+  --accent-line: #ec2f36;
+  --accent-bg: #3a1220;
+  --accent-text: #ff7b80;
+
+  --task-bg: #11355f;
+  --task-border: #24508a;
+  --task-text: #eef3fa;
+  --sport-bg: #4a1018;
+  --sport-border: #7f1d27;
+  --sport-text: #ffe1e2;
+  --sport-muted: #ffa3a7;
+  --free-bg: #0d3b52;
+  --free-border: #1b5a78;
+  --free-text: #d8f0fb;
+  --free-muted: #9fd3ea;
+  --busy-border: #24508a;
+  --event-bg: #0a2a50;
+  --event-border: #649bc8;
+  --event-text: #eef3fa;
+  --danger: #ff7b80;
 }
 
 :root[data-theme="light"] {
-  --bg-primary: #fafaf9;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f5f5f4;
-  --text-primary: #1c1917;
-  --text-secondary: #44403c;
-  --text-muted: #57534e;
-  --border-color: #e7e5e4;
-  --border-strong: #d6d3d1;
-  --shadow: rgba(28, 25, 23, 0.06);
+  --bg-primary: #f1e4de;
+  --bg-secondary: #f8f0ec;
+  --bg-tertiary: #e9dad2;
+  --text-primary: #2b2717;
+  --text-secondary: #4a4329;
+  --text-muted: #675f45;
+  --border-color: #e2d1c8;
+  --border-strong: #cdb8ad;
+  --shadow: rgba(74, 67, 41, 0.08);
 
-  --accent-primary: #a3e635;
-  --accent-primary-hover: #84cc16;
-  --on-accent: #1c1917;
-  --accent-bg: #ecfccb;
-  --accent-text: #3f6212;
+  --hero-bg: #4a4329;
+  --hero-text: #f8f0ec;
+  --hero-muted: #d6cbb3;
+  --hero-track: rgba(248, 240, 236, 0.2);
 
-  --task-bg: #ffffff;
-  --task-border: #e7e5e4;
-  --task-text: #1c1917;
-  --sport-bg: #ffedd5;
-  --sport-border: #fdba74;
-  --sport-text: #7c2d12;
-  --sport-muted: #9a3412;
-  --free-bg: #dcfce7;
-  --free-border: #86efac;
-  --free-text: #14532d;
-  --free-muted: #166534;
-  --busy-border: #d6d3d1;
-  --event-bg: #e0e7ff;
-  --event-border: #c7d2fe;
-  --event-text: #1e1b4b;
-  --danger: #dc2626;
+  --accent-primary: #fe74b6;
+  --accent-primary-hover: #ff8cc3;
+  --on-accent: #3b0b24;
+  --accent-line: #fe74b6;
+  --accent-bg: #ffdcec;
+  --accent-text: #a8216a;
+
+  --task-bg: #f8f0ec;
+  --task-border: #e2d1c8;
+  --task-text: #2b2717;
+  --sport-bg: #ffd5e9;
+  --sport-border: #fca4cd;
+  --sport-text: #5e0f36;
+  --sport-muted: #8e1d55;
+  --free-bg: #e3decb;
+  --free-border: #c9c1a2;
+  --free-text: #2f2b18;
+  --free-muted: #4a4329;
+  --busy-border: #cdb8ad;
+  --event-bg: #ffffff;
+  --event-border: #e2d1c8;
+  --event-text: #2b2717;
+  --danger: #c0262d;
 }
 
 /* ---------- App shell ---------- */
@@ -135,7 +152,7 @@ html, body {
   text-decoration: none;
   margin-right: var(--space-4);
 }
-.brand-dot { color: var(--accent-primary); }
+.brand-dot { color: var(--accent-line); }
 
 .nav { display: flex; align-items: center; gap: var(--space-1); }
 .nav a {
@@ -151,7 +168,7 @@ html, body {
   transition: background-color 0.15s, color 0.15s;
 }
 .nav a:hover { color: var(--text-primary); }
-.nav a.active { background: var(--accent-primary); color: var(--on-accent); font-weight: 600; }
+.nav a.active { background: var(--hero-bg); color: var(--hero-text); font-weight: 600; }
 .nav a:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .nav svg { width: 18px; height: 18px; }
 
