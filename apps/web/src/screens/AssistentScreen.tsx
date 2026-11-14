@@ -81,7 +81,8 @@ export const AssistentScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ text: string; plan?: { id: string; title: string; minutes: number } } | null>(null);
+  const [placing, setPlacing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,7 +99,7 @@ export const AssistentScreen: React.FC = () => {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2600);
+    const t = setTimeout(() => setToast(null), toast.plan ? 7000 : 2600);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -150,10 +151,14 @@ export const AssistentScreen: React.FC = () => {
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || `Fehler ${res.status}`);
-        setToast(`Termin „${s.title}“ steht im Kalender`);
+        setToast({ text: `Termin „${s.title}“ steht im Kalender` });
       } else {
-        await saveTask(uid, suggestionToTask(s), firebaseUser);
-        setToast(`„${s.title}“ ist in Aufgaben`);
+        const task = suggestionToTask(s);
+        await saveTask(uid, task, firebaseUser);
+        setToast({
+          text: `„${s.title}“ ist in Aufgaben`,
+          plan: { id: task.id, title: task.title, minutes: task.duration_max_minutes || task.duration_min_minutes || 30 },
+        });
       }
       setSugg(loadSuggestions(uid).filter((x) => x.id !== s.id));
       if (editing === s.id) setEditing(null);
@@ -161,6 +166,30 @@ export const AssistentScreen: React.FC = () => {
       setError(`Konnte nicht übernommen werden: ${e.message}`);
     } finally {
       setBusyId(null);
+    }
+  };
+
+  // One tap after ✓: put the new to-do into the next free gap today
+  const placeToday = async (plan: { id: string; title: string; minutes: number }) => {
+    setPlacing(true);
+    try {
+      const res = await fetch(`${API_BASE}/calendar/place`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+        body: JSON.stringify({ task_id: plan.id, title: plan.title, minutes: plan.minutes }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `Fehler ${res.status}`);
+      setToast({
+        text: json.placed
+          ? `Eingeplant: heute ${timeLabel(json.start)}–${timeLabel(json.end)}`
+          : 'Heute ist keine Lücke mehr frei, kommt morgen dran',
+      });
+    } catch (e: any) {
+      setToast(null);
+      setError(`Einplanen hat nicht geklappt: ${e.message}`);
+    } finally {
+      setPlacing(false);
     }
   };
 
@@ -390,7 +419,16 @@ export const AssistentScreen: React.FC = () => {
         )}
       </aside>
 
-      {toast && <div className={styles.toast} role="status">{toast}</div>}
+      {toast && (
+        <div className={styles.toast} role="status">
+          <span>{toast.text}</span>
+          {toast.plan && (
+            <button className={styles.toastAction} onClick={() => placeToday(toast.plan!)} disabled={placing}>
+              {placing ? 'Plane …' : 'Heute einplanen'}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

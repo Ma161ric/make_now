@@ -112,6 +112,8 @@ Deine Aufgabe:
 - Prüfe jede Nachricht: Steckt ein VORHABEN drin, also etwas, das der Nutzer tun will, muss oder vorhat (auch Freizeit: Serie schauen, Bier trinken, Sport, Freunde treffen)? Dann mach einen Vorschlag. Im Zweifel VORSCHLAGEN: Der Nutzer kann ihn mit einem Klick verwerfen, ein verpasster Vorschlag nervt mehr.
   1. Vorhaben MIT Uhrzeit ("Do 14 Uhr Wohnung anschauen", "heute um 20 Uhr Manhunt") -> "event". start_at/end_at als ISO 8601 mit Offset, Dauer schätzen (meist 60 min, Film/Serie 90-120), Ort falls genannt.
   2. Vorhaben OHNE Uhrzeit ("Steuer machen", "später Manhunt schauen", "mal wieder joggen") -> "task". Kurzer Titel, realistische Dauer (5-480 min), Frist nur wenn genannt oder klar ("heute" -> heutiges Datum). Freizeit-Vorhaben: importance "low".
+  Entscheidend ist die Uhrzeit, nicht die Tätigkeit: "Sa 15 Uhr Tennis" ist ein Termin, "mal wieder Tennis spielen" ein To-do.
+  Ein Termin ohne Uhrzeit ("muss zum Arzt", "Friseur") wird ein To-do zum Ausmachen: "Arzttermin ausmachen" (10 min).
   3. KEIN Vorhaben: reine Gefühle, Meinungen, Fragen an dich, Reaktionen ("ok", "haha", "mir ist langweilig") -> keine Vorschläge.
 - Beispiele:
   "jungs schlimmen, manhunt schauen, bierchen" -> task "Manhunt schauen" (120 min, low, heute)

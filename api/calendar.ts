@@ -11,6 +11,7 @@
  *   GET  /api/calendar/week?start=YYYY-MM-DD -> 7 days for the week view (auth)
  *   POST /api/calendar/settings    { windowStartHour, windowEndHour, maxBlocks, maxPlannedMinutes, enabled, timezone } (auth)
  *   POST /api/calendar/plan        { day: 'today' | 'tomorrow' } -> plan (auth)
+ *   POST /api/calendar/place       { task_id, title, minutes } -> one task into the next free gap today (auth)
  *   POST /api/calendar/extend      { task_id, minutes } -> running block longer, later DayFlow blocks move back (auth)
  *   POST /api/calendar/event       { title, start_at, end_at, location? } -> appointment in DayFlow calendar (auth)
  *   POST /api/calendar/disconnect  revoke + delete connection (auth)
@@ -20,7 +21,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
 import { createState, verifyState } from './_lib/oauthState.js';
-import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
+import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, placeTaskToday, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 
 function appUrl(path: string): string {
   const base = process.env.APP_URL || '';
@@ -165,6 +166,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const day = req.body?.day === 'today' ? 'today' : 'tomorrow';
         const result = await planForUser(uid, day);
         return res.status(200).json(result);
+      }
+
+      case 'place': {
+        const { task_id, title } = req.body || {};
+        const minutes = Number(req.body?.minutes);
+        if (typeof task_id !== 'string' || !task_id || typeof title !== 'string' || !title.trim()) throw new HttpError(400, 'task_id und title fehlen');
+        if (!Number.isInteger(minutes) || minutes < 5 || minutes > 480) throw new HttpError(400, 'minutes: 5-480');
+        return res.status(200).json(await placeTaskToday(uid, { id: task_id, title: title.trim().slice(0, 200), minutes }));
       }
 
       case 'extend': {
