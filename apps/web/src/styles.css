@@ -67,20 +67,20 @@ html, body {
   --highlight-on-hero: #e12a31;   /* title on the white card, >= 3:1 for large text */
   --highlight-on-sport: #ff8a8e;  /* title on the blue sport card */
 
-  --task-bg: #11355f;
-  --task-border: #2a5585;
-  --task-text: #ffffff;
-  --sport-bg: #1f4e7a;
+  --task-bg: #649bc8;
+  --task-border: #649bc8;
+  --task-text: #051f3e;
+  --sport-bg: #649bc8;
   --sport-border: #649bc8;
-  --sport-text: #ffffff;
-  --sport-muted: #ffffff;
-  --free-bg: #0d3b52;
-  --free-border: #1b5a78;
+  --sport-text: #051f3e;
+  --sport-muted: #1b3d63;
+  --free-bg: #11355f;
+  --free-border: #11355f;
   --free-text: #ffffff;
-  --free-muted: #ffffff;
+  --free-muted: #e3ebf4;
   --busy-border: #2a5585;
-  --event-bg: #0a2a50;
-  --event-border: #d9e5f2;
+  --event-bg: #dc2b31;
+  --event-border: #dc2b31;
   --event-text: #ffffff;
   --danger: #ff7b80;
 }
@@ -113,21 +113,21 @@ html, body {
   --highlight-on-hero: #fe74b6;   /* title on the black card */
   --highlight-on-sport: #fe8cc3;  /* title on the mocha sport card */
 
-  --task-bg: #f8f0ec;
-  --task-border: #e2d1c8;
-  --task-text: #141414;
+  --task-bg: #4a4329;
+  --task-border: #4a4329;
+  --task-text: #f8f0ec;
   --sport-bg: #4a4329;
   --sport-border: #4a4329;
   --sport-text: #f8f0ec;
   --sport-muted: #d6cbb3;
-  --free-bg: #e3decb;
-  --free-border: #c9c1a2;
+  --free-bg: #e9dad2;
+  --free-border: #e9dad2;
   --free-text: #141414;
-  --free-muted: #141414;
+  --free-muted: #3a3a3a;
   --busy-border: #c9b4a9;
-  --event-bg: #ffffff;
-  --event-border: #141414;
-  --event-text: #141414;
+  --event-bg: #fe74b6;
+  --event-border: #fe74b6;
+  --event-text: #3b0b24;
   --danger: #c0262d;
 }
 

@@ -73,7 +73,7 @@
 .nowInner .eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--highlight); }
 .nowInner .muted, .nowInner .nowSub { color: var(--hero-muted); }
 .nowInner .nowTitle { color: var(--highlight-on-hero); }
-.nowInner.sport .nowTitle { color: var(--highlight-on-sport); }
+.nowInner.sport .nowTitle { color: var(--sport-text); }
 .nowInner.free .nowTitle { color: var(--free-text); }
 .nowInner.sport { background: var(--sport-bg); color: var(--sport-text); }
 .nowInner.free { background: var(--free-bg); color: var(--free-text); }
@@ -215,16 +215,12 @@
 .blockTitle { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .blockMeta { font-size: 12px; opacity: 0.85; font-variant-numeric: tabular-nums; }
 
-.block_task { background: var(--bg-tertiary); border-color: var(--border-strong); color: var(--text-primary); }
+.block_task { background: var(--task-bg); border-color: var(--task-border); color: var(--task-text); }
 .block_sport { background: var(--sport-bg); border-color: var(--sport-border); color: var(--sport-text); }
 .block_free { background: var(--free-bg); border-color: var(--free-border); color: var(--free-text); }
 .block_event { background: var(--event-bg); border-color: var(--event-border); color: var(--event-text); }
-.block_busy {
-  background: repeating-linear-gradient(135deg, transparent 0 7px, var(--bg-tertiary) 7px 14px);
-  border: 1px dashed var(--busy-border);
-  color: var(--text-muted);
-}
-.blockNow { box-shadow: 0 0 0 2px var(--accent-line); }
+.block_busy { background: var(--event-bg); border-color: var(--event-border); color: var(--event-text); }
+.blockNow { box-shadow: 0 0 0 2px var(--text-primary); }
 .blockDone { opacity: 0.5; }
 .blockDone .blockTitle { text-decoration: line-through; }
 
@@ -274,7 +270,7 @@
   min-height: 44px;
 }
 .capture input::placeholder { color: var(--text-muted); }
-.capture button {
+.capture button[type='submit'] {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
@@ -287,8 +283,8 @@
   justify-content: center;
   cursor: pointer;
 }
-.capture button:disabled { opacity: 0.4; cursor: default; }
-.capture button:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.capture button[type='submit']:disabled { opacity: 0.4; cursor: default; }
+.capture button[type='submit']:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
 
 .captureState { margin: 0 var(--space-2); font-size: 13px; color: var(--text-muted); }
 .captureState a { color: var(--accent-text); }

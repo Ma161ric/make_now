@@ -7,11 +7,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
-import { updateTaskStatus, addNote } from '../storage';
+import { updateTaskStatus } from '../storage';
 import { extractFromNoteCloud } from '../firebase/functionsService';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
-import { uuid } from '../utils';
 import { IconArrowRight, IconCheck } from '../components/Icons';
+import { MicButton } from '../components/MicButton';
+import { loadSuggestions, saveSuggestions, fromExtraction } from '../utils/suggestions';
 import TodayScreen from './TodayScreen';
 import styles from './HeuteScreen.module.css';
 
@@ -78,7 +79,7 @@ export const HeuteScreen: React.FC = () => {
   const [done, setDone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
-  const [noteState, setNoteState] = useState<{ kind: 'saving' | 'saved' | 'error'; id?: string } | null>(null);
+  const [noteState, setNoteState] = useState<{ kind: 'saving' | 'saved' | 'error'; count?: number } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -155,11 +156,14 @@ export const HeuteScreen: React.FC = () => {
     if (!text || !user) return;
     setNoteState({ kind: 'saving' });
     try {
-      const id = uuid();
       const extraction = await extractFromNoteCloud(text);
-      await addNote(user.id, { id, raw_text: text, created_at: new Date().toISOString(), status: 'unprocessed' }, extraction, firebaseUser);
+      let found = fromExtraction(extraction, text);
+      if (!found.length) {
+        found = [{ id: crypto.randomUUID(), kind: 'task', title: text.slice(0, 200), duration_min_minutes: 15, duration_max_minutes: 30, importance: 'medium', source: text, created_at: new Date().toISOString() }];
+      }
+      saveSuggestions(user.id, [...found, ...loadSuggestions(user.id)]);
       setNote('');
-      setNoteState({ kind: 'saved', id });
+      setNoteState({ kind: 'saved', count: found.length });
     } catch {
       setNoteState({ kind: 'error' });
     }
@@ -240,6 +244,7 @@ export const HeuteScreen: React.FC = () => {
               autoComplete="off"
               maxLength={2000}
             />
+            <MicButton onText={(t) => setNote((cur) => (cur ? `${cur} ${t}` : t))} onError={(m) => setError(m)} />
             <button type="submit" aria-label="Notiz speichern" disabled={!note.trim() || noteState?.kind === 'saving'}>
               <IconArrowRight size={18} />
             </button>
@@ -249,7 +254,7 @@ export const HeuteScreen: React.FC = () => {
               {noteState.kind === 'saving' && 'Wird verarbeitet …'}
               {noteState.kind === 'saved' && (
                 <>
-                  ✓ In der Inbox. <Link to={`/review/${noteState.id}`}>Jetzt prüfen</Link>
+                  ✓ {noteState.count} {noteState.count === 1 ? 'Vorschlag' : 'Vorschläge'} in der Inbox. <Link to="/">Jetzt bestätigen</Link>
                 </>
               )}
               {noteState.kind === 'error' && 'Konnte die Notiz nicht speichern. Versuch es nochmal.'}
