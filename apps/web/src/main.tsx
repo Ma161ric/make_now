@@ -8,7 +8,6 @@ import TodayScreen from './screens/TodayScreen';
 import WeekCalendarScreen from './screens/WeekCalendarScreen';
 import TasksOverviewScreen from './screens/TasksOverviewScreen';
 import DailyReviewScreen from './screens/DailyReviewScreen';
-import AITestScreen from './screens/AITestScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -51,7 +50,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="daily-review" element={<ProtectedRoute><OnboardingGuard><DailyReviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="chat" element={<ProtectedRoute><OnboardingGuard><ChatScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="settings" element={<ProtectedRoute><OnboardingGuard><SettingsScreen /></OnboardingGuard></ProtectedRoute>} />
-                <Route path="ai-test" element={<ProtectedRoute><AITestScreen /></ProtectedRoute>} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

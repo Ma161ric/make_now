@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { complete, prompt, extractJson } from './_lib/llm.js';
 import { optionalUser } from './_lib/firebaseAdmin.js';
-import { ExtractionOutput } from '../functions/src/types.js';
+import type { ExtractionOutput } from './_lib/types.js';
 import { validateExtraction } from '../packages/core/src/validation.js';
 
 
