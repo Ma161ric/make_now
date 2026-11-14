@@ -73,7 +73,7 @@
 }
 .weekday { font-size: 12px; color: var(--text-muted); }
 .dayNum { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
-.today .dayNum { color: var(--highlight); }
+.today .dayNum { color: var(--accent-primary); }
 .allDay {
   font-size: 11px;
   font-weight: 600;

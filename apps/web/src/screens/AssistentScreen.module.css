@@ -118,7 +118,7 @@
 .error {
   margin: 0 0 8px;
   font-size: 0.85rem;
-  color: var(--highlight);
+  color: var(--danger);
 }
 
 .composer {
@@ -202,8 +202,8 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 10px;
-  background: var(--highlight);
-  color: #fff;
+  background: var(--accent-primary);
+  color: var(--on-accent);
   font-size: 0.75rem;
   font-weight: 700;
   display: inline-flex;
