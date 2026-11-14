@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Task } from '../src/models';
 import {
   planIntoFreeSlots,
+  planFreeTime,
   computeFreeSlots,
   zonedTimeToUtc,
   localDateString,
@@ -139,5 +140,35 @@ describe('planIntoFreeSlots', () => {
   it('returns nothing when the window is already over', () => {
     const plan = planIntoFreeSlots([task('a', 30)], [], DAY, local(21), cfg());
     expect(plan.blocks).toEqual([]);
+  });
+});
+
+describe('remaining slots and free time', () => {
+  it('returns what is left after tasks, respecting buffers', () => {
+    const busy = [{ start: local(14), end: local(15) }];
+    const plan = planIntoFreeSlots([task('a', 60)], busy, DAY, BEFORE_DAY, cfg());
+    // task 10:00-11:00, then 11:10-13:50 and 15:10-20:00 stay free
+    expect(plan.remaining_slots.map((s) => [s.start, s.end])).toEqual([
+      [local(11, 10), local(13, 50)],
+      [local(15, 10), local(20)],
+    ]);
+  });
+
+  it('turns long enough gaps into free-time blocks with rotating ideas', () => {
+    const gaps = [
+      { start: local(11), end: local(11, 20) }, // too short
+      { start: local(13), end: local(14) },
+      { start: local(16), end: local(20) },
+    ];
+    const blocks = planFreeTime(gaps, DAY, ['Sport', 'Spaziergang', 'Lesen'], 30);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].start).toEqual(local(13));
+    expect(blocks[0].idea).not.toBe(blocks[1].idea);
+    const nextDay = planFreeTime(gaps, '2026-11-17', ['Sport', 'Spaziergang', 'Lesen'], 30);
+    expect(nextDay[0].idea).not.toBe(blocks[0].idea);
+  });
+
+  it('works without ideas', () => {
+    expect(planFreeTime([{ start: local(13), end: local(14) }], DAY, [], 30)[0].idea).toBe('');
   });
 });

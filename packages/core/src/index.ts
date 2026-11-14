@@ -67,6 +67,7 @@ export type { SchedulingConfig } from './scheduling';
 // Calendar-aware scheduling (free gaps around existing events)
 export {
   planIntoFreeSlots,
+  planFreeTime,
   computeFreeSlots,
   orderTasksForPlanning,
   zonedTimeToUtc,
@@ -74,7 +75,7 @@ export {
   addDays,
   DEFAULT_FREE_SLOT_CONFIG,
 } from './freeSlotScheduling';
-export type { BusyInterval, FreeSlotConfig, FreeSlotPlan, PlannedBlock } from './freeSlotScheduling';
+export type { BusyInterval, FreeSlotConfig, FreeSlotPlan, PlannedBlock, FreeTimeBlock } from './freeSlotScheduling';
 
 // Validation
 export { validateExtraction, validatePlanning, formatValidationErrors } from './validation';

@@ -42,6 +42,14 @@ function sanitizeSettings(input: any, current: CalendarSettings): CalendarSettin
     windowEndHour: int(input?.windowEndHour, 1, 24, current.windowEndHour),
     maxBlocks: int(input?.maxBlocks, 1, 10, current.maxBlocks),
     maxPlannedMinutes: int(input?.maxPlannedMinutes, 15, 720, current.maxPlannedMinutes),
+    freeTimeEnabled: typeof input?.freeTimeEnabled === 'boolean' ? input.freeTimeEnabled : current.freeTimeEnabled,
+    freeTimeIdeas: Array.isArray(input?.freeTimeIdeas)
+      ? input.freeTimeIdeas
+          .filter((i: unknown): i is string => typeof i === 'string')
+          .map((i: string) => i.trim().slice(0, 60))
+          .filter(Boolean)
+          .slice(0, 12)
+      : current.freeTimeIdeas,
   };
   if (s.windowEndHour <= s.windowStartHour) throw new HttpError(400, 'Ende muss nach dem Start liegen');
   return s;

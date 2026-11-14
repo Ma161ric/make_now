@@ -55,6 +55,8 @@ export interface FreeSlotPlan {
   date: string; // YYYY-MM-DD (local)
   blocks: PlannedBlock[];
   free_slots: BusyInterval[];
+  /** Gaps still free after placing the tasks (at least minSlotMinutes long) */
+  remaining_slots: BusyInterval[];
   skipped_task_ids: string[];
 }
 
@@ -200,7 +202,7 @@ export function planIntoFreeSlots(
     windowStart = new Date(Math.ceil(now.getTime() / quarter) * quarter);
   }
 
-  const empty: FreeSlotPlan = { date, blocks: [], free_slots: [], skipped_task_ids: [] };
+  const empty: FreeSlotPlan = { date, blocks: [], free_slots: [], remaining_slots: [], skipped_task_ids: [] };
   if (windowStart >= windowEnd) return empty;
 
   const freeSlots = computeFreeSlots(windowStart, windowEnd, busy, config.bufferMinutes, config.minSlotMinutes);
@@ -230,5 +232,39 @@ export function planIntoFreeSlots(
     slot.start = end + config.bufferMinutes * MINUTE;
   }
 
-  return { date, blocks, free_slots: freeSlots, skipped_task_ids: skipped };
+  const remainingSlots = remaining
+    .filter((s) => s.end - s.start >= config.minSlotMinutes * MINUTE)
+    .map((s) => ({ start: new Date(s.start), end: new Date(s.end) }));
+
+  return { date, blocks, free_slots: freeSlots, remaining_slots: remainingSlots, skipped_task_ids: skipped };
+}
+
+export interface FreeTimeBlock {
+  start: Date;
+  end: Date;
+  idea: string;
+}
+
+/**
+ * Turns the gaps left after planning into free-time blocks, each with one
+ * suggestion. Suggestions rotate by date so not every day says the same.
+ * The first gap long enough gets a movement idea if the list has one
+ * (first entry is treated as the "active" idea, e.g. Sport / Gym).
+ */
+export function planFreeTime(
+  remaining: BusyInterval[],
+  date: string,
+  ideas: string[],
+  minMinutes = 30
+): FreeTimeBlock[] {
+  const list = ideas.map((i) => i.trim()).filter(Boolean);
+  const gaps = remaining.filter((g) => g.end.getTime() - g.start.getTime() >= minMinutes * MINUTE);
+  if (!gaps.length) return [];
+  const [y, m, d] = date.split('-').map(Number);
+  const dayIndex = Math.floor(Date.UTC(y, m - 1, d) / 86_400_000);
+  return gaps.map((g, i) => ({
+    start: g.start,
+    end: g.end,
+    idea: list.length ? list[(dayIndex + i) % list.length] : '',
+  }));
 }

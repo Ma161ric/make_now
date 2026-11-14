@@ -133,7 +133,19 @@ export async function deleteEvent(accessToken: string, calendarId: string, event
 export async function insertEvent(
   accessToken: string,
   calendarId: string,
-  event: { summary: string; description: string; start: Date; end: Date; timeZone: string; taskId: string; planDate: string }
+  event: {
+    summary: string;
+    description: string;
+    start: Date;
+    end: Date;
+    timeZone: string;
+    taskId: string;
+    planDate: string;
+    /** shows as "free" for others / other tools (used for free-time blocks) */
+    transparent?: boolean;
+    colorId?: string;
+    reminderMinutes?: number | null;
+  }
 ) {
   return api<{ id: string; htmlLink: string }>(accessToken, `/calendars/${encodeURIComponent(calendarId)}/events`, {
     method: 'POST',
@@ -142,7 +154,12 @@ export async function insertEvent(
       description: event.description,
       start: { dateTime: event.start.toISOString(), timeZone: event.timeZone },
       end: { dateTime: event.end.toISOString(), timeZone: event.timeZone },
-      reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 5 }] },
+      reminders: {
+        useDefault: false,
+        overrides: event.reminderMinutes === null ? [] : [{ method: 'popup', minutes: event.reminderMinutes ?? 5 }],
+      },
+      ...(event.transparent ? { transparency: 'transparent' } : {}),
+      ...(event.colorId ? { colorId: event.colorId } : {}),
       extendedProperties: { private: { dayflow: '1', dayflow_task_id: event.taskId, dayflow_plan_date: event.planDate } },
     }),
   });
