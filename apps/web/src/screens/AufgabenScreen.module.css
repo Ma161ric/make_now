@@ -159,7 +159,7 @@
   cursor: pointer;
 }
 .tab { background: transparent; border: 1px solid var(--border-strong); color: var(--text-primary); }
-.tabActive { background: var(--hero-bg); border: 1px solid var(--hero-bg); color: var(--hero-text); }
+.tabActive { background: var(--accent-primary); border: 1px solid var(--accent-primary); color: var(--on-accent); }
 
 /* tasks */
 .taskItem { border-bottom: 1px solid var(--border-color); }

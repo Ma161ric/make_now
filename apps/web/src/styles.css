@@ -63,12 +63,12 @@ html, body {
   --border-strong: color-mix(in srgb, var(--p-ink) 20%, var(--p-ground));
   --shadow: rgba(0, 0, 0, 0.4);
 
-  /* "Jetzt" card = sage; apricot can't be read on sage, so text there is graphite */
-  --hero-bg: var(--p-sage);
-  --hero-text: var(--p-ground);
-  --hero-muted: color-mix(in srgb, var(--p-ground) 72%, var(--p-sage));
-  --hero-track: color-mix(in srgb, var(--p-ground) 18%, var(--p-sage));
-  --hero-bar: var(--p-ground);
+  /* "Jetzt" card = graphite with a sage tint, so the apricot title reads well */
+  --hero-bg: color-mix(in srgb, var(--p-sage) 14%, var(--p-ground));
+  --hero-text: var(--p-ink);
+  --hero-muted: color-mix(in srgb, var(--p-ink) 78%, var(--p-ground));
+  --hero-track: color-mix(in srgb, var(--p-ink) 14%, var(--p-ground));
+  --hero-bar: var(--p-accent);
   --hero-accent: var(--p-accent);
   --hero-on-accent: var(--p-ground);
 
@@ -79,8 +79,12 @@ html, body {
   --accent-bg: color-mix(in srgb, var(--p-sage) 16%, var(--p-ground));
   --accent-text: var(--p-ink);
   --highlight: var(--p-accent);
-  --highlight-on-hero: var(--p-ground);
-  --highlight-on-sport: var(--p-ground);
+  --highlight-on-hero: var(--p-accent);
+  --highlight-on-sport: var(--p-accent);
+  /* the sport "Jetzt" card looks like the normal one here */
+  --sport-card-bg: var(--hero-bg);
+  --sport-card-text: var(--hero-text);
+  --sport-card-muted: var(--hero-muted);
   --highlight-on-free: var(--p-accent);
 
   --task-bg: var(--p-sage);
@@ -209,7 +213,7 @@ html, body {
   transition: background-color 0.15s, color 0.15s;
 }
 .nav a:hover { color: var(--text-primary); }
-.nav a.active { background: var(--hero-bg); color: var(--hero-text); font-weight: 600; }
+.nav a.active { background: var(--accent-primary); color: var(--on-accent); font-weight: 600; }
 .nav a:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .nav svg { width: 18px; height: 18px; }
 
