@@ -230,7 +230,7 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
   return result;
 }
 
-export type TimelineKind = 'task' | 'sport' | 'free' | 'busy';
+export type TimelineKind = 'task' | 'sport' | 'free' | 'event' | 'busy';
 
 export interface TimelineItem {
   start: string;
@@ -238,25 +238,30 @@ export interface TimelineItem {
   kind: TimelineKind;
   title: string;
   task_id?: string;
+  location?: string;
 }
 
 export interface Timeline {
   connected: boolean;
   status?: 'ok' | 'needs_reauth';
+  /** connected before event details were available: reconnect to see them */
+  needs_upgrade?: boolean;
   date?: string;
   timezone?: string;
   window?: { start: string; end: string };
+  all_day?: string[];
   items: TimelineItem[];
 }
 
 /**
  * Today's timeline for the "Heute" screen: DayFlow blocks (tasks, sport,
- * free time) plus busy times from the user's other calendars. Other
- * calendars only expose free/busy (scope), so those items say "Termin".
+ * free time) plus the user's other appointments with title and place.
+ * Connections made before the events scope existed only get free/busy
+ * ("Termin") until the user reconnects.
  */
 export async function getTimeline(uid: string, now = new Date()): Promise<Timeline> {
   const snap = await connectionRef(uid).get();
-  const conn = snap.data() as CalendarConnection | undefined;
+  const conn = snap.data() as (CalendarConnection & { scopes?: string[] }) | undefined;
   if (!conn?.refresh_token) return { connected: false, items: [] };
   if (conn.status === 'needs_reauth') return { connected: true, status: 'needs_reauth', items: [] };
 
@@ -265,6 +270,7 @@ export async function getTimeline(uid: string, now = new Date()): Promise<Timeli
   const date = localDateString(now, tz);
   const dayStart = zonedTimeToUtc(date, 0, 0, tz);
   const dayEnd = zonedTimeToUtc(addDays(date, 1), 0, 0, tz);
+  const canReadEvents = (conn.scopes || []).includes(google.EVENTS_READ_SCOPE);
 
   let accessToken: string;
   try {
@@ -278,39 +284,62 @@ export async function getTimeline(uid: string, now = new Date()): Promise<Timeli
   }
 
   const calendarIds = (await google.listVisibleCalendarIds(accessToken)).filter((id) => id !== conn.calendar_id);
-  const [own, busy] = await Promise.all([
-    conn.calendar_id ? google.listEvents(accessToken, conn.calendar_id, dayStart, dayEnd) : Promise.resolve([]),
-    google.freeBusy(accessToken, calendarIds, dayStart, dayEnd),
-  ]);
+  const ownPromise = conn.calendar_id ? google.listEvents(accessToken, conn.calendar_id, dayStart, dayEnd) : Promise.resolve([]);
 
   const items: TimelineItem[] = [];
-  for (const e of own) {
-    if (!e.start.dateTime || !e.end.dateTime) continue; // all-day: not a block
+  const allDay: string[] = [];
+
+  for (const e of await ownPromise) {
+    if (!e.start.dateTime || !e.end.dateTime) continue;
     const taskId = e.extendedProperties?.private?.dayflow_task_id;
-    const kind: TimelineKind = taskId === 'sport' ? 'sport' : taskId === 'free_time' ? 'free' : taskId ? 'task' : 'busy';
-    const title = (e.summary || '').replace(/^[^\p{L}\p{N}]+/u, '').trim() || 'Block';
+    const kind: TimelineKind = taskId === 'sport' ? 'sport' : taskId === 'free_time' ? 'free' : taskId ? 'task' : 'event';
     items.push({
       start: new Date(e.start.dateTime).toISOString(),
       end: new Date(e.end.dateTime).toISOString(),
       kind,
-      title,
+      title: (e.summary || '').replace(/^[^\p{L}\p{N}]+/u, '').trim() || 'Block',
       ...(kind === 'task' ? { task_id: taskId } : {}),
     });
   }
-  for (const b of busy) {
-    items.push({ start: b.start.toISOString(), end: b.end.toISOString(), kind: 'busy', title: 'Termin' });
+
+  if (canReadEvents) {
+    const lists = await Promise.all(
+      calendarIds.slice(0, 20).map((id) => google.listEvents(accessToken, id, dayStart, dayEnd).catch(() => []))
+    );
+    for (const e of lists.flat()) {
+      if (e.status === 'cancelled') continue;
+      if (e.attendees?.some((a) => a.self && a.responseStatus === 'declined')) continue;
+      const title = (e.summary || '').trim() || 'Termin';
+      if (!e.start.dateTime || !e.end.dateTime) {
+        allDay.push(title);
+        continue;
+      }
+      items.push({
+        start: new Date(e.start.dateTime).toISOString(),
+        end: new Date(e.end.dateTime).toISOString(),
+        kind: 'event',
+        title,
+        ...(e.location ? { location: e.location.slice(0, 120) } : {}),
+      });
+    }
+  } else {
+    for (const b of await google.freeBusy(accessToken, calendarIds, dayStart, dayEnd)) {
+      items.push({ start: b.start.toISOString(), end: b.end.toISOString(), kind: 'busy', title: 'Termin' });
+    }
   }
   items.sort((a, b) => a.start.localeCompare(b.start));
 
   return {
     connected: true,
     status: 'ok',
+    ...(canReadEvents ? {} : { needs_upgrade: true }),
     date,
     timezone: tz,
     window: {
       start: zonedTimeToUtc(date, settings.windowStartHour, 0, tz).toISOString(),
       end: zonedTimeToUtc(date, settings.windowEndHour, 0, tz).toISOString(),
     },
+    all_day: allDay,
     items,
   };
 }

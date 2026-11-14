@@ -4,12 +4,15 @@
  * Env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
  */
 
-// Least privilege: free/busy only, read the calendar list, and full access
-// ONLY to calendars this app creates (the "DayFlow" calendar).
+// Least privilege: read-only access to events (to show your appointments
+// with title and place on "Heute"), the calendar list, free/busy, and full
+// access ONLY to calendars this app creates (the "DayFlow" calendar).
+export const EVENTS_READ_SCOPE = 'https://www.googleapis.com/auth/calendar.events.readonly';
 export const SCOPES = [
   'https://www.googleapis.com/auth/calendar.freebusy',
   'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
   'https://www.googleapis.com/auth/calendar.app.created',
+  EVENTS_READ_SCOPE,
 ];
 
 const CAL = 'https://www.googleapis.com/calendar/v3';
@@ -168,6 +171,10 @@ export async function insertEvent(
 export interface CalendarEvent {
   id: string;
   summary?: string;
+  location?: string;
+  transparency?: 'opaque' | 'transparent';
+  status?: string;
+  attendees?: { self?: boolean; responseStatus?: string }[];
   start: { dateTime?: string; date?: string };
   end: { dateTime?: string; date?: string };
   extendedProperties?: { private?: Record<string, string> };

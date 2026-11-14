@@ -16,9 +16,10 @@ geplant; in den Einstellungen kannst du auch „Heute“ oder „Morgen“ von H
    Mehrfaches Planen erzeugt also keine Duplikate.
 
 Berechtigungen (so wenig wie möglich): `calendar.freebusy`,
-`calendar.calendarlist.readonly`, `calendar.app.created` (Vollzugriff nur auf den
-Kalender, den DayFlow selbst anlegt – deine anderen Termine kann die App weder
-lesen noch ändern, nur „belegt/frei“ sehen).
+`calendar.calendarlist.readonly`, `calendar.events.readonly` (deine Termine mit
+Titel und Ort auf „Heute“ anzeigen, nur lesen) und `calendar.app.created`
+(Schreibzugriff nur auf den Kalender, den DayFlow selbst anlegt – deine anderen
+Termine kann die App nie ändern).
 
 Der Refresh-Token liegt serverseitig in `calendar_connections/{uid}`. Die
 Firestore-Regeln verbieten Clients jeden Zugriff darauf (Default-Deny).
