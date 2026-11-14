@@ -29,7 +29,7 @@ export interface LlmResult {
 }
 
 const CLAUDE_MODEL = () => process.env.ANTHROPIC_MODEL || 'claude-haiku-5-5';
-const GROQ_MODEL = () => process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = () => process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 const TIMEOUT_MS = 25_000;
 
 async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>): Promise<T> {
@@ -79,6 +79,7 @@ async function callGroq(req: LlmRequest): Promise<LlmResult> {
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new Error('GROQ_API_KEY not set');
   const model = GROQ_MODEL();
+  const reasoning = model.includes('gpt-oss');
   const json = await withTimeout(async (signal) => {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -86,7 +87,10 @@ async function callGroq(req: LlmRequest): Promise<LlmResult> {
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
-        max_tokens: req.maxTokens ?? 1024,
+        // gpt-oss models think before answering and those tokens count
+        // against the limit: keep thinking short and leave enough room
+        ...(reasoning ? { reasoning_effort: 'low' } : {}),
+        max_tokens: reasoning ? Math.max(req.maxTokens ?? 1024, 1024) : req.maxTokens ?? 1024,
         temperature: req.temperature ?? 0.3,
         messages: [...(req.system ? [{ role: 'system', content: req.system }] : []), ...req.messages],
       }),
