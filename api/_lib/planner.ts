@@ -440,3 +440,92 @@ export async function addAppointment(uid: string, ev: { title: string; start: Da
   const accessToken = await google.refreshAccessToken(conn.refresh_token);
   return google.insertAppointment(accessToken, conn.calendar_id, { ...ev, timeZone: conn.timezone || DEFAULT_FREE_SLOT_CONFIG.timezone });
 }
+
+export interface RescheduleResult {
+  moved: boolean;
+  minutes: number;
+  start?: string;
+  end?: string;
+}
+
+/**
+ * "Nicht geschafft": the current (or next) block of this task ends now and the
+ * rest goes into the next free gap today that fits. Free-time blocks give way.
+ * If nothing fits today, the task simply stays open for tomorrow's plan.
+ */
+export async function rescheduleTask(uid: string, taskId: string, now = new Date()): Promise<RescheduleResult> {
+  const snap = await connectionRef(uid).get();
+  const conn = snap.data() as CalendarConnection | undefined;
+  if (!conn?.refresh_token || !conn.calendar_id) throw new Error('Kalender ist nicht verbunden');
+  const settings = { ...DEFAULT_SETTINGS, ...(conn.settings || {}) };
+  const tz = conn.timezone || DEFAULT_FREE_SLOT_CONFIG.timezone;
+  const calendarId = conn.calendar_id;
+  const accessToken = await google.refreshAccessToken(conn.refresh_token);
+
+  const date = localDateString(now, tz);
+  const dayStart = zonedTimeToUtc(date, 0, 0, tz);
+  const dayEnd = zonedTimeToUtc(addDays(date, 1), 0, 0, tz);
+  const own = (await google.listEvents(accessToken, calendarId, dayStart, dayEnd)).filter((e) => e.start.dateTime && e.end.dateTime);
+  const startOf = (e: google.CalendarEvent) => new Date(e.start.dateTime!).getTime();
+  const endOf = (e: google.CalendarEvent) => new Date(e.end.dateTime!).getTime();
+
+  const block = own
+    .filter((e) => e.extendedProperties?.private?.dayflow_task_id === taskId && endOf(e) > now.getTime())
+    .sort((a, b) => startOf(a) - startOf(b))[0];
+  if (!block) throw new Error('Kein Block für diese Aufgabe gefunden');
+
+  // Cut the block at "now" (or drop it if it hasn't really started)
+  const t = now.getTime();
+  const remainingMs = startOf(block) >= t ? endOf(block) - startOf(block) : endOf(block) - t;
+  const minutes = Math.max(15, Math.round(remainingMs / 60_000 / 5) * 5);
+  if (t - startOf(block) < 5 * 60_000) {
+    await google.deleteEvent(accessToken, calendarId, block.id);
+  } else {
+    await google.patchEventTimes(accessToken, calendarId, block.id, new Date(startOf(block)), now, tz);
+  }
+
+  // Busy = other calendars + our own blocks, except free time and the cut block
+  const calendarIds = (await google.listVisibleCalendarIds(accessToken)).filter((id) => id !== calendarId);
+  const busy = await google.freeBusy(accessToken, calendarIds, now, dayEnd);
+  for (const e of own) {
+    if (e.id === block.id || e.extendedProperties?.private?.dayflow_task_id === 'free_time' || e.transparency === 'transparent') continue;
+    busy.push({ start: new Date(startOf(e)), end: new Date(endOf(e)) });
+  }
+  const config: FreeSlotConfig = {
+    ...DEFAULT_FREE_SLOT_CONFIG,
+    timezone: tz,
+    windowStartHour: settings.windowStartHour,
+    windowEndHour: settings.windowEndHour,
+  };
+  const slots = planIntoFreeSlots([], busy, date, new Date(t + 5 * 60_000), config).free_slots;
+  const slot = slots.find((s) => s.end.getTime() - s.start.getTime() >= minutes * 60_000);
+  if (!slot) return { moved: false, minutes };
+
+  const start = slot.start;
+  const end = new Date(start.getTime() + minutes * 60_000);
+  await google.insertEvent(accessToken, calendarId, {
+    summary: block.summary || 'Aufgabe',
+    description: `Von DayFlow verschoben · noch ${minutes} min`,
+    start,
+    end,
+    timeZone: tz,
+    taskId,
+    planDate: date,
+  });
+
+  // Free time that overlaps the new block gives way
+  for (const e of own) {
+    if (e.extendedProperties?.private?.dayflow_task_id !== 'free_time') continue;
+    const fs = startOf(e);
+    const fe = endOf(e);
+    if (fe <= start.getTime() || fs >= end.getTime()) continue;
+    if (fs < start.getTime() && start.getTime() - fs >= 15 * 60_000) {
+      await google.patchEventTimes(accessToken, calendarId, e.id, new Date(fs), start, tz);
+    } else if (fe > end.getTime() && fe - end.getTime() >= 15 * 60_000) {
+      await google.patchEventTimes(accessToken, calendarId, e.id, end, new Date(fe), tz);
+    } else {
+      await google.deleteEvent(accessToken, calendarId, e.id);
+    }
+  }
+  return { moved: true, minutes, start: start.toISOString(), end: end.toISOString() };
+}

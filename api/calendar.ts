@@ -11,6 +11,7 @@
  *   GET  /api/calendar/week?start=YYYY-MM-DD -> 7 days for the week view (auth)
  *   POST /api/calendar/settings    { windowStartHour, windowEndHour, maxBlocks, maxPlannedMinutes, enabled, timezone } (auth)
  *   POST /api/calendar/plan        { day: 'today' | 'tomorrow' } -> plan (auth)
+ *   POST /api/calendar/reschedule  { task_id } -> rest of the current block into the next free gap (auth)
  *   POST /api/calendar/event       { title, start_at, end_at, location? } -> appointment in DayFlow calendar (auth)
  *   POST /api/calendar/disconnect  revoke + delete connection (auth)
  */
@@ -19,7 +20,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
 import { createState, verifyState } from './_lib/oauthState.js';
-import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
+import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, rescheduleTask, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 
 function appUrl(path: string): string {
   const base = process.env.APP_URL || '';
@@ -163,6 +164,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const day = req.body?.day === 'today' ? 'today' : 'tomorrow';
         const result = await planForUser(uid, day);
         return res.status(200).json(result);
+      }
+
+      case 'reschedule': {
+        const taskId = req.body?.task_id;
+        if (typeof taskId !== 'string' || !taskId || taskId === 'sport' || taskId === 'free_time') throw new HttpError(400, 'task_id fehlt');
+        return res.status(200).json(await rescheduleTask(uid, taskId));
       }
 
       case 'event': {

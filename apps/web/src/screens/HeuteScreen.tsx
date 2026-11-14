@@ -78,6 +78,8 @@ export const HeuteScreen: React.FC = () => {
   const [now, setNow] = useState(() => new Date());
   const [done, setDone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
+  const [moving, setMoving] = useState(false);
   const [note, setNote] = useState('');
   const [noteState, setNoteState] = useState<{ kind: 'saving' | 'saved' | 'error'; count?: number } | null>(null);
 
@@ -150,6 +152,32 @@ export const HeuteScreen: React.FC = () => {
     }
   };
 
+  // "Nicht geschafft": rest of the block into the next free gap today
+  const moveRest = async (item: Item) => {
+    if (!item.task_id) return;
+    setMoving(true);
+    setError(null);
+    try {
+      const r = await api<{ moved: boolean; minutes: number; start?: string; end?: string }>('reschedule', { task_id: item.task_id });
+      setInfo(
+        r.moved && r.start && r.end
+          ? `„${item.title}“ geht um ${hhmm(r.start)}–${hhmm(r.end)} weiter (noch ${r.minutes} min).`
+          : `Heute ist keine Lücke mehr frei. „${item.title}“ bleibt offen und wird morgen eingeplant.`
+      );
+      await load();
+    } catch (e: any) {
+      setError(`Verschieben hat nicht geklappt: ${e.message}`);
+    } finally {
+      setMoving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!info) return;
+    const t = setTimeout(() => setInfo(null), 8000);
+    return () => clearTimeout(t);
+  }, [info]);
+
   const saveNote = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = note.trim();
@@ -200,6 +228,7 @@ export const HeuteScreen: React.FC = () => {
         </div>
       )}
       {error && <div className={styles.banner} role="alert">{error}</div>}
+      {info && <div className={styles.banner} role="status">{info}</div>}
 
       <div className={styles.layout}>
         <section aria-label="Jetzt" className={styles.nowCard}>
@@ -218,7 +247,7 @@ export const HeuteScreen: React.FC = () => {
               </div>
             </div>
           ) : current ? (
-            <NowCard item={current} now={t} next={next} done={!!current.task_id && done.has(current.task_id)} onDone={() => markDone(current)} />
+            <NowCard item={current} now={t} next={next} done={!!current.task_id && done.has(current.task_id)} onDone={() => markDone(current)} onLater={() => moveRest(current)} moving={moving} />
           ) : (
             <FreeCard now={t} next={next} onPlan={planToday} busy={busy} />
           )}
@@ -278,7 +307,7 @@ export const HeuteScreen: React.FC = () => {
   );
 };
 
-const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: boolean; onDone: () => void }> = ({ item, now, next, done, onDone }) => {
+const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: boolean; onDone: () => void; onLater: () => void; moving: boolean }> = ({ item, now, next, done, onDone, onLater, moving }) => {
   const start = new Date(item.start).getTime();
   const end = new Date(item.end).getTime();
   const progress = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
@@ -313,9 +342,14 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
                 <IconCheck size={18} /> Erledigt
               </span>
             ) : (
-              <button className="button" onClick={onDone}>
-                Erledigt
-              </button>
+              <>
+                <button className="button" onClick={onDone} disabled={moving}>
+                  Erledigt
+                </button>
+                <button className={`button ${styles.later}`} onClick={onLater} disabled={moving} title="Rest in die nächste freie Lücke schieben">
+                  {moving ? 'Verschiebe …' : 'Nicht geschafft'}
+                </button>
+              </>
             )}
           </div>
         )}
