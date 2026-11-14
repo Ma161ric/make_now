@@ -27,8 +27,10 @@ export const auth = getAuth(app);
 let cachedDb: any | null = null;
 export async function getDb() {
   if (cachedDb) return cachedDb;
-  const { getFirestore } = await import('firebase/firestore');
-  cachedDb = getFirestore(app);
+  const { initializeFirestore } = await import('firebase/firestore');
+  // Optional fields (due_at, notes, ...) are often undefined: drop them
+  // instead of rejecting the whole write.
+  cachedDb = initializeFirestore(app, { ignoreUndefinedProperties: true });
   return cachedDb;
 }
 

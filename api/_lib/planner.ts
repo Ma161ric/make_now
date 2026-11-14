@@ -79,7 +79,8 @@ function toDate(v: any): Date | undefined {
 }
 
 async function loadOpenTasks(uid: string): Promise<Task[]> {
-  const snap = await db().collection(`users/${uid}/items`).where('status', '==', 'open').get();
+  // 'scheduled'/'in_progress' come from the old local planner; still to do
+  const snap = await db().collection(`users/${uid}/items`).where('status', 'in', ['open', 'scheduled', 'in_progress']).get();
   return snap.docs
     .map((doc): any => ({ id: doc.id, ...doc.data() }))
     // the items collection can also hold ideas/events

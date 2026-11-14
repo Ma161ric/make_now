@@ -163,7 +163,7 @@ function toTime(value: unknown): number | null {
 export function orderTasksForPlanning(tasks: Task[], now: Date): Task[] {
   const importanceOrder: Record<Importance, number> = { high: 0, medium: 1, low: 2 };
   return tasks
-    .filter((t) => t.status === 'open')
+    .filter((t) => t.status === 'open' || t.status === 'scheduled' || t.status === 'in_progress')
     .slice()
     .sort((a, b) => {
       const aDue = toTime(a.due_at) ?? Infinity;

@@ -64,7 +64,7 @@ function sanitizeProposals(input: unknown): Proposal[] {
 }
 
 async function openTasksSummary(uid: string): Promise<string> {
-  const snap = await db().collection(`users/${uid}/items`).where('status', '==', 'open').limit(40).get();
+  const snap = await db().collection(`users/${uid}/items`).where('status', 'in', ['open', 'scheduled', 'in_progress']).limit(40).get();
   const lines = snap.docs
     .map((d): any => d.data())
     .filter((t: any) => typeof t.title === 'string' && (!t.type || t.type === 'task'))

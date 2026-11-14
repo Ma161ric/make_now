@@ -1,5 +1,5 @@
 import { usePreferences } from '../context/PreferencesContext';
-import InboxScreen from '../screens/InboxScreen';
+import { InboxNeuScreen } from '../screens/AufgabenScreen';
 import { HeuteScreen } from '../screens/HeuteScreen';
 import WeekCalendarScreen from '../screens/WeekCalendarScreen';
 
@@ -14,6 +14,6 @@ export function DefaultScreenRouter() {
       return <WeekCalendarScreen />;
     case 'notes':
     default:
-      return <InboxScreen />;
+      return <InboxNeuScreen />;
   }
 }
