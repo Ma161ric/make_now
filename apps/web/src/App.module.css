@@ -8,10 +8,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  background: var(--bg-tertiary);
+  padding: 4px 12px 4px 4px;
+  min-height: 40px;
+  background: transparent;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
   transition: all 0.2s;
   color: var(--text-primary);
@@ -20,8 +21,7 @@
 }
 
 .userButton:hover {
-  background: var(--bg-secondary);
-  border-color: var(--accent-primary);
+  border-color: var(--border-strong);
 }
 
 .userAvatar {
@@ -31,7 +31,8 @@
   width: 28px;
   height: 28px;
   font-size: 16px;
-  background: var(--bg-primary);
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
   border-radius: 50%;
 }
 

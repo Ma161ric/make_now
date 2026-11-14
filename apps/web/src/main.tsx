@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';
 import InboxScreen from './screens/InboxScreen';
 import ReviewScreen from './screens/ReviewScreen';
-import TodayScreen from './screens/TodayScreen';
+import { HeuteScreen } from './screens/HeuteScreen';
 import WeekCalendarScreen from './screens/WeekCalendarScreen';
 import TasksOverviewScreen from './screens/TasksOverviewScreen';
 import DailyReviewScreen from './screens/DailyReviewScreen';
@@ -45,7 +45,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route index element={<ProtectedRoute><OnboardingGuard><InboxScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="review/:id" element={<ProtectedRoute><OnboardingGuard><ReviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="week" element={<ProtectedRoute><OnboardingGuard><WeekCalendarScreen /></OnboardingGuard></ProtectedRoute>} />
-                <Route path="today" element={<ProtectedRoute><OnboardingGuard><TodayScreen /></OnboardingGuard></ProtectedRoute>} />
+                <Route path="today" element={<ProtectedRoute><OnboardingGuard><HeuteScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="tasks" element={<ProtectedRoute><OnboardingGuard><TasksOverviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="daily-review" element={<ProtectedRoute><OnboardingGuard><DailyReviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="chat" element={<ProtectedRoute><OnboardingGuard><ChatScreen /></OnboardingGuard></ProtectedRoute>} />

@@ -7,6 +7,7 @@
  *   POST /api/calendar/connect     -> { url }  start Google OAuth (auth)
  *   GET  /api/calendar/callback    <- Google redirects here
  *   GET  /api/calendar/status      -> connection + settings + last plan (auth)
+ *   GET  /api/calendar/today       -> today's timeline for the Heute screen (auth)
  *   POST /api/calendar/settings    { windowStartHour, windowEndHour, maxBlocks, maxPlannedMinutes, enabled, timezone } (auth)
  *   POST /api/calendar/plan        { day: 'today' | 'tomorrow' } -> plan (auth)
  *   POST /api/calendar/disconnect  revoke + delete connection (auth)
@@ -16,7 +17,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
 import { createState, verifyState } from './_lib/oauthState.js';
-import { connectionRef, planForUser, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
+import { connectionRef, planForUser, getTimeline, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 
 function appUrl(path: string): string {
   const base = process.env.APP_URL || '';
@@ -108,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (action === 'callback' && req.method === 'GET') return await handleCallback(req, res);
 
-    if (req.method !== 'POST' && !(action === 'status' && req.method === 'GET')) {
+    if (req.method !== 'POST' && !((action === 'status' || action === 'today') && req.method === 'GET')) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
     const uid = await requireUser(req);
@@ -133,6 +134,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           settings: { ...DEFAULT_SETTINGS, ...(c.settings || {}) },
           last_plan: c.last_plan ? { ...c.last_plan, at: c.last_plan.at?.toDate?.()?.toISOString() ?? null } : null,
         });
+      }
+
+      case 'today': {
+        return res.status(200).json(await getTimeline(uid));
       }
 
       case 'settings': {
