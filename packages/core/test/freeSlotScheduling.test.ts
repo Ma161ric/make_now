@@ -3,6 +3,8 @@ import type { Task } from '../src/models';
 import {
   planIntoFreeSlots,
   planFreeTime,
+  pickLongBlockSlot,
+  daysBetween,
   computeFreeSlots,
   zonedTimeToUtc,
   localDateString,
@@ -170,5 +172,23 @@ describe('remaining slots and free time', () => {
 
   it('works without ideas', () => {
     expect(planFreeTime([{ start: local(13), end: local(14) }], DAY, [], 30)[0].idea).toBe('');
+  });
+});
+
+describe('sport block helpers', () => {
+  it('picks the latest gap that fits and places the block at its start', () => {
+    const slots = [
+      { start: local(10), end: local(12) },
+      { start: local(13), end: local(14) }, // too short for 90 min
+      { start: local(16), end: local(20) },
+    ];
+    expect(pickLongBlockSlot(slots, 90)).toEqual({ start: local(16), end: local(17, 30) });
+    expect(pickLongBlockSlot(slots, 300)).toBe(null);
+  });
+
+  it('counts days between local dates across month ends', () => {
+    expect(daysBetween('2026-11-28', '2026-12-01')).toBe(3);
+    expect(daysBetween('2026-11-16', '2026-11-16')).toBe(0);
+    expect(daysBetween('2026-11-17', '2026-11-16')).toBe(-1);
   });
 });

@@ -68,6 +68,8 @@ export type { SchedulingConfig } from './scheduling';
 export {
   planIntoFreeSlots,
   planFreeTime,
+  pickLongBlockSlot,
+  daysBetween,
   computeFreeSlots,
   orderTasksForPlanning,
   zonedTimeToUtc,

@@ -11,6 +11,8 @@ import * as google from './google.js';
 import {
   planIntoFreeSlots,
   planFreeTime,
+  pickLongBlockSlot,
+  daysBetween,
   zonedTimeToUtc,
   localDateString,
   addDays,
@@ -28,6 +30,11 @@ export interface CalendarSettings {
   /** Fill the gaps left after tasks with free-time blocks */
   freeTimeEnabled: boolean;
   freeTimeIdeas: string[];
+  /** Reserve a longer sport block every few days */
+  sportEnabled: boolean;
+  sportEveryDays: number;
+  sportMinutes: number;
+  sportLabel: string;
 }
 
 export const DEFAULT_FREE_TIME_IDEAS = ['Sport / Gym', 'Spaziergang', 'Freunde treffen', 'Lesen', 'Kochen', 'Musik / Hobby'];
@@ -40,6 +47,10 @@ export const DEFAULT_SETTINGS: CalendarSettings = {
   maxPlannedMinutes: DEFAULT_FREE_SLOT_CONFIG.maxPlannedMinutes,
   freeTimeEnabled: true,
   freeTimeIdeas: DEFAULT_FREE_TIME_IDEAS,
+  sportEnabled: true,
+  sportEveryDays: 2,
+  sportMinutes: 120,
+  sportLabel: 'Sport / Gym',
 };
 
 export interface CalendarConnection {
@@ -49,6 +60,8 @@ export interface CalendarConnection {
   status: 'ok' | 'needs_reauth';
   settings: CalendarSettings;
   last_plan?: unknown;
+  /** local date (YYYY-MM-DD) of the last planned sport block */
+  last_sport_date?: string;
 }
 
 /**
@@ -87,6 +100,7 @@ export interface PlanResult {
   date: string;
   blocks: { task_id: string; title: string; start: string; end: string; duration_minutes: number }[];
   free_time: { start: string; end: string; idea: string }[];
+  sport: { start: string; end: string } | null;
   skipped_task_ids: string[];
   removed_previous: number;
 }
@@ -135,7 +149,34 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
     maxBlocks: settings.maxBlocks,
     maxPlannedMinutes: settings.maxPlannedMinutes,
   };
-  const plan = planIntoFreeSlots(tasks, busy, date, now, config);
+  // Sport: if it is due (every N days), reserve it BEFORE the tasks, so a
+  // full to-do list cannot crowd it out. Re-planning the same day counts as due.
+  const sportDue =
+    settings.sportEnabled &&
+    (!conn.last_sport_date || conn.last_sport_date === date || daysBetween(conn.last_sport_date, date) >= settings.sportEveryDays);
+  let sport = sportDue ? pickLongBlockSlot(planIntoFreeSlots([], busy, date, now, config).free_slots, settings.sportMinutes) : null;
+
+  let plan = planIntoFreeSlots(tasks, sport ? [...busy, sport] : busy, date, now, config);
+
+  // Not due, but the day has no tasks and room for it: suggest sport anyway
+  if (!sport && settings.sportEnabled && plan.blocks.length === 0) {
+    sport = pickLongBlockSlot(plan.remaining_slots, settings.sportMinutes);
+    if (sport) plan = planIntoFreeSlots(tasks, [...busy, sport], date, now, config);
+  }
+
+  if (sport) {
+    await google.insertEvent(accessToken, calendarId, {
+      summary: `🏋️ ${settings.sportLabel}`,
+      description: 'Von DayFlow eingeplant: Zeit für Bewegung.',
+      start: sport.start,
+      end: sport.end,
+      timeZone: tz,
+      taskId: 'sport',
+      planDate: date,
+      colorId: '6', // tangerine
+      reminderMinutes: 15,
+    });
+  }
 
   for (const block of plan.blocks) {
     await google.insertEvent(accessToken, calendarId, {
@@ -176,10 +217,15 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
       end: b.end.toISOString(),
       duration_minutes: b.duration_minutes,
     })),
+    sport: sport ? { start: sport.start.toISOString(), end: sport.end.toISOString() } : null,
     free_time: freeTime.map((f) => ({ start: f.start.toISOString(), end: f.end.toISOString(), idea: f.idea })),
     skipped_task_ids: plan.skipped_task_ids,
     removed_previous: previous.length,
   };
-  await ref.update({ last_plan: { ...result, at: FieldValue.serverTimestamp() }, status: 'ok' });
+  await ref.update({
+    last_plan: { ...result, at: FieldValue.serverTimestamp() },
+    status: 'ok',
+    ...(sport ? { last_sport_date: date } : {}),
+  });
   return result;
 }

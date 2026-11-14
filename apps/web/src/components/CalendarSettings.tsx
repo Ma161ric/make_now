@@ -13,6 +13,10 @@ interface Settings {
   maxPlannedMinutes: number;
   freeTimeEnabled: boolean;
   freeTimeIdeas: string[];
+  sportEnabled: boolean;
+  sportEveryDays: number;
+  sportMinutes: number;
+  sportLabel: string;
 }
 
 interface PlanBlock {
@@ -33,6 +37,7 @@ interface Status {
     at: string | null;
     blocks: PlanBlock[];
     free_time?: { start: string; end: string; idea: string }[];
+    sport?: { start: string; end: string } | null;
     skipped_task_ids: string[];
   } | null;
 }
@@ -129,11 +134,12 @@ export const CalendarSettings: React.FC = () => {
 
   const plan = (day: 'today' | 'tomorrow') =>
     run(async () => {
-      const result = await call<{ blocks: PlanBlock[]; free_time?: unknown[] }>('plan', { day });
+      const result = await call<{ blocks: PlanBlock[]; free_time?: unknown[]; sport?: unknown }>('plan', { day });
       const n = result.blocks.length;
       const f = result.free_time?.length || 0;
       const parts = [
         n ? `${n} ${n === 1 ? 'Aufgabe' : 'Aufgaben'}` : null,
+        result.sport ? 'Sport' : null,
         f ? `${f} Freizeit-${f === 1 ? 'Block' : 'Blöcke'}` : null,
       ].filter(Boolean);
       setMessage(parts.length ? `📅 ${parts.join(' und ')} in deinen Kalender eingetragen.` : 'Nichts eingeplant: keine offenen Aufgaben und keine freie Lücke.');
@@ -229,6 +235,52 @@ export const CalendarSettings: React.FC = () => {
 
               <div className={styles.setting}>
                 <div className={styles.settingInfo}>
+                  <p className={styles.settingLabel}>Sport einplanen</p>
+                  <p className={styles.settingDescription}>
+                    Reserviert regelmäßig einen festen Block, auch wenn viele Aufgaben anstehen. An Tagen ohne Aufgaben wird er
+                    zusätzlich vorgeschlagen.
+                  </p>
+                </div>
+                <button
+                  className={`${styles.toggleButton} ${s.sportEnabled ? styles.active : ''}`}
+                  onClick={() => save({ sportEnabled: !s.sportEnabled })}
+                  disabled={busy}
+                >
+                  {s.sportEnabled ? 'An' : 'Aus'}
+                </button>
+              </div>
+
+              {s.sportEnabled && (
+                <div className={styles.setting}>
+                  <div className={styles.settingInfo}>
+                    <p className={styles.settingLabel}>Wie oft und wie lange</p>
+                    <input
+                      type="text"
+                      defaultValue={s.sportLabel}
+                      onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== s.sportLabel && save({ sportLabel: e.target.value.trim() })}
+                      maxLength={40}
+                      disabled={busy}
+                      aria-label="Name des Sport-Blocks"
+                      style={{ marginTop: 6, padding: '6px 8px', width: 200 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <select value={s.sportEveryDays} onChange={(e) => save({ sportEveryDays: Number(e.target.value) })} disabled={busy}>
+                      {[1, 2, 3, 4, 7].map((d) => (
+                        <option key={d} value={d}>{d === 1 ? 'jeden Tag' : d === 7 ? '1× pro Woche' : `alle ${d} Tage`}</option>
+                      ))}
+                    </select>
+                    <select value={s.sportMinutes} onChange={(e) => save({ sportMinutes: Number(e.target.value) })} disabled={busy}>
+                      {[45, 60, 90, 120, 150, 180].map((m) => (
+                        <option key={m} value={m}>{m < 60 ? `${m} min` : `${m / 60} h`}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.setting}>
+                <div className={styles.settingInfo}>
                   <p className={styles.settingLabel}>Freizeit eintragen</p>
                   <p className={styles.settingDescription}>
                     Lücken ohne Aufgabe werden als „🌿 Freizeit“ mit einem Vorschlag eingetragen (als „frei“ markiert, ohne Erinnerung).
@@ -283,12 +335,15 @@ export const CalendarSettings: React.FC = () => {
             <div className={styles.setting}>
               <div className={styles.settingInfo}>
                 <p className={styles.settingLabel}>Letzter Plan ({status.last_plan.date})</p>
-                {status.last_plan.blocks.length === 0 && !status.last_plan.free_time?.length ? (
+                {status.last_plan.blocks.length === 0 && !status.last_plan.free_time?.length && !status.last_plan.sport ? (
                   <p className={styles.settingDescription}>Keine Blöcke.</p>
                 ) : (
                   <ul className={styles.settingDescription} style={{ margin: 0, paddingLeft: 18 }}>
                     {[
                       ...status.last_plan.blocks.map((b) => ({ key: b.task_id, start: b.start, end: b.end, label: b.title })),
+                      ...(status.last_plan.sport
+                        ? [{ key: 'sport', start: status.last_plan.sport.start, end: status.last_plan.sport.end, label: `🏋️ ${s?.sportLabel || 'Sport'}` }]
+                        : []),
                       ...(status.last_plan.free_time || []).map((f) => ({
                         key: `free-${f.start}`,
                         start: f.start,
