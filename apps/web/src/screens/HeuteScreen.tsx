@@ -2,7 +2,7 @@
  * "Heute" (Dark Focus): one big card for what is happening right now,
  * a timeline of the rest of the day, and one input to jot something down.
  * Data comes from the Google Calendar plan (/api/calendar/today).
- * Without a connected calendar the classic Today screen is shown instead.
+ * Without a connected calendar it asks to connect one.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -13,7 +13,6 @@ import { API_BASE, authHeaders } from '../utils/apiAuth';
 import { IconArrowRight, IconCheck } from '../components/Icons';
 import { MicButton } from '../components/MicButton';
 import { loadSuggestions, saveSuggestions, fromExtraction } from '../utils/suggestions';
-import TodayScreen from './TodayScreen';
 import styles from './HeuteScreen.module.css';
 
 type Kind = 'task' | 'sport' | 'free' | 'event' | 'busy';
@@ -201,16 +200,15 @@ export const HeuteScreen: React.FC = () => {
     }
   };
 
-  // Not connected: keep the classic screen so nothing is lost
   if (timeline && !timeline.connected) {
     return (
-      <>
-        <div className={styles.connectHint}>
-          <span>Verbinde deinen Google Kalender, dann plant DayFlow deinen Tag automatisch.</span>
-          <Link to="/settings" className="button">Kalender verbinden</Link>
-        </div>
-        <TodayScreen />
-      </>
+      <div className={styles.connectHint}>
+        <span>
+          Verbinde deinen Google Kalender, dann plant DayFlow deine Aufgaben automatisch in die freien Lücken. Deine Aufgaben
+          findest du solange unter <Link to="/tasks">Aufgaben</Link>.
+        </span>
+        <Link to="/settings" className="button">Kalender verbinden</Link>
+      </div>
     );
   }
 

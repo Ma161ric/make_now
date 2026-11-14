@@ -2,12 +2,11 @@
  * Woche: seven columns with the Google Calendar plan.
  * One quiet scheme: DayFlow blocks (tasks + sport) in the second palette
  * color, your own appointments in the accent, free time neutral.
- * Without a connected calendar the classic week screen is shown.
+ * Without a connected calendar it asks to connect one.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
-import WeekCalendarScreen from './WeekCalendarScreen';
 import styles from './WocheScreen.module.css';
 
 type Kind = 'task' | 'sport' | 'free' | 'event' | 'busy';
@@ -88,13 +87,10 @@ export const WocheScreen: React.FC = () => {
 
   if (week && !week.connected) {
     return (
-      <>
-        <div className={styles.connectHint}>
-          <span>Verbinde deinen Google Kalender, dann siehst du hier deine ganze Woche.</span>
-          <Link to="/settings" className="button">Kalender verbinden</Link>
-        </div>
-        <WeekCalendarScreen />
-      </>
+      <div className={styles.connectHint}>
+        <span>Verbinde deinen Google Kalender, dann siehst du hier deine ganze Woche.</span>
+        <Link to="/settings" className="button">Kalender verbinden</Link>
+      </div>
     );
   }
 
