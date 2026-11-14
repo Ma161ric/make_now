@@ -5,7 +5,7 @@ import App from './App';
 import { InboxNeuScreen, AufgabenScreen } from './screens/AufgabenScreen';
 import ReviewScreen from './screens/ReviewScreen';
 import { HeuteScreen } from './screens/HeuteScreen';
-import WeekCalendarScreen from './screens/WeekCalendarScreen';
+import { WocheScreen } from './screens/WocheScreen';
 import DailyReviewScreen from './screens/DailyReviewScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
@@ -43,7 +43,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="terms" element={<TermsOfServiceScreen />} />
                 <Route index element={<ProtectedRoute><OnboardingGuard><InboxNeuScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="review/:id" element={<ProtectedRoute><OnboardingGuard><ReviewScreen /></OnboardingGuard></ProtectedRoute>} />
-                <Route path="week" element={<ProtectedRoute><OnboardingGuard><WeekCalendarScreen /></OnboardingGuard></ProtectedRoute>} />
+                <Route path="week" element={<ProtectedRoute><OnboardingGuard><WocheScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="today" element={<ProtectedRoute><OnboardingGuard><HeuteScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="tasks" element={<ProtectedRoute><OnboardingGuard><AufgabenScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="daily-review" element={<ProtectedRoute><OnboardingGuard><DailyReviewScreen /></OnboardingGuard></ProtectedRoute>} />
