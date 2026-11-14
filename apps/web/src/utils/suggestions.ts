@@ -14,7 +14,11 @@ export interface Suggestion {
   importance: Importance;
   due_at?: string; // ISO
   note?: string;
-  source: string; // the note it came from
+  // appointments (kind 'event'): fixed time, go to the calendar, not to Aufgaben
+  start_at?: string; // ISO
+  end_at?: string; // ISO
+  location?: string;
+  source: string; // the note or chat message it came from
   created_at: string;
 }
 
@@ -50,7 +54,8 @@ export function fromExtraction(extraction: ExtractionResponse, source: string): 
     const base = { id: uuid(), title: item.title, source, created_at: now };
     if (item.type === 'event') {
       const f = item.parsed_fields as EventFields;
-      return { ...base, kind: 'event' as const, duration_min_minutes: 30, duration_max_minutes: 60, importance: 'high' as Importance, due_at: f.start_at, note: f.location };
+      const end = f.start_at ? new Date(new Date(f.start_at).getTime() + 60 * 60_000).toISOString() : undefined;
+      return { ...base, kind: 'event' as const, duration_min_minutes: 60, duration_max_minutes: 60, importance: 'high' as Importance, due_at: f.start_at, start_at: f.start_at, end_at: f.end_at || end, location: f.location };
     }
     if (item.type === 'idea') {
       const f = item.parsed_fields as IdeaFields;
@@ -92,4 +97,31 @@ export function durationLabel(min?: number, max?: number): string {
   const b = max || min!;
   const fmt = (m: number) => (m >= 60 ? `${Math.round((m / 60) * 10) / 10} h`.replace('.', ',') : `${m} min`);
   return a === b ? fmt(a) : `${fmt(a)}–${fmt(b)}`.replace(' min–', '–');
+}
+
+/** Chat proposals → suggestions for the Assistent panel. */
+export function fromChatProposals(proposals: any[], source: string): Suggestion[] {
+  const now = new Date().toISOString();
+  return (proposals || []).flatMap((p): Suggestion[] => {
+    if (!p?.title) return [];
+    const base = { id: uuid(), title: String(p.title), source, created_at: now, importance: (p.importance || 'medium') as Importance };
+    if (p.kind === 'event' && p.start_at) {
+      const mins = p.end_at ? Math.max(15, Math.round((+new Date(p.end_at) - +new Date(p.start_at)) / 60000)) : 60;
+      return [{ ...base, kind: 'event', importance: 'high', start_at: p.start_at, end_at: p.end_at, location: p.location, duration_min_minutes: mins, duration_max_minutes: mins }];
+    }
+    if (p.kind !== 'task') return [];
+    const min = p.duration_min_minutes || p.duration_max_minutes || 30;
+    return [{
+      ...base,
+      kind: 'task',
+      duration_min_minutes: min,
+      duration_max_minutes: Math.max(min, p.duration_max_minutes || min),
+      due_at: p.due_date ? new Date(`${p.due_date}T12:00:00`).toISOString() : undefined,
+      note: p.reason,
+    }];
+  });
+}
+
+export function addSuggestions(uid: string, list: Suggestion[]) {
+  if (list.length) saveSuggestions(uid, [...list, ...loadSuggestions(uid)]);
 }

@@ -11,6 +11,7 @@
  *   GET  /api/calendar/week?start=YYYY-MM-DD -> 7 days for the week view (auth)
  *   POST /api/calendar/settings    { windowStartHour, windowEndHour, maxBlocks, maxPlannedMinutes, enabled, timezone } (auth)
  *   POST /api/calendar/plan        { day: 'today' | 'tomorrow' } -> plan (auth)
+ *   POST /api/calendar/event       { title, start_at, end_at, location? } -> appointment in DayFlow calendar (auth)
  *   POST /api/calendar/disconnect  revoke + delete connection (auth)
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -18,7 +19,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
 import { createState, verifyState } from './_lib/oauthState.js';
-import { connectionRef, planForUser, getTimeline, getWeek, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
+import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 
 function appUrl(path: string): string {
   const base = process.env.APP_URL || '';
@@ -162,6 +163,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const day = req.body?.day === 'today' ? 'today' : 'tomorrow';
         const result = await planForUser(uid, day);
         return res.status(200).json(result);
+      }
+
+      case 'event': {
+        const { title, start_at, end_at, location } = req.body || {};
+        const start = new Date(start_at);
+        const end = new Date(end_at);
+        if (typeof title !== 'string' || !title.trim() || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+          throw new HttpError(400, 'Titel, Start und Ende werden gebraucht');
+        }
+        const ev = await addAppointment(uid, {
+          title: title.trim().slice(0, 200),
+          start,
+          end,
+          location: typeof location === 'string' && location.trim() ? location.trim().slice(0, 200) : undefined,
+        });
+        return res.status(200).json({ id: ev.id, link: ev.htmlLink });
       }
 
       case 'disconnect': {

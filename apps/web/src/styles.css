@@ -50,12 +50,12 @@ html, body {
   --border-strong: #2a5585;
   --shadow: rgba(0, 0, 0, 0.35);
 
-  --hero-bg: #ffffff;
+  --hero-bg: #649bc8;
   --hero-text: #051f3e;
-  --hero-muted: #3d5a7c;
-  --hero-track: rgba(5, 31, 62, 0.12);
-  --hero-accent: #649bc8;
-  --hero-on-accent: #051f3e;
+  --hero-muted: #1b3d63;
+  --hero-track: rgba(5, 31, 62, 0.2);
+  --hero-accent: #051f3e;
+  --hero-on-accent: #ffffff;
 
   --accent-primary: #649bc8;
   --accent-primary-hover: #80b1d9;
@@ -64,7 +64,7 @@ html, body {
   --accent-bg: #0f3a63;
   --accent-text: #ffffff;
   --highlight: #dc2b31;
-  --highlight-on-hero: #dc2b31;   /* title on the white card, >= 3:1 for large text */
+  --highlight-on-hero: #051f3e;   /* red on stone blue fails contrast: title in navy */
   --highlight-on-sport: #dc2b31;  /* title on the blue sport card */
 
   --task-bg: #649bc8;

@@ -410,7 +410,6 @@ const TasksAndInbox: React.FC<{ mode: 'inbox' | 'tasks' }> = ({ mode }) => {
   );
 };
 
-export const InboxNeuScreen: React.FC = () => <TasksAndInbox mode="inbox" />;
 export const AufgabenScreen: React.FC = () => <TasksAndInbox mode="tasks" />;
 
 const TaskEditor: React.FC<{

@@ -11,19 +11,24 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import { complete, extractJson, type LlmMessage } from './_lib/llm.js';
+import { zonedTimeToUtc } from '../packages/core/src/freeSlotScheduling.js';
 
 const MAX_MESSAGES = 30;
 const MAX_CHARS = 4000;
 const DAILY_LIMIT = () => Number(process.env.CHAT_DAILY_LIMIT || 150);
 
 export interface Proposal {
-  kind: 'task' | 'note';
+  kind: 'task' | 'event';
   title: string;
+  // task
   duration_min_minutes?: number;
   duration_max_minutes?: number;
   importance?: 'high' | 'medium' | 'low';
   due_date?: string; // YYYY-MM-DD
-  text?: string; // for notes
+  // event (appointment at a fixed time)
+  start_at?: string; // ISO
+  end_at?: string; // ISO
+  location?: string;
   reason?: string;
 }
 
@@ -33,30 +38,44 @@ function sanitizeMessages(input: unknown): LlmMessage[] {
     .filter((m: any) => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
     .slice(-MAX_MESSAGES)
     .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, MAX_CHARS) }) as LlmMessage);
-  // Both APIs need the conversation to start with the user
   while (msgs.length && msgs[0].role !== 'user') msgs.shift();
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') throw new HttpError(400, 'last message must be from the user');
   return msgs;
 }
 
-function sanitizeProposals(input: unknown): Proposal[] {
+/** ISO with offset as is; a bare local time ("2026-11-19T14:00") is read in the user's zone. */
+const isoOrUndef = (v: unknown, tz: string) => {
+  if (typeof v !== 'string') return undefined;
+  const local = v.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/);
+  if (local) return zonedTimeToUtc(local[1], Number(local[2]), Number(local[3]), tz).toISOString();
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+};
+
+function sanitizeProposals(input: unknown, tz: string): Proposal[] {
   if (!Array.isArray(input)) return [];
   const int = (v: unknown) => (typeof v === 'number' && v >= 5 && v <= 480 ? Math.round(v) : undefined);
   return input.slice(0, 5).flatMap((p: any): Proposal[] => {
-    const kind = p?.kind === 'note' ? 'note' : p?.kind === 'task' ? 'task' : null;
     const title = typeof p?.title === 'string' ? p.title.trim().slice(0, 200) : '';
-    if (!kind || title.length < 3) return [];
+    if (title.length < 2) return [];
+    if (p?.kind === 'event') {
+      const start = isoOrUndef(p.start_at, tz);
+      if (!start) return []; // an appointment without a time is a task
+      let end = isoOrUndef(p.end_at, tz);
+      if (!end || end <= start) end = new Date(new Date(start).getTime() + 60 * 60_000).toISOString();
+      return [{ kind: 'event', title, start_at: start, end_at: end, location: typeof p.location === 'string' ? p.location.slice(0, 120) : undefined, reason: typeof p.reason === 'string' ? p.reason.slice(0, 200) : undefined }];
+    }
+    if (p?.kind !== 'task') return [];
     const min = int(p.duration_min_minutes);
     const max = int(p.duration_max_minutes);
     return [
       {
-        kind,
+        kind: 'task',
         title,
         duration_min_minutes: min,
         duration_max_minutes: max && min && max < min ? min : max,
         importance: ['high', 'medium', 'low'].includes(p.importance) ? p.importance : undefined,
         due_date: typeof p.due_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.due_date) ? p.due_date : undefined,
-        text: kind === 'note' && typeof p.text === 'string' ? p.text.slice(0, 2000) : undefined,
         reason: typeof p.reason === 'string' ? p.reason.slice(0, 200) : undefined,
       },
     ];
@@ -84,23 +103,29 @@ async function checkQuota(uid: string, date: string) {
   if (count > DAILY_LIMIT()) throw new HttpError(429, 'Tageslimit für den Chat erreicht, morgen geht es weiter.');
 }
 
-function systemPrompt(now: string, tasks: string): string {
-  return `Du bist der Assistent in DayFlow, einer App, die Notizen in Aufgaben verwandelt und sie automatisch in freie Lücken im Kalender einplant.
-Jetzt ist ${now}.
+function systemPrompt(now: string, tz: string, tasks: string): string {
+  return `Du bist der Assistent in DayFlow. Der Nutzer erzählt dir, was ansteht, oder redet einfach mit dir.
+Jetzt ist ${now} (Zeitzone ${tz}).
 
-Deine Rolle:
-- Du hilfst beim Nachdenken, Diskutieren und Priorisieren. Antworte auf Deutsch, knapp und konkret, wie ein ehrlicher Freund, der gut organisiert ist.
-- Wenn etwas Umsetzbares auftaucht, schlägst du es als To-do vor: klein und konkret genug, um es in einem Kalenderblock zu erledigen (lieber "Anschreiben für Bewerbung X entwerfen, 45 min" als "Bewerbungen machen").
-- Schätze für jedes To-do realistisch, wie lange es dauert (min/max in Minuten, 5-480).
-- Gedanken oder Infos, die keine Aufgabe sind, kannst du als Notiz vorschlagen.
-- Schlage nichts doppelt vor, was schon in den offenen Aufgaben steht. Erfinde keine Fakten.
-- Nicht jede Nachricht braucht Vorschläge. Höchstens 5 pro Antwort.
+Deine Aufgabe:
+- Antworte auf Deutsch, knapp und konkret, wie ein ehrlicher, gut organisierter Freund. Hilf beim Sortieren und Priorisieren.
+- Unterscheide genau, was der Nutzer sagt:
+  1. TO-DO: etwas, das er erledigen muss, ohne feste Uhrzeit ("Zahnarzt anrufen", "Bewerbung schreiben"). Klein und konkret formulieren, realistische Dauer schätzen (5-480 min), Frist nur wenn genannt oder klar ableitbar.
+  2. TERMIN: etwas zu einer festen Zeit ("Donnerstag 14 Uhr Wohnung anschauen", "morgen um 9 Zahnarzt"). Datum und Uhrzeit als ISO 8601 mit Zeitzonen-Offset, Dauer schätzen falls nicht genannt (meist 60 min), Ort falls genannt.
+  3. NORMALES REDEN: Gedanken, Gefühle, Fragen, Smalltalk. Dafür KEINE Vorschläge.
+- Relative Angaben ("morgen", "Donnerstag") beziehen sich auf jetzt.
+- Nichts doppelt vorschlagen, was schon in den offenen Aufgaben steht. Nichts erfinden. Höchstens 5 Vorschläge.
+- Erwähne in der Antwort kurz, was du vorschlägst ("Ich hab dir 2 To-dos und einen Termin rausgeschrieben"), die Details stehen in den Vorschlägen.
 
 Offene Aufgaben des Nutzers:
 ${tasks}
 
 Antworte IMMER als JSON, ohne Text davor oder danach:
-{"reply": "deine Antwort (Markdown erlaubt)", "proposals": [{"kind": "task", "title": "...", "duration_min_minutes": 30, "duration_max_minutes": 45, "importance": "high|medium|low", "due_date": "YYYY-MM-DD oder weglassen", "reason": "kurz warum"}, {"kind": "note", "title": "...", "text": "..."}]}`;
+{"reply": "deine Antwort",
+ "proposals": [
+  {"kind": "task", "title": "...", "duration_min_minutes": 15, "duration_max_minutes": 30, "importance": "high|medium|low", "due_date": "YYYY-MM-DD (optional)"},
+  {"kind": "event", "title": "...", "start_at": "2026-11-19T14:00:00+01:00", "end_at": "2026-11-19T15:00:00+01:00", "location": "optional"}
+ ]}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -128,13 +153,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const tasks = await openTasksSummary(uid);
 
     const llm = await complete(
-      { system: systemPrompt(nowText, tasks), messages, maxTokens: 1500, temperature: 0.5 },
+      { system: systemPrompt(nowText, tz, tasks), messages, maxTokens: 1500, temperature: 0.4 },
       { allowClaude: true }
     );
 
     const parsed = extractJson<{ reply?: unknown; proposals?: unknown }>(llm.text);
     const reply = typeof parsed?.reply === 'string' && parsed.reply.trim() ? parsed.reply : llm.text;
-    return res.status(200).json({ reply, proposals: parsed ? sanitizeProposals(parsed.proposals) : [], provider: llm.provider });
+    return res.status(200).json({ reply, proposals: parsed ? sanitizeProposals(parsed.proposals, tz) : [], provider: llm.provider });
   } catch (e: any) {
     if (e instanceof HttpError) return res.status(e.status).json({ error: e.message });
     console.error('[chat] failed', e);

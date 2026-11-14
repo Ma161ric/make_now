@@ -254,7 +254,7 @@ export const HeuteScreen: React.FC = () => {
               {noteState.kind === 'saving' && 'Wird verarbeitet …'}
               {noteState.kind === 'saved' && (
                 <>
-                  ✓ {noteState.count} {noteState.count === 1 ? 'Vorschlag' : 'Vorschläge'} in der Inbox. <Link to="/">Jetzt bestätigen</Link>
+                  ✓ {noteState.count} {noteState.count === 1 ? 'Vorschlag' : 'Vorschläge'} beim Assistenten. <Link to="/">Jetzt bestätigen</Link>
                 </>
               )}
               {noteState.kind === 'error' && 'Konnte die Notiz nicht speichern. Versuch es nochmal.'}
