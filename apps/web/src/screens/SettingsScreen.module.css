@@ -1,178 +1,363 @@
-.container {
-  min-height: 100vh;
-  background: var(--bg-primary);
-  padding: 20px;
-}
-
-.header {
-  max-width: 900px;
-  margin: 0 auto 32px;
-  padding-top: 20px;
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.content {
-  max-width: 600px;
+/* Settings: calm cards, one row per setting, controls on the right */
+.page {
+  max-width: 720px;
   margin: 0 auto;
+  padding: 28px 20px 48px;
+  box-sizing: border-box;
+}
+
+.h1 {
+  margin: 0 0 20px;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 .section {
-  margin-bottom: 24px;
-  padding: 20px;
+  margin-bottom: 16px;
+  padding: 8px 20px;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 20px;
 }
 
 .section h2 {
-  margin: 0 0 16px 0;
-  font-size: 16px;
+  margin: 14px 0 2px;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-primary);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--text-muted);
 }
 
-.profileCard {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.profileInfo {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.avatar {
-  font-size: 48px;
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-tertiary);
-  border-radius: 50%;
-}
-
-.userName {
-  margin: 0 0 4px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.userEmail {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.userProvider {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.setting {
+/* ---------- rows ---------- */
+.row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
+  gap: 16px;
+  padding: 14px 0;
   border-bottom: 1px solid var(--border-color);
 }
 
-.setting:last-child {
-  border-bottom: none;
+.row:last-child,
+.section > .row:last-of-type {
+  border-bottom: 0;
 }
 
-.settingInfo {
+.rowText {
   flex: 1;
+  min-width: 0;
 }
 
-.settingLabel {
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.settingDescription {
+.label {
   margin: 0;
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.toggleButton {
-  padding: 8px 16px;
-  font-size: 14px;
+  font-size: 0.95rem;
   font-weight: 500;
   color: var(--text-primary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.toggleButton:hover {
-  background: var(--bg-primary);
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-}
-
-.toggleButton.active {
-  background: var(--accent-primary);
-  color: var(--on-accent);
-  border-color: var(--accent-primary);
-}
-
-.buttonGroup {
   display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hint,
+.muted {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.control {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-.buttonGroup .toggleButton {
-  flex: 1;
-  min-width: 80px;
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0;
 }
 
-.logoutButton {
+.notice {
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-bg);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+}
+
+/* ---------- profile ---------- */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+}
+
+.avatar {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--accent-primary);
+  color: var(--on-accent);
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.avatar img {
   width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
-  background: var(--danger);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
+  height: 100%;
+  object-fit: cover;
 }
 
-.logoutButton:hover {
-  background: var(--danger);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--shadow);
+.name {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ---------- controls ---------- */
+.select,
+.input {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.select {
+  cursor: pointer;
+}
+
+.input {
+  min-width: 0;
+}
+
+.stack .input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inline .input {
+  width: 140px;
+}
+
+.select:focus-visible,
+.input:focus-visible,
+.switch:focus-visible,
+.segment button:focus-visible,
+.ghost:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.range {
+  width: 160px;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.value {
+  min-width: 44px;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.switch {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: var(--border-strong);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.switch span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  transition: transform 0.15s;
+}
+
+.switch[aria-checked='true'] {
+  background: var(--accent-primary);
+}
+
+.switch[aria-checked='true'] span {
+  transform: translateX(18px);
+}
+
+.switch:disabled,
+.segment button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.segment {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 12px;
+  background: var(--bg-primary);
+}
+
+.segment button {
+  border: 0;
+  border-radius: 9px;
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.segment button:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}
+
+.segment button[aria-pressed='true'] {
+  background: var(--accent-primary);
+  color: var(--on-accent);
+}
+
+.ghost {
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}
+
+/* ---------- last plan ---------- */
+.planBox {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--bg-primary);
+}
+
+.planHead {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.planList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.planList li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.planDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.plan_task,
+.plan_sport {
+  background: var(--task-bg);
+}
+
+.plan_free {
+  background: var(--border-strong);
+}
+
+.planTime {
+  min-width: 96px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.footer {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.footer a {
+  color: inherit;
 }
 
 @media (max-width: 600px) {
-  .profileInfo {
+  .row {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 10px;
   }
 
-  .avatar {
-    width: 50px;
-    height: 50px;
-    font-size: 36px;
+  .control {
+    justify-content: flex-start;
+  }
+
+  .row:has(.switch) {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .inline {
+    justify-content: flex-start;
+  }
+
+  .range {
+    flex: 1;
   }
 }
