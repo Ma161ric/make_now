@@ -59,3 +59,10 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Installable app (PWA): register the service worker in production builds
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}

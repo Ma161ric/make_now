@@ -1,0 +1,20 @@
+{
+  "name": "DayFlow",
+  "short_name": "DayFlow",
+  "description": "Plant deine To-dos automatisch in die freien Lücken deines Kalenders.",
+  "lang": "de",
+  "start_url": "/today",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#121413",
+  "theme_color": "#121413",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Heute", "url": "/today", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Assistent", "url": "/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
