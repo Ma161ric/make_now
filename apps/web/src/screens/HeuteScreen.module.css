@@ -72,8 +72,8 @@
 .nowInner .eyebrow { color: var(--hero-text); display: inline-flex; align-items: center; gap: 8px; }
 .nowInner .muted, .nowInner .nowSub { color: var(--hero-muted); }
 .nowInner .nowTitle { color: var(--highlight-on-hero); }
-.nowInner.sport .nowTitle { color: var(--sport-text); }
-.nowInner.free .nowTitle { color: var(--free-text); }
+.nowInner.sport .nowTitle { color: var(--highlight-on-sport); }
+.nowInner.free .nowTitle { color: var(--highlight-on-free); }
 .nowInner.sport { background: var(--sport-bg); color: var(--sport-text); }
 .nowInner.free { background: var(--free-bg); color: var(--free-text); }
 .nowInner.sport .eyebrow, .nowInner.sport .muted, .nowInner.sport .nowSub { color: var(--sport-muted); }
@@ -125,9 +125,9 @@
 }
 .progress > div { height: 100%; background: var(--hero-accent); transition: width 1s linear; }
 .nowInner.sport .progress { background: rgba(0, 0, 0, 0.2); }
-.nowInner.sport .progress > div { background: var(--sport-muted); }
+.nowInner.sport .progress > div { background: var(--highlight-on-sport); }
 .nowInner.free .progress { background: rgba(0, 0, 0, 0.2); }
-.nowInner.free .progress > div { background: var(--free-muted); }
+.nowInner.free .progress > div { background: var(--highlight-on-free); }
 
 .actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 .actions :global(.button) { min-height: 52px; padding: 14px 24px; font-size: 15px; border-radius: 14px; background: var(--hero-accent); color: var(--hero-on-accent); }

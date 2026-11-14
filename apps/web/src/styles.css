@@ -54,8 +54,8 @@ html, body {
   --hero-text: #121413;
   --hero-muted: #3f4a3b;
   --hero-track: rgba(18, 20, 19, 0.18);
-  --hero-accent: #121413;
-  --hero-on-accent: #f2f2ee;
+  --hero-accent: #93450a;        /* apricot, darkened for the sage card */
+  --hero-on-accent: #ffffff;
 
   --accent-primary: #b5c4ae;
   --accent-primary-hover: #c6d3c0;
@@ -65,7 +65,8 @@ html, body {
   --accent-text: #f2f2ee;
   --highlight: #f2a65a;
   --highlight-on-hero: #93450a;   /* apricot, darkened so the title stays readable on sage */
-  --highlight-on-sport: #121413;
+  --highlight-on-sport: #93450a;
+  --highlight-on-free: #f2a65a;
 
   --task-bg: #b5c4ae;
   --task-border: #b5c4ae;
@@ -111,7 +112,8 @@ html, body {
   --accent-text: #1c1f1a;
   --highlight: #d99a2b;
   --highlight-on-hero: #f0c062;   /* honey title on the sage card */
-  --highlight-on-sport: #24352a;
+  --highlight-on-sport: #8a5a00;  /* honey, darkened for the light sage card */
+  --highlight-on-free: #8a5a00;
 
   --task-bg: #dde5d8;
   --task-border: #dde5d8;
