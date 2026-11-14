@@ -90,6 +90,7 @@ async function handleCallback(req: VercelRequest, res: VercelResponse) {
         calendar_id: calendarId,
         timezone,
         status: 'ok',
+        scopes: granted,
         settings: { ...DEFAULT_SETTINGS, ...(existing?.settings || {}) },
         connected_at: FieldValue.serverTimestamp(),
       },

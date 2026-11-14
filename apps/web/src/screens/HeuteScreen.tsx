@@ -15,7 +15,7 @@ import { IconArrowRight, IconCheck } from '../components/Icons';
 import TodayScreen from './TodayScreen';
 import styles from './HeuteScreen.module.css';
 
-type Kind = 'task' | 'sport' | 'free' | 'busy';
+type Kind = 'task' | 'sport' | 'free' | 'event' | 'busy';
 
 interface Item {
   start: string;
@@ -23,12 +23,15 @@ interface Item {
   kind: Kind;
   title: string;
   task_id?: string;
+  location?: string;
 }
 
 interface Timeline {
   connected: boolean;
   status?: 'ok' | 'needs_reauth';
+  needs_upgrade?: boolean;
   window?: { start: string; end: string };
+  all_day?: string[];
   items: Item[];
 }
 
@@ -54,7 +57,7 @@ function countdown(ms: number): string {
   return h ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
 
-const KIND_LABEL: Record<Kind, string> = { task: 'Aufgabe', sport: 'Sport', free: 'Freizeit', busy: 'Termin' };
+const KIND_LABEL: Record<Kind, string> = { task: 'Aufgabe', sport: 'Sport', free: 'Freizeit', event: 'Termin', busy: 'Termin' };
 
 async function api<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}/calendar/${path}`, {
@@ -108,12 +111,21 @@ export const HeuteScreen: React.FC = () => {
   // What is happening right now: own blocks win over other appointments
   const current = useMemo(() => {
     const running = items.filter((i) => new Date(i.start).getTime() <= t && t < new Date(i.end).getTime());
-    return running.find((i) => i.kind !== 'busy') || running[0] || null;
+    return running.find((i) => i.kind !== 'busy' && i.kind !== 'event') || running[0] || null;
   }, [items, t]);
   const next = useMemo(
     () => items.find((i) => new Date(i.start).getTime() > t && i !== current) || null,
     [items, t, current]
   );
+
+  const reconnect = async () => {
+    try {
+      const { url } = await api<{ url: string }>('connect', { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+      window.location.href = url;
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
 
   const planToday = async () => {
     setBusy(true);
@@ -177,6 +189,12 @@ export const HeuteScreen: React.FC = () => {
           Google hat den Kalender-Zugriff beendet. <Link to="/settings">Neu verbinden</Link>
         </div>
       )}
+      {timeline?.needs_upgrade && (
+        <div className={styles.banner}>
+          Damit deine Termine mit Titel und Ort erscheinen, verbinde den Kalender einmal neu.{' '}
+          <button className={styles.textButton} onClick={reconnect}>Jetzt verbinden</button>
+        </div>
+      )}
       {error && <div className={styles.banner} role="alert">{error}</div>}
 
       <div className={styles.layout}>
@@ -198,6 +216,13 @@ export const HeuteScreen: React.FC = () => {
                 {busy ? 'Plane …' : 'Neu planen'}
               </button>
             </div>
+            {!!timeline?.all_day?.length && (
+              <ul className={styles.allDay} aria-label="Ganztägig">
+                {timeline.all_day.map((title, i) => (
+                  <li key={`${title}-${i}`}>{title}</li>
+                ))}
+              </ul>
+            )}
             <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={done} />
           </section>
 
@@ -252,6 +277,7 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
         <p className={styles.nowSub}>
           {item.kind === 'free' && 'Keine Aufgabe eingeplant. Die Zeit gehört dir. '}
           {item.kind === 'busy' && 'Termin aus deinem Kalender. '}
+          {item.kind === 'event' && item.location && `Ort: ${item.location}. `}
           {next ? `Danach: ${next.title} um ${hhmm(next.start)}.` : 'Danach ist nichts mehr geplant.'}
         </p>
       </div>
@@ -347,7 +373,7 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
             <span className={styles.blockTitle}>{i.title}</span>
             {h >= 38 && (
               <span className={styles.blockMeta}>
-                {hhmm(i.start)} – {hhmm(i.end)} · {duration(e - s)}
+                {hhmm(i.start)} – {hhmm(i.end)} · {i.location ? i.location : duration(e - s)}
               </span>
             )}
           </div>
