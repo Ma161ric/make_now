@@ -561,3 +561,63 @@ export async function extendTask(uid: string, taskId: string, minutes: number, n
 
   return { end: new Date(newEnd).toISOString(), added, moved, dropped };
 }
+
+export interface PlaceResult {
+  placed: boolean;
+  start?: string;
+  end?: string;
+}
+
+/**
+ * Puts one task into the first free gap today that fits (after now), without
+ * touching the rest of the plan. Appointments keep their buffer, free time
+ * gives way. No gap: nothing happens, the task waits for tomorrow's plan.
+ */
+export async function placeTaskToday(uid: string, task: { id: string; title: string; minutes: number }, now = new Date()): Promise<PlaceResult> {
+  const snap = await connectionRef(uid).get();
+  const conn = snap.data() as CalendarConnection | undefined;
+  if (!conn?.refresh_token || !conn.calendar_id) throw new Error('Kalender ist nicht verbunden');
+  const settings = { ...DEFAULT_SETTINGS, ...(conn.settings || {}) };
+  const tz = conn.timezone || DEFAULT_FREE_SLOT_CONFIG.timezone;
+  const calendarId = conn.calendar_id;
+  const accessToken = await google.refreshAccessToken(conn.refresh_token);
+
+  const date = localDateString(now, tz);
+  const dayStart = zonedTimeToUtc(date, 0, 0, tz);
+  const dayEnd = zonedTimeToUtc(addDays(date, 1), 0, 0, tz);
+  const own = (await google.listEvents(accessToken, calendarId, dayStart, dayEnd)).filter((e) => e.start.dateTime && e.end.dateTime);
+  const taskOf = (e: google.CalendarEvent) => e.extendedProperties?.private?.dayflow_task_id;
+
+  const busy = await fixedBusy(accessToken, calendarId, now, dayEnd, settings.bufferBeforeEventsMinutes, own);
+  for (const e of own) {
+    const id = taskOf(e);
+    if (id && id !== 'free_time') busy.push({ start: new Date(e.start.dateTime!), end: new Date(e.end.dateTime!) });
+  }
+  const config: FreeSlotConfig = { ...DEFAULT_FREE_SLOT_CONFIG, timezone: tz, windowStartHour: settings.windowStartHour, windowEndHour: settings.windowEndHour };
+  const ms = task.minutes * 60_000;
+  const slot = planIntoFreeSlots([], busy, date, now, config).free_slots.find((s) => s.end.getTime() - s.start.getTime() >= ms);
+  if (!slot) return { placed: false };
+
+  const start = slot.start;
+  const end = new Date(start.getTime() + ms);
+  await google.insertEvent(accessToken, calendarId, {
+    summary: `🎯 ${task.title}`,
+    description: `Von DayFlow eingeplant · geschätzt ${task.minutes} min`,
+    start,
+    end,
+    timeZone: tz,
+    taskId: task.id,
+    planDate: date,
+  });
+
+  for (const e of own.filter((x) => taskOf(x) === 'free_time')) {
+    let fs = new Date(e.start.dateTime!).getTime();
+    let fe = new Date(e.end.dateTime!).getTime();
+    if (fe <= start.getTime() || fs >= end.getTime()) continue;
+    if (start.getTime() - fs >= fe - end.getTime()) fe = start.getTime();
+    else fs = end.getTime();
+    if (fe - fs < 15 * 60_000) await google.deleteEvent(accessToken, calendarId, e.id);
+    else await google.patchEventTimes(accessToken, calendarId, e.id, new Date(fs), new Date(fe), tz);
+  }
+  return { placed: true, start: start.toISOString(), end: end.toISOString() };
+}
