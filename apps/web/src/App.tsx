@@ -3,7 +3,7 @@ import { useTheme } from './theme/themeContext';
 import { useAuth } from './auth/authContext';
 import styles from './App.module.css';
 import './styles.css';
-import { IconToday, IconInbox, IconChat, IconWeek, IconTasks, IconSun, IconMoon, IconSettings } from './components/Icons';
+import { IconToday, IconChat, IconWeek, IconTasks, IconSun, IconMoon, IconSettings } from './components/Icons';
 
 export default function App() {
   const location = useLocation();
@@ -16,8 +16,7 @@ export default function App() {
   
   const navItems = [
     { to: '/today', label: 'Heute', icon: <IconToday /> },
-    { to: '/', label: 'Inbox', icon: <IconInbox /> },
-    { to: '/chat', label: 'Chat', icon: <IconChat /> },
+    { to: '/', label: 'Assistent', icon: <IconChat /> },
     { to: '/week', label: 'Woche', icon: <IconWeek /> },
     { to: '/tasks', label: 'Aufgaben', icon: <IconTasks /> },
   ];

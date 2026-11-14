@@ -192,3 +192,22 @@ export async function listEvents(accessToken: string, calendarId: string, timeMi
   const out = await api<{ items: CalendarEvent[] }>(accessToken, `/calendars/${encodeURIComponent(calendarId)}/events?${params}`);
   return out.items || [];
 }
+
+/** A user-confirmed appointment in the DayFlow calendar (survives re-planning). */
+export async function insertAppointment(
+  accessToken: string,
+  calendarId: string,
+  ev: { title: string; start: Date; end: Date; timeZone: string; location?: string }
+) {
+  return api<{ id: string; htmlLink: string }>(accessToken, `/calendars/${encodeURIComponent(calendarId)}/events`, {
+    method: 'POST',
+    body: JSON.stringify({
+      summary: ev.title,
+      ...(ev.location ? { location: ev.location } : {}),
+      start: { dateTime: ev.start.toISOString(), timeZone: ev.timeZone },
+      end: { dateTime: ev.end.toISOString(), timeZone: ev.timeZone },
+      reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 30 }] },
+      extendedProperties: { private: { dayflow: '1', dayflow_kind: 'appointment' } },
+    }),
+  });
+}

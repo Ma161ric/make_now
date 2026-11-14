@@ -431,3 +431,12 @@ export async function getWeek(uid: string, start: string): Promise<{ connected: 
     days,
   };
 }
+
+/** Saves a confirmed appointment into the user's DayFlow calendar. */
+export async function addAppointment(uid: string, ev: { title: string; start: Date; end: Date; location?: string }) {
+  const snap = await connectionRef(uid).get();
+  const conn = snap.data() as CalendarConnection | undefined;
+  if (!conn?.refresh_token || !conn.calendar_id) throw new Error('Kalender ist nicht verbunden');
+  const accessToken = await google.refreshAccessToken(conn.refresh_token);
+  return google.insertAppointment(accessToken, conn.calendar_id, { ...ev, timeZone: conn.timezone || DEFAULT_FREE_SLOT_CONFIG.timezone });
+}

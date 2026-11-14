@@ -2,7 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';
-import { InboxNeuScreen, AufgabenScreen } from './screens/AufgabenScreen';
+import { AufgabenScreen } from './screens/AufgabenScreen';
+import { AssistentScreen } from './screens/AssistentScreen';
 import ReviewScreen from './screens/ReviewScreen';
 import { HeuteScreen } from './screens/HeuteScreen';
 import { WocheScreen } from './screens/WocheScreen';
@@ -10,7 +11,6 @@ import DailyReviewScreen from './screens/DailyReviewScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
-import { ChatScreen } from './screens/ChatScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from './screens/TermsOfServiceScreen';
@@ -41,13 +41,13 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="onboarding" element={<ProtectedRoute><OnboardingScreen /></ProtectedRoute>} />
                 <Route path="privacy" element={<PrivacyPolicyScreen />} />
                 <Route path="terms" element={<TermsOfServiceScreen />} />
-                <Route index element={<ProtectedRoute><OnboardingGuard><InboxNeuScreen /></OnboardingGuard></ProtectedRoute>} />
+                <Route index element={<ProtectedRoute><OnboardingGuard><AssistentScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="review/:id" element={<ProtectedRoute><OnboardingGuard><ReviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="week" element={<ProtectedRoute><OnboardingGuard><WocheScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="today" element={<ProtectedRoute><OnboardingGuard><HeuteScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="tasks" element={<ProtectedRoute><OnboardingGuard><AufgabenScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="daily-review" element={<ProtectedRoute><OnboardingGuard><DailyReviewScreen /></OnboardingGuard></ProtectedRoute>} />
-                <Route path="chat" element={<ProtectedRoute><OnboardingGuard><ChatScreen /></OnboardingGuard></ProtectedRoute>} />
+                <Route path="chat" element={<Navigate to="/" replace />} />
                 <Route path="settings" element={<ProtectedRoute><OnboardingGuard><SettingsScreen /></OnboardingGuard></ProtectedRoute>} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
