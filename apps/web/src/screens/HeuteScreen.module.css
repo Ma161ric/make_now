@@ -212,6 +212,7 @@
   overflow: hidden;
   border: 1px solid transparent;
 }
+.blockTitle, .blockMeta { position: relative; z-index: 2; }
 .blockTitle { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .blockMeta { font-size: 12px; opacity: 0.85; font-variant-numeric: tabular-nums; }
 
@@ -231,8 +232,7 @@
   height: 2px;
   margin-top: -1px;
   background: var(--highlight);
-  box-shadow: 0 0 0 1px var(--bg-secondary);
-  z-index: 2;
+  z-index: 1; /* above block backgrounds, below block text */
   pointer-events: none;
 }
 .nowLine::before {

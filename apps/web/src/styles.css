@@ -32,7 +32,7 @@ html, body {
 /*
  * Two palettes, each "two calm base colors + one rare highlight":
  *   dark  = Egyptian Blue #051F3E + white, Stone Blue #649BC8 for actions,
- *           Scarlet Red #EC2F36 only as a tiny highlight
+ *           Scarlet Red (#DC2B31, one shade for every red so white text stays readable)
  *   light = Soft Sand #F1E4DE + black, Mocha Green #4A4329 for actions,
  *           Watermelon Pink #FE74B6 only as a tiny highlight
  * --hero-*      the "Jetzt" card and the active nav item
@@ -63,9 +63,9 @@ html, body {
   --accent-line: #649bc8;
   --accent-bg: #0f3a63;
   --accent-text: #ffffff;
-  --highlight: #ec2f36;
-  --highlight-on-hero: #e12a31;   /* title on the white card, >= 3:1 for large text */
-  --highlight-on-sport: #ff8a8e;  /* title on the blue sport card */
+  --highlight: #dc2b31;
+  --highlight-on-hero: #dc2b31;   /* title on the white card, >= 3:1 for large text */
+  --highlight-on-sport: #dc2b31;  /* title on the blue sport card */
 
   --task-bg: #649bc8;
   --task-border: #649bc8;
@@ -111,7 +111,7 @@ html, body {
   --accent-text: #141414;
   --highlight: #fe74b6;
   --highlight-on-hero: #fe74b6;   /* title on the black card */
-  --highlight-on-sport: #fe8cc3;  /* title on the mocha sport card */
+  --highlight-on-sport: #fe74b6;  /* title on the mocha sport card */
 
   --task-bg: #4a4329;
   --task-border: #4a4329;
