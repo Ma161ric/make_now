@@ -64,6 +64,8 @@ html, body {
   --accent-bg: #0f3a63;
   --accent-text: #9cc4e4;
   --highlight: #ec2f36;
+  --highlight-on-hero: #e12a31;   /* title on the white card, >= 3:1 for large text */
+  --highlight-on-sport: #ff8a8e;  /* title on the blue sport card */
 
   --task-bg: #11355f;
   --task-border: #2a5585;
@@ -108,6 +110,8 @@ html, body {
   --accent-bg: #e3decb;
   --accent-text: #4a4329;
   --highlight: #fe74b6;
+  --highlight-on-hero: #fe74b6;   /* title on the black card */
+  --highlight-on-sport: #fe8cc3;  /* title on the mocha sport card */
 
   --task-bg: #f8f0ec;
   --task-border: #e2d1c8;

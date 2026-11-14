@@ -72,6 +72,9 @@
 .nowInner .eyebrow { color: var(--hero-text); display: inline-flex; align-items: center; gap: 8px; }
 .nowInner .eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--highlight); }
 .nowInner .muted, .nowInner .nowSub { color: var(--hero-muted); }
+.nowInner .nowTitle { color: var(--highlight-on-hero); }
+.nowInner.sport .nowTitle { color: var(--highlight-on-sport); }
+.nowInner.free .nowTitle { color: var(--free-text); }
 .nowInner.sport { background: var(--sport-bg); color: var(--sport-text); }
 .nowInner.free { background: var(--free-bg); color: var(--free-text); }
 .nowInner.sport .eyebrow, .nowInner.sport .muted, .nowInner.sport .nowSub { color: var(--sport-muted); }
@@ -230,7 +233,10 @@
   left: -8px;
   right: 0;
   height: 2px;
-  background: var(--accent-line);
+  margin-top: -1px;
+  background: var(--highlight);
+  box-shadow: 0 0 0 1px var(--bg-secondary);
+  z-index: 2;
   pointer-events: none;
 }
 .nowLine::before {
