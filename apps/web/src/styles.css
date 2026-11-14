@@ -90,8 +90,8 @@ html, body {
   --bg-secondary: #f8f0ec;
   --bg-tertiary: #e9dad2;
   --text-primary: #141414;
-  --text-secondary: #3a3527;
-  --text-muted: #5f5848;
+  --text-secondary: #1c1c1c;
+  --text-muted: #3a3a3a;
   --border-color: #e2d1c8;
   --border-strong: #c9b4a9;
   --shadow: rgba(20, 20, 20, 0.08);
@@ -108,7 +108,7 @@ html, body {
   --on-accent: #f8f0ec;
   --accent-line: #4a4329;
   --accent-bg: #e3decb;
-  --accent-text: #4a4329;
+  --accent-text: #141414;
   --highlight: #fe74b6;
   --highlight-on-hero: #fe74b6;   /* title on the black card */
   --highlight-on-sport: #fe8cc3;  /* title on the mocha sport card */
@@ -122,8 +122,8 @@ html, body {
   --sport-muted: #d6cbb3;
   --free-bg: #e3decb;
   --free-border: #c9c1a2;
-  --free-text: #2f2b18;
-  --free-muted: #4a4329;
+  --free-text: #141414;
+  --free-muted: #141414;
   --busy-border: #c9b4a9;
   --event-bg: #ffffff;
   --event-border: #141414;
