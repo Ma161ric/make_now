@@ -5,6 +5,7 @@ import { saveTask, addNote } from '../storage';
 import { extractFromNoteCloud } from '../firebase/functionsService';
 import { uuid } from '../utils';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
+import { MicButton } from '../components/MicButton';
 import styles from './ChatScreen.module.css';
 
 interface Proposal {
@@ -200,11 +201,12 @@ export const ChatScreen: React.FC = () => {
               send();
             }
           }}
-          placeholder="Was steht an? (Enter zum Senden, Shift+Enter für neue Zeile)"
+          placeholder="Was steht an? Schreiben oder sprechen …"
           rows={2}
           maxLength={4000}
           disabled={sending}
         />
+        <MicButton onText={(t) => setInput((cur) => (cur ? `${cur} ${t}` : t))} onError={setError} />
         <button className={styles.primaryButton} type="submit" disabled={sending || !input.trim()}>
           Senden
         </button>

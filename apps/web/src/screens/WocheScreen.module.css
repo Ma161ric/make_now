@@ -1,0 +1,125 @@
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.header { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.h1 { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+.nav { margin-left: auto; display: flex; gap: var(--space-2); }
+.navBtn {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 44px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.navBtn:disabled { opacity: 0.5; cursor: default; }
+.navBtn:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
+.legend { display: flex; gap: var(--space-5); flex-wrap: wrap; font-size: 13px; color: var(--text-muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; }
+.swTask { background: var(--task-bg); }
+.swEvent { background: var(--event-bg); }
+.swFree { background: var(--free-bg); }
+
+.banner { margin: 0; font-size: 14px; color: var(--text-muted); }
+.banner a { color: var(--text-primary); font-weight: 600; }
+
+.connectHint {
+  max-width: 1120px;
+  margin: var(--space-5) auto 0;
+  padding: var(--space-4) var(--space-5);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+.connectHint a { text-decoration: none; display: inline-flex; align-items: center; }
+
+.scroller {
+  overflow-x: auto;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+.grid { display: grid; grid-template-columns: 52px repeat(7, minmax(110px, 1fr)); min-width: 820px; }
+
+.corner { border-bottom: 1px solid var(--border-color); }
+.dayHead {
+  padding: 10px 8px;
+  border-left: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.weekday { font-size: 12px; color: var(--text-muted); }
+.dayNum { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+.today .dayNum { color: var(--highlight); }
+.allDay {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--event-bg);
+  color: var(--event-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hours { position: relative; }
+.hours span {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.hours span:first-child { transform: none; }
+
+.dayCol { position: relative; border-left: 1px solid var(--border-color); }
+.todayCol { background: rgba(127, 127, 127, 0.07); }
+.hourLine { position: absolute; left: 0; right: 0; border-top: 1px solid var(--border-color); opacity: 0.6; }
+
+.block {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  padding: 4px 7px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.bTitle { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bMeta { font-size: 11px; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b_task, .b_sport { background: var(--task-bg); color: var(--task-text); }
+.b_event, .b_busy { background: var(--event-bg); color: var(--event-text); }
+.b_free { background: var(--free-bg); color: var(--free-text); }
+
+@media (max-width: 768px) {
+  .page { padding: var(--space-4); }
+  .h1 { font-size: 22px; }
+}

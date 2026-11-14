@@ -344,3 +344,90 @@ export async function getTimeline(uid: string, now = new Date()): Promise<Timeli
     items,
   };
 }
+
+export interface WeekDay {
+  date: string;
+  all_day: string[];
+  items: TimelineItem[];
+}
+
+/**
+ * Seven days starting at `start` (YYYY-MM-DD, local): DayFlow blocks and the
+ * user's own appointments, for the week view.
+ */
+export async function getWeek(uid: string, start: string): Promise<{ connected: boolean; status?: string; needs_upgrade?: boolean; window?: { startHour: number; endHour: number }; days: WeekDay[] }> {
+  const snap = await connectionRef(uid).get();
+  const conn = snap.data() as (CalendarConnection & { scopes?: string[] }) | undefined;
+  if (!conn?.refresh_token) return { connected: false, days: [] };
+  if (conn.status === 'needs_reauth') return { connected: true, status: 'needs_reauth', days: [] };
+
+  const settings = { ...DEFAULT_SETTINGS, ...(conn.settings || {}) };
+  const tz = conn.timezone || DEFAULT_FREE_SLOT_CONFIG.timezone;
+  const from = zonedTimeToUtc(start, 0, 0, tz);
+  const to = zonedTimeToUtc(addDays(start, 7), 0, 0, tz);
+  const canReadEvents = (conn.scopes || []).includes(google.EVENTS_READ_SCOPE);
+
+  let accessToken: string;
+  try {
+    accessToken = await google.refreshAccessToken(conn.refresh_token);
+  } catch (e) {
+    if (e instanceof google.GoogleAuthRevokedError) {
+      await connectionRef(uid).update({ status: 'needs_reauth' });
+      return { connected: true, status: 'needs_reauth', days: [] };
+    }
+    throw e;
+  }
+
+  const days: WeekDay[] = Array.from({ length: 7 }, (_, i) => ({ date: addDays(start, i), all_day: [], items: [] }));
+  const dayOf = (iso: string) => days.find((d) => d.date === localDateString(new Date(iso), tz));
+
+  const calendarIds = (await google.listVisibleCalendarIds(accessToken)).filter((id) => id !== conn.calendar_id);
+  const own = conn.calendar_id ? await google.listEvents(accessToken, conn.calendar_id, from, to) : [];
+  for (const e of own) {
+    if (!e.start.dateTime || !e.end.dateTime) continue;
+    const taskId = e.extendedProperties?.private?.dayflow_task_id;
+    const kind: TimelineKind = taskId === 'sport' ? 'sport' : taskId === 'free_time' ? 'free' : taskId ? 'task' : 'event';
+    dayOf(e.start.dateTime)?.items.push({
+      start: new Date(e.start.dateTime).toISOString(),
+      end: new Date(e.end.dateTime).toISOString(),
+      kind,
+      title: (e.summary || '').replace(/^[^\p{L}\p{N}]+/u, '').trim() || 'Block',
+      ...(kind === 'task' ? { task_id: taskId } : {}),
+    });
+  }
+
+  if (canReadEvents) {
+    const lists = await Promise.all(calendarIds.slice(0, 20).map((id) => google.listEvents(accessToken, id, from, to).catch(() => [])));
+    for (const e of lists.flat()) {
+      if (e.status === 'cancelled' || e.attendees?.some((a) => a.self && a.responseStatus === 'declined')) continue;
+      const title = (e.summary || '').trim() || 'Termin';
+      if (!e.start.dateTime || !e.end.dateTime) {
+        // all-day (end date is exclusive)
+        const s0 = e.start.date;
+        const e0 = e.end.date;
+        if (s0) for (const d of days) if (d.date >= s0 && (!e0 || d.date < e0)) d.all_day.push(title);
+        continue;
+      }
+      dayOf(e.start.dateTime)?.items.push({
+        start: new Date(e.start.dateTime).toISOString(),
+        end: new Date(e.end.dateTime).toISOString(),
+        kind: 'event',
+        title,
+        ...(e.location ? { location: e.location.slice(0, 120) } : {}),
+      });
+    }
+  } else {
+    for (const b of await google.freeBusy(accessToken, calendarIds, from, to)) {
+      dayOf(b.start.toISOString())?.items.push({ start: b.start.toISOString(), end: b.end.toISOString(), kind: 'busy', title: 'Termin' });
+    }
+  }
+  for (const d of days) d.items.sort((a, b) => a.start.localeCompare(b.start));
+
+  return {
+    connected: true,
+    status: 'ok',
+    ...(canReadEvents ? {} : { needs_upgrade: true }),
+    window: { startHour: settings.windowStartHour, endHour: settings.windowEndHour },
+    days,
+  };
+}
