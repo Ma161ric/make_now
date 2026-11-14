@@ -1,35 +1,20 @@
 /**
- * Two pages from one component:
- * - Inbox (mode="inbox"): write or speak what is on your mind; what the AI
- *   recognises shows up right below, confirm with ✓ or drop with ×.
- * - Aufgaben (mode="tasks"): the list, Heute (times from the calendar) and
- *   Später, done/undone with one tap, tap a task to edit / plan / delete.
+ * Aufgaben: the list, Heute (times from the calendar) and Später,
+ * done/undone with one tap, tap a task to edit / plan / delete.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import type { Task, Importance } from '@make-now/core';
 import { useAuth } from '../auth/authContext';
 import { useTasksSync } from '../hooks/useSyncEffect';
 import { saveTask, updateTaskStatus } from '../storage';
-import { extractFromNoteCloud } from '../firebase/functionsService';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
-import { MicButton } from '../components/MicButton';
-import { IconArrowRight, IconCheck } from '../components/Icons';
-import {
-  type Suggestion,
-  loadSuggestions,
-  saveSuggestions,
-  onSuggestionsChange,
-  fromExtraction,
-  suggestionToTask,
-  durationLabel,
-} from '../utils/suggestions';
+import { IconCheck } from '../components/Icons';
+import { durationLabel } from '../utils/suggestions';
 import { uuid } from '../utils';
 import styles from './AufgabenScreen.module.css';
 
 const OPEN = new Set(['open', 'scheduled', 'in_progress']);
 const DURATIONS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 240];
-const AUTO_KEY = (uid: string) => `dayflow_auto_accept_${uid}`;
 
 const toDate = (v: any): Date | undefined => {
   if (!v) return undefined;
@@ -55,14 +40,12 @@ const hhmm = (iso: string) => new Date(iso).toLocaleTimeString('de-DE', { hour: 
 const dueLabel = (d?: Date) => (d ? `bis ${d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}` : '');
 const IMPORTANCE: Record<Importance, string> = { high: 'wichtig', medium: 'normal', low: 'unwichtig' };
 
-const TasksAndInbox: React.FC<{ mode: 'inbox' | 'tasks' }> = ({ mode }) => {
+export const AufgabenScreen: React.FC = () => {
   const { user, firebaseUser } = useAuth();
   const uid = user?.id || '';
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [todayTimes, setTodayTimes] = useState<Record<string, string>>({});
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => (uid ? loadSuggestions(uid) : []));
-  const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [tab, setTab] = useState<'open' | 'done'>('open');
@@ -70,7 +53,6 @@ const TasksAndInbox: React.FC<{ mode: 'inbox' | 'tasks' }> = ({ mode }) => {
   const [query, setQuery] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
-  const [autoAccept, setAutoAccept] = useState(() => (uid ? localStorage.getItem(AUTO_KEY(uid)) === '1' : false));
 
   // Tasks live from Firestore
   const onTasks = useCallback((raw: any[]) => {
@@ -78,14 +60,6 @@ const TasksAndInbox: React.FC<{ mode: 'inbox' | 'tasks' }> = ({ mode }) => {
     setLoaded(true);
   }, []);
   useTasksSync(onTasks, { user: firebaseUser, enabled: !!firebaseUser });
-
-  // Suggestions (shared with the capture field on "Heute")
-  useEffect(() => {
-    if (!uid) return;
-    setSuggestions(loadSuggestions(uid));
-    setAutoAccept(localStorage.getItem(AUTO_KEY(uid)) === '1');
-    return onSuggestionsChange(() => setSuggestions(loadSuggestions(uid)));
-  }, [uid]);
 
   // Today's planned times from the calendar
   const loadToday = useCallback(async () => {
@@ -107,54 +81,6 @@ const TasksAndInbox: React.FC<{ mode: 'inbox' | 'tasks' }> = ({ mode }) => {
   const flash = (m: string) => {
     setMessage(m);
     setTimeout(() => setMessage((cur) => (cur === m ? null : cur)), 4000);
-  };
-
-  const setSugg = (list: Suggestion[]) => {
-    setSuggestions(list);
-    saveSuggestions(uid, list);
-  };
-
-  const accept = async (s: Suggestion) => {
-    try {
-      await saveTask(uid, suggestionToTask(s), firebaseUser);
-      setSugg(loadSuggestions(uid).filter((x) => x.id !== s.id));
-    } catch (e: any) {
-      flash(`Konnte nicht speichern: ${e.message}`);
-    }
-  };
-  const drop = (s: Suggestion) => setSugg(suggestions.filter((x) => x.id !== s.id));
-  const editSuggestion = (id: string, patch: Partial<Suggestion>) => setSugg(suggestions.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-
-  const submit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const note = text.trim();
-    if (!note || busy) return;
-    setBusy(true);
-    try {
-      const extraction = await extractFromNoteCloud(note);
-      let found = fromExtraction(extraction, note);
-      if (!found.length) {
-        // AI found nothing: keep the note as one task so nothing gets lost
-        found = [{ id: uuid(), kind: 'task', title: note.slice(0, 200), duration_min_minutes: 15, duration_max_minutes: 30, importance: 'medium', source: note, created_at: new Date().toISOString() }];
-      }
-      setText('');
-      if (autoAccept) {
-        for (const s of found) await saveTask(uid, suggestionToTask(s), firebaseUser);
-        flash(`${found.length} ${found.length === 1 ? 'Aufgabe' : 'Aufgaben'} angelegt.`);
-      } else {
-        setSugg([...found, ...loadSuggestions(uid)]);
-      }
-    } catch (err: any) {
-      flash(`Das hat nicht geklappt: ${err.message}`);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const toggleAuto = () => {
-    const next = !autoAccept;
-    setAutoAccept(next);
-    localStorage.setItem(AUTO_KEY(uid), next ? '1' : '0');
   };
 
   const toggleDone = async (t: Task) => {
@@ -254,94 +180,6 @@ const TasksAndInbox: React.FC<{ mode: 'inbox' | 'tasks' }> = ({ mode }) => {
     </li>
   );
 
-  if (mode === 'inbox') {
-    return (
-      <div className={styles.page}>
-        <div>
-          <h1 className={styles.h1}>Was geht dir durch den Kopf?</h1>
-          <p className={styles.lead}>Einfach reinschreiben oder sprechen. DayFlow macht Aufgaben daraus.</p>
-        </div>
-      <form className={styles.capture} onSubmit={submit}>
-        <label htmlFor="capture" className="visually-hidden">Was steht an?</label>
-        <textarea
-          id="capture"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              submit();
-            }
-          }}
-          placeholder="Was steht an? Schreiben oder sprechen …"
-          rows={2}
-          maxLength={2000}
-          disabled={busy}
-        />
-        <div className={styles.captureActions}>
-          <MicButton onText={(t) => setText((cur) => (cur ? `${cur} ${t}` : t))} onError={flash} className={styles.captureMic} />
-          <button type="submit" className={styles.captureSend} disabled={!text.trim() || busy} aria-label="In Aufgaben umwandeln">
-            {busy ? <span className={styles.dots}>…</span> : <IconArrowRight size={18} />}
-          </button>
-        </div>
-      </form>
-
-      {message && <p className={styles.message} role="status">{message}</p>}
-
-      {suggestions.length > 0 && (
-        <section className={styles.card} aria-label="Neu erkannt">
-          <div className={styles.cardHeader}>
-            <h2>Neu erkannt</h2>
-            <label className={styles.auto}>
-              <input type="checkbox" checked={autoAccept} onChange={toggleAuto} /> künftig automatisch übernehmen
-            </label>
-          </div>
-          <ul className={styles.list}>
-            {suggestions.map((s) => (
-              <li key={s.id} className={styles.suggestion}>
-                <span className={styles.newTag}>{s.kind === 'event' ? 'Termin' : s.kind === 'idea' ? 'Idee' : 'neu'}</span>
-                <div className={styles.suggestionMain}>
-                  <input
-                    className={styles.inlineInput}
-                    value={s.title}
-                    onChange={(e) => editSuggestion(s.id, { title: e.target.value })}
-                    aria-label="Titel"
-                    maxLength={200}
-                  />
-                  <span className={styles.taskMeta}>
-                    <select
-                      className={styles.inlineSelect}
-                      value={s.duration_max_minutes}
-                      onChange={(e) => editSuggestion(s.id, { duration_min_minutes: Number(e.target.value), duration_max_minutes: Number(e.target.value) })}
-                      aria-label="Dauer"
-                    >
-                      {[...new Set([...DURATIONS, s.duration_max_minutes])].sort((a, b) => a - b).map((m) => (
-                        <option key={m} value={m}>{durationLabel(m, m)}</option>
-                      ))}
-                    </select>
-                    {s.due_at && ` · ${dueLabel(new Date(s.due_at))}`}
-                  </span>
-                </div>
-                <button className={styles.iconAccept} onClick={() => accept(s)} aria-label={`„${s.title}“ übernehmen`}>
-                  <IconCheck size={16} />
-                </button>
-                <button className={styles.iconDrop} onClick={() => drop(s)} aria-label={`„${s.title}“ verwerfen`}>×</button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-        {suggestions.length === 0 && !busy && (
-          <p className={styles.hint}>
-            {open.length ? `${open.length} offene ${open.length === 1 ? 'Aufgabe' : 'Aufgaben'}` : 'Noch keine offenen Aufgaben'} ·{' '}
-            <Link to="/tasks">Zu den Aufgaben</Link>
-          </p>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className={styles.page}>
       <div className={styles.headerRow}>
@@ -410,7 +248,6 @@ const TasksAndInbox: React.FC<{ mode: 'inbox' | 'tasks' }> = ({ mode }) => {
   );
 };
 
-export const AufgabenScreen: React.FC = () => <TasksAndInbox mode="tasks" />;
 
 const TaskEditor: React.FC<{
   task: Task;
