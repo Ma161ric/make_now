@@ -10,6 +10,7 @@ import { db } from './firebaseAdmin.js';
 import * as google from './google.js';
 import {
   planIntoFreeSlots,
+  planFreeTime,
   zonedTimeToUtc,
   localDateString,
   addDays,
@@ -24,7 +25,12 @@ export interface CalendarSettings {
   windowEndHour: number;
   maxBlocks: number;
   maxPlannedMinutes: number;
+  /** Fill the gaps left after tasks with free-time blocks */
+  freeTimeEnabled: boolean;
+  freeTimeIdeas: string[];
 }
+
+export const DEFAULT_FREE_TIME_IDEAS = ['Sport / Gym', 'Spaziergang', 'Freunde treffen', 'Lesen', 'Kochen', 'Musik / Hobby'];
 
 export const DEFAULT_SETTINGS: CalendarSettings = {
   enabled: true,
@@ -32,6 +38,8 @@ export const DEFAULT_SETTINGS: CalendarSettings = {
   windowEndHour: DEFAULT_FREE_SLOT_CONFIG.windowEndHour,
   maxBlocks: DEFAULT_FREE_SLOT_CONFIG.maxBlocks,
   maxPlannedMinutes: DEFAULT_FREE_SLOT_CONFIG.maxPlannedMinutes,
+  freeTimeEnabled: true,
+  freeTimeIdeas: DEFAULT_FREE_TIME_IDEAS,
 };
 
 export interface CalendarConnection {
@@ -78,6 +86,7 @@ export type PlanDay = 'today' | 'tomorrow';
 export interface PlanResult {
   date: string;
   blocks: { task_id: string; title: string; start: string; end: string; duration_minutes: number }[];
+  free_time: { start: string; end: string; idea: string }[];
   skipped_task_ids: string[];
   removed_previous: number;
 }
@@ -140,6 +149,24 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
     });
   }
 
+  const freeTime = settings.freeTimeEnabled ? planFreeTime(plan.remaining_slots, date, settings.freeTimeIdeas) : [];
+  for (const block of freeTime) {
+    await google.insertEvent(accessToken, calendarId, {
+      summary: block.idea ? `🌿 Freizeit · ${block.idea}` : '🌿 Freizeit',
+      description: block.idea
+        ? `Keine Aufgabe eingeplant, die Zeit gehört dir. Vorschlag: ${block.idea}`
+        : 'Keine Aufgabe eingeplant, die Zeit gehört dir.',
+      start: block.start,
+      end: block.end,
+      timeZone: tz,
+      taskId: 'free_time',
+      planDate: date,
+      transparent: true,
+      colorId: '2', // sage green
+      reminderMinutes: null,
+    });
+  }
+
   const result: PlanResult = {
     date,
     blocks: plan.blocks.map((b) => ({
@@ -149,6 +176,7 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
       end: b.end.toISOString(),
       duration_minutes: b.duration_minutes,
     })),
+    free_time: freeTime.map((f) => ({ start: f.start.toISOString(), end: f.end.toISOString(), idea: f.idea })),
     skipped_task_ids: plan.skipped_task_ids,
     removed_previous: previous.length,
   };
