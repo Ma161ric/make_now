@@ -168,27 +168,27 @@ export default function WeekCalendarScreen() {
               <div
                 key={day.date}
                 style={{
-                  border: isToday ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+                  border: isToday ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
                   borderRadius: 8,
                   padding: '12px',
-                  backgroundColor: isToday ? '#f0f9ff' : '#fafafa',
+                  backgroundColor: isToday ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
                   minHeight: '360px',
                   display: 'flex',
                   flexDirection: 'column',
-                  boxShadow: isToday ? '0 0 0 3px rgba(59, 130, 246, 0.1)' : 'none',
+                  boxShadow: isToday ? '0 0 0 3px var(--shadow)' : 'none',
                   transition: 'all 0.2s ease',
                 }}
               >
                 {/* Day Header */}
-                <div style={{ marginBottom: 8, borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+                <div style={{ marginBottom: 8, borderBottom: '1px solid var(--border-color)', paddingBottom: 8 }}>
                   <div style={{ fontWeight: 600, fontSize: 14 }}>
                     {dayName}
                   </div>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     {formatDateShort(day.date)}
                   </div>
                   {day.date && getDayPlan(userId, day.date)?.status === 'confirmed' && (
-                    <div style={{ fontSize: 10, color: '#059669', marginTop: 4 }}>✓ Plan bestätigt</div>
+                    <div style={{ fontSize: 10, color: 'var(--accent-primary)', marginTop: 4 }}>✓ Plan bestätigt</div>
                   )}
                 </div>
 
@@ -196,14 +196,14 @@ export default function WeekCalendarScreen() {
                 {day.focusTask && (
                   <div style={{
                     padding: 8,
-                    backgroundColor: '#fef3c7',
+                    backgroundColor: 'var(--bg-tertiary)',
                     borderRadius: 6,
                     marginBottom: 8,
-                    borderLeft: '3px solid #f59e0b',
+                    borderLeft: '3px solid var(--highlight)',
                     fontSize: 12,
                   }}>
                     <div style={{ fontWeight: 600 }}>🎯 {day.focusTask.title}</div>
-                    <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                       {day.focusTask.duration_min_minutes}-{day.focusTask.duration_max_minutes}min
                     </div>
                   </div>
@@ -212,7 +212,7 @@ export default function WeekCalendarScreen() {
                 {/* Mini Tasks */}
                 {day.miniTasks.length > 0 && (
                   <div style={{ marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4, color: '#6b7280' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>
                       Minis ({day.miniTasks.length})
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -221,10 +221,10 @@ export default function WeekCalendarScreen() {
                           key={task.id}
                           style={{
                             padding: 6,
-                            backgroundColor: '#e0f2fe',
+                            backgroundColor: 'var(--bg-tertiary)',
                             borderRadius: 4,
                             fontSize: 11,
-                            borderLeft: '2px solid #0284c7',
+                            borderLeft: '2px solid var(--accent-primary)',
                           }}
                         >
                           ⚡ {task.title}
@@ -236,13 +236,13 @@ export default function WeekCalendarScreen() {
 
                 {/* Time Blocks */}
                 {day.blocks.length > 0 && (
-                  <div style={{ marginTop: 'auto', paddingTop: 8, borderTop: '1px solid #e5e7eb' }}>
-                    <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, color: '#6b7280' }}>
+                  <div style={{ marginTop: 'auto', paddingTop: 8, borderTop: '1px solid var(--border-color)' }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>
                       Zeitblöcke
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {day.blocks.slice(0, 3).map((block, idx) => (
-                        <div key={idx} style={{ fontSize: 9, color: '#6b7280' }}>
+                        <div key={idx} style={{ fontSize: 9, color: 'var(--text-muted)' }}>
                           <span style={{ textTransform: 'uppercase', fontWeight: 500 }}>
                             {block.block_type}
                           </span>
@@ -253,7 +253,7 @@ export default function WeekCalendarScreen() {
                         </div>
                       ))}
                       {day.blocks.length > 3 && (
-                        <div style={{ fontSize: 9, color: '#9ca3af' }}>
+                        <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>
                           +{day.blocks.length - 3} mehr
                         </div>
                       )}
@@ -263,7 +263,7 @@ export default function WeekCalendarScreen() {
 
                 {/* Empty State */}
                 {!day.focusTask && day.miniTasks.length === 0 && day.blocks.length === 0 && (
-                  <div style={{ color: '#d1d5db', fontSize: 12, textAlign: 'center', marginTop: 'auto' }}>
+                  <div style={{ color: 'var(--border-strong)', fontSize: 12, textAlign: 'center', marginTop: 'auto' }}>
                     Keine Planung
                   </div>
                 )}

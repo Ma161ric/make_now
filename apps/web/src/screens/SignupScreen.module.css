@@ -34,11 +34,11 @@
 .error {
   margin-bottom: 16px;
   padding: 12px;
-  background: #fee;
-  color: #c33;
+  background: var(--bg-tertiary);
+  color: var(--danger);
   border-radius: 8px;
   font-size: 14px;
-  border-left: 4px solid #c33;
+  border-left: 4px solid var(--danger);
 }
 
 .form {
@@ -72,7 +72,7 @@
 .formGroup input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px var(--shadow);
 }
 
 .formGroup input:disabled {
@@ -95,7 +95,7 @@
 .submitButton:hover:not(:disabled) {
   background: var(--accent-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .submitButton:disabled {

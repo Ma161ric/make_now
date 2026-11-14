@@ -213,7 +213,7 @@ export default function ReviewScreen() {
         <div className="muted" style={{ marginBottom: 8 }}>Notiz: {note.raw_text}</div>
         
         {/* Re-extraction section */}
-        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border-color)' }}>
           <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="label">KI-Extraktion</div>
             <button
@@ -227,17 +227,17 @@ export default function ReviewScreen() {
             </button>
           </div>
           {hasEmptyExtraction && (
-            <div className="muted" style={{ marginTop: 8, fontSize: '0.875rem', color: '#d97706' }}>
+            <div className="muted" style={{ marginTop: 8, fontSize: '0.875rem', color: 'var(--highlight)' }}>
               Keine Items extrahiert - nutze den Button um mit KI zu analysieren oder fülle Felder manuell aus.
             </div>
           )}
         </div>
 
-        {error && <div style={{ color: '#b91c1c', marginBottom: 8, padding: '8px', backgroundColor: '#fee2e2', borderRadius: '4px' }}>{error}</div>}
-        {success && <div style={{ color: '#15803d', marginBottom: 8, padding: '8px', backgroundColor: '#dcfce7', borderRadius: '4px' }}>{success}</div>}
+        {error && <div style={{ color: 'var(--danger)', marginBottom: 8, padding: '8px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>{error}</div>}
+        {success && <div style={{ color: 'var(--accent-primary)', marginBottom: 8, padding: '8px', backgroundColor: 'var(--accent-bg)', borderRadius: '4px' }}>{success}</div>}
         
         {items.length === 0 && (
-          <div className="card" style={{ borderColor: '#fbbf24', borderLeft: '4px solid #fbbf24', backgroundColor: '#fffbeb' }}>
+          <div className="card" style={{ borderColor: 'var(--highlight)', borderLeft: '4px solid var(--highlight)', backgroundColor: 'var(--bg-tertiary)' }}>
             <div className="label" style={{ marginBottom: 12 }}>🆕 Item manuell erstellen</div>
             <div className="grid" style={{ gap: 8, marginBottom: 12 }}>
               <div>
@@ -274,7 +274,7 @@ export default function ReviewScreen() {
         
         <div className="grid" style={{ gap: 12, marginBottom: 16 }}>
           {items.map((item) => (
-            <div key={item.id} className="card" style={{ borderColor: '#e5e7eb' }}>
+            <div key={item.id} className="card" style={{ borderColor: 'var(--border-color)' }}>
               <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
@@ -407,9 +407,9 @@ function TaskFieldsEditor({ title, fields, onChange }: { title: string; fields: 
           {loading ? '⏳' : '🤖'} AI Estimate
         </button>
       </div>
-      {error && <div className="muted" style={{ color: '#b91c1c', fontSize: '0.875rem' }}>{error}</div>}
+      {error && <div className="muted" style={{ color: 'var(--danger)', fontSize: '0.875rem' }}>{error}</div>}
       {showEstimation && (
-        <div className="muted" style={{ color: '#15803d', fontSize: '0.875rem' }}>✓ Duration estimated by AI</div>
+        <div className="muted" style={{ color: 'var(--accent-primary)', fontSize: '0.875rem' }}>✓ Duration estimated by AI</div>
       )}
       <div className="flex">
         <input

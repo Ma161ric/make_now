@@ -118,13 +118,13 @@ function PlanDisplay({
   onClose: () => void;
 }) {
   return (
-    <div style={{ marginTop: 12, padding: 12, background: '#fef3c7', borderRadius: 0, borderLeft: '4px solid #f59e0b' }}>
-      <div style={{ fontWeight: 600, color: '#92400e', marginBottom: 12 }}>{title}</div>
+    <div style={{ marginTop: 12, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 0, borderLeft: '4px solid var(--highlight)' }}>
+      <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>{title}</div>
 
       {plan.focus_recommendation && (
-        <div style={{ marginBottom: 12, padding: 8, background: '#fef08a', borderRadius: 4 }}>
+        <div style={{ marginBottom: 12, padding: 8, background: 'var(--bg-tertiary)', borderRadius: 4 }}>
           <div className="label" style={{ fontSize: '0.875rem', marginBottom: 4 }}>🔥 Fokus</div>
-          <div style={{ fontSize: '0.95rem', color: '#78350f' }}>{plan.focus_recommendation}</div>
+          <div style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{plan.focus_recommendation}</div>
         </div>
       )}
 
@@ -133,9 +133,9 @@ function PlanDisplay({
           <div className="label" style={{ fontSize: '0.875rem', marginBottom: 6 }}>📋 Tasks</div>
           <div style={{ display: 'grid', gap: 6 }}>
             {plan.suggested_tasks.map((task, i) => (
-              <div key={i} style={{ padding: 8, background: 'white', borderRadius: 4, borderLeft: `3px solid ${task.priority === 'high' ? '#ef4444' : task.priority === 'medium' ? '#f59e0b' : '#10b981'}` }}>
+              <div key={i} style={{ padding: 8, background: 'white', borderRadius: 4, borderLeft: `3px solid ${task.priority === 'high' ? 'var(--danger)' : task.priority === 'medium' ? 'var(--highlight)' : 'var(--accent-primary)'}` }}>
                 <div style={{ fontWeight: 500, fontSize: '0.95rem' }}>{task.title}</div>
-                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: 4 }}>⏱️ {task.duration_minutes}min • {task.priority === 'high' ? '🔴 Hoch' : task.priority === 'medium' ? '🟡 Mittel' : '🟢 Niedrig'}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>⏱️ {task.duration_minutes}min • {task.priority === 'high' ? '🔴 Hoch' : task.priority === 'medium' ? '🟡 Mittel' : '🟢 Niedrig'}</div>
               </div>
             ))}
           </div>
@@ -145,7 +145,7 @@ function PlanDisplay({
       {plan.planning_tips && plan.planning_tips.length > 0 && (
         <div style={{ marginBottom: 12 }}>
           <div className="label" style={{ fontSize: '0.875rem', marginBottom: 6 }}>💡 Tipps</div>
-          <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569', gap: 4 }}>
+          <ul style={{ marginLeft: 16, marginTop: 4, color: 'var(--text-muted)', gap: 4 }}>
             {plan.planning_tips.map((tip, i) => (
               <li key={i} style={{ marginBottom: 4, fontSize: '0.9rem' }}>{tip}</li>
             ))}

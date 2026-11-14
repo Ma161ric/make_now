@@ -87,7 +87,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 style={{
                   marginBottom: '24px',
                   textAlign: 'left',
-                  background: '#fee',
+                  background: 'var(--bg-tertiary)',
                   padding: '12px',
                   borderRadius: '6px',
                   fontSize: '14px',
@@ -100,7 +100,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   style={{
                     overflow: 'auto',
                     fontSize: '12px',
-                    color: '#c33',
+                    color: 'var(--danger)',
                   }}
                 >
                   {this.state.error.toString()}

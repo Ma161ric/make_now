@@ -114,7 +114,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
               width: '100%',
               minHeight: 100,
               padding: 8,
-              border: '1px solid #e5e7eb',
+              border: '1px solid var(--border-color)',
               borderRadius: 4,
               fontFamily: 'inherit',
               fontSize: 'inherit',
@@ -123,7 +123,7 @@ export function TaskReviewModal({ task, onClose, onSave }: TaskReviewModalProps)
           />
         </div>
 
-        {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
+        {error && <div style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</div>}
 
         <div className="flex" style={{ justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
           <button 
