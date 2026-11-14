@@ -152,21 +152,25 @@ export const HeuteScreen: React.FC = () => {
     }
   };
 
-  // "Nicht geschafft": rest of the block into the next free gap today
-  const moveRest = async (item: Item) => {
+  // "Brauche länger": block gets longer, later DayFlow blocks move back
+  const extend = async (item: Item, minutes: number) => {
     if (!item.task_id) return;
     setMoving(true);
     setError(null);
     try {
-      const r = await api<{ moved: boolean; minutes: number; start?: string; end?: string }>('reschedule', { task_id: item.task_id });
-      setInfo(
-        r.moved && r.start && r.end
-          ? `„${item.title}“ geht um ${hhmm(r.start)}–${hhmm(r.end)} weiter (noch ${r.minutes} min).`
-          : `Heute ist keine Lücke mehr frei. „${item.title}“ bleibt offen und wird morgen eingeplant.`
-      );
+      const r = await api<{ end: string; added: number; moved: number; dropped: string[] }>('extend', { task_id: item.task_id, minutes });
+      const parts = [
+        r.added > 0
+          ? `„${item.title}“ geht jetzt bis ${hhmm(r.end)}.`
+          : `Länger geht nicht, danach kommt ein Termin aus deinem Kalender.`,
+      ];
+      if (r.added > 0 && r.added < minutes) parts.push(`Nur ${r.added} min, danach kommt ein Termin.`);
+      if (r.moved > 0) parts.push(`${r.moved} ${r.moved === 1 ? 'Block ist' : 'Blöcke sind'} nach hinten gerutscht.`);
+      if (r.dropped.length) parts.push(`Passt heute nicht mehr: ${r.dropped.join(', ')}. Kommt morgen dran.`);
+      setInfo(parts.join(' '));
       await load();
     } catch (e: any) {
-      setError(`Verschieben hat nicht geklappt: ${e.message}`);
+      setError(`Verlängern hat nicht geklappt: ${e.message}`);
     } finally {
       setMoving(false);
     }
@@ -247,7 +251,7 @@ export const HeuteScreen: React.FC = () => {
               </div>
             </div>
           ) : current ? (
-            <NowCard item={current} now={t} next={next} done={!!current.task_id && done.has(current.task_id)} onDone={() => markDone(current)} onLater={() => moveRest(current)} moving={moving} />
+            <NowCard item={current} now={t} next={next} done={!!current.task_id && done.has(current.task_id)} onDone={() => markDone(current)} onExtend={(m) => extend(current, m)} moving={moving} />
           ) : (
             <FreeCard now={t} next={next} onPlan={planToday} busy={busy} />
           )}
@@ -307,7 +311,8 @@ export const HeuteScreen: React.FC = () => {
   );
 };
 
-const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: boolean; onDone: () => void; onLater: () => void; moving: boolean }> = ({ item, now, next, done, onDone, onLater, moving }) => {
+const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: boolean; onDone: () => void; onExtend: (minutes: number) => void; moving: boolean }> = ({ item, now, next, done, onDone, onExtend, moving }) => {
+  const [askLonger, setAskLonger] = React.useState(false);
   const start = new Date(item.start).getTime();
   const end = new Date(item.end).getTime();
   const progress = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
@@ -346,9 +351,17 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
                 <button className="button" onClick={onDone} disabled={moving}>
                   Erledigt
                 </button>
-                <button className={`button ${styles.later}`} onClick={onLater} disabled={moving} title="Rest in die nächste freie Lücke schieben">
-                  {moving ? 'Verschiebe …' : 'Nicht geschafft'}
-                </button>
+                {askLonger ? (
+                  [15, 30, 60].map((m) => (
+                    <button key={m} className={`button ${styles.later}`} disabled={moving} onClick={() => { onExtend(m); setAskLonger(false); }}>
+                      +{m} min
+                    </button>
+                  ))
+                ) : (
+                  <button className={`button ${styles.later}`} onClick={() => setAskLonger(true)} disabled={moving}>
+                    {moving ? 'Verschiebe …' : 'Brauche länger'}
+                  </button>
+                )}
               </>
             )}
           </div>
