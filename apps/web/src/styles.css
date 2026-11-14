@@ -64,7 +64,7 @@ html, body {
   --accent-bg: #26302a;
   --accent-text: #f2f2ee;
   --highlight: #f2a65a;
-  --highlight-on-hero: #121413;   /* apricot on sage is too weak: title in graphite */
+  --highlight-on-hero: #93450a;   /* apricot, darkened so the title stays readable on sage */
   --highlight-on-sport: #121413;
 
   --task-bg: #b5c4ae;

@@ -70,7 +70,6 @@
   gap: var(--space-6);
 }
 .nowInner .eyebrow { color: var(--hero-text); display: inline-flex; align-items: center; gap: 8px; }
-.nowInner .eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--highlight); }
 .nowInner .muted, .nowInner .nowSub { color: var(--hero-muted); }
 .nowInner .nowTitle { color: var(--highlight-on-hero); }
 .nowInner.sport .nowTitle { color: var(--sport-text); }
