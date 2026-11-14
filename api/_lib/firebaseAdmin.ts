@@ -26,6 +26,20 @@ export class HttpError extends Error {
 }
 
 /**
+ * Like requireUser, but returns null instead of throwing (no token, invalid
+ * token, or Firebase Admin not configured). Used to decide whether the paid
+ * AI provider may be used for a request.
+ */
+export async function optionalUser(req: VercelRequest): Promise<string | null> {
+  if (!req.headers.authorization || !process.env.FIREBASE_SERVICE_ACCOUNT) return null;
+  try {
+    return await requireUser(req);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Verifies the Firebase ID token from `Authorization: Bearer <token>`
  * and returns the user's uid.
  */

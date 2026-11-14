@@ -16,12 +16,6 @@ service cloud.firestore {
       return value is timestamp;
     }
 
-    // Rate limiting: max 10 writes per minute per user
-    function checkRateLimit(userId) {
-      let lastWriteTime = get(/users/{userId}).data.last_write_time;
-      return request.time.seconds - lastWriteTime.seconds > 6;  // At least 6 seconds between bulk writes
-    }
-    
     // User data - only accessible by the user themselves
     match /users/{userId} {
       allow read: if isOwner(userId);
@@ -88,7 +82,10 @@ service cloud.firestore {
       }
     }
     
-    // Deny all other access by default
+    // Deny all other access by default.
+    // Server-only collections live here too: calendar_connections (Google
+    // refresh tokens) and ai_usage (chat quota) are written by the API with
+    // the Admin SDK and must never be readable by clients.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Import Groq using require for CommonJS compatibility
-const Groq = require('groq-sdk').default;
+import { prompt as askAi, extractJson } from './_lib/llm.js';
+import { optionalUser } from './_lib/firebaseAdmin.js';
 
 interface PlanTask {
   title: string;
@@ -23,10 +23,6 @@ interface PlanInput {
   tasksTotal: number;
   completionRate: number;
 }
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
 
 const DEFAULT_PLAN: DayPlanResponse = {
   suggested_tasks: [
@@ -63,7 +59,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    'Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
   if (req.method === 'OPTIONS') {
@@ -84,41 +80,18 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
-    const completion = await groq.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      max_tokens: 1000,
+    const allowClaude = (await optionalUser(req)) !== null;
+    const llm = await askAi(prompt, {
+      allowClaude,
+      maxTokens: 1000,
       temperature: 0.7,
-      messages: [
-        {
-          role: 'system',
-          content: 'Du bist ein hilfreicher Assistent, der intelligente Tagesplanungen basierend auf Reflexionen erstellt. Antworte mit gültigem JSON, keine Markdown oder zusätzlicher Text.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+      system:
+        'Du bist ein hilfreicher Assistent, der intelligente Tagesplanungen basierend auf Reflexionen erstellt. Antworte mit gültigem JSON, keine Markdown oder zusätzlicher Text.',
     });
 
-    const content = completion.choices[0]?.message?.content || '';
-
-    if (!content) {
-      console.warn('Empty response from Groq');
-      return res.status(200).json(DEFAULT_PLAN);
-    }
-
-    // Try to extract JSON - handle various formats
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.warn('No JSON found in Groq response:', content.substring(0, 100));
-      return res.status(200).json(DEFAULT_PLAN);
-    }
-
-    let plan: any;
-    try {
-      plan = JSON.parse(jsonMatch[0]);
-    } catch (parseError) {
-      console.warn('Failed to parse JSON:', jsonMatch[0].substring(0, 100));
+    const plan: any = extractJson(llm.text);
+    if (!plan) {
+      console.warn(`No JSON in ${llm.provider} response:`, llm.text.substring(0, 100));
       return res.status(200).json(DEFAULT_PLAN);
     }
 

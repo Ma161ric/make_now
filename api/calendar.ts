@@ -1,6 +1,8 @@
 /**
  * Google Calendar integration, one function for all actions (keeps the
- * Vercel function count low):
+ * Vercel function count low). vercel.json rewrites /api/calendar/:action
+ * to /api/calendar?action=:action (dynamic [action] files are not matched
+ * because of the catch-all SPA rewrite):
  *
  *   POST /api/calendar/connect     -> { url }  start Google OAuth (auth)
  *   GET  /api/calendar/callback    <- Google redirects here
@@ -11,10 +13,10 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { FieldValue } from 'firebase-admin/firestore';
-import { requireUser, HttpError } from '../_lib/firebaseAdmin.js';
-import * as google from '../_lib/google.js';
-import { createState, verifyState } from '../_lib/oauthState.js';
-import { connectionRef, planForUser, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from '../_lib/planner.js';
+import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
+import * as google from './_lib/google.js';
+import { createState, verifyState } from './_lib/oauthState.js';
+import { connectionRef, planForUser, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 
 function appUrl(path: string): string {
   const base = process.env.APP_URL || '';

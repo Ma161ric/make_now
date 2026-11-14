@@ -1,20 +1,16 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import Groq from 'groq-sdk';
-import { ExtractionOutput } from '../functions/src/types.js';
+import { complete, prompt, extractJson } from './_lib/llm.js';
+import { optionalUser } from './_lib/firebaseAdmin.js';
+import type { ExtractionOutput } from './_lib/types.js';
 import { validateExtraction } from '../packages/core/src/validation.js';
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -32,6 +28,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       error: 'Invalid request: noteText must be a non-empty string',
     });
   }
+
+  // Paid model only for signed-in users
+  const allowClaude = (await optionalUser(req)) !== null;
 
   try {
     console.log('[AI] Extracting from note:', noteText.substring(0, 100) + '...');
@@ -62,33 +61,14 @@ Return this exact JSON structure:
 
 ${noteText}`;
 
-    console.log('[AI] Calling Groq with prompt...');
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.2,
-      max_tokens: 2000,
-    });
+    const llm = await complete(
+      { system: systemPrompt, messages: [{ role: 'user', content: userPrompt }], temperature: 0.2, maxTokens: 2000 },
+      { allowClaude }
+    );
+    console.log(`[AI] ${llm.provider} answered`);
 
-    const content = completion.choices[0]?.message?.content;
-    console.log('[AI] Raw response:', content?.substring(0, 200));
-    
-    if (!content) {
-      throw new Error('No response from Groq API');
-    }
-
-    // Extract JSON from response (might have extra text)
-    let jsonStr = content;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[0];
-      console.log('[AI] Extracted JSON');
-    }
-
-    const result: ExtractionOutput = JSON.parse(jsonStr);
+    const result = extractJson<ExtractionOutput>(llm.text);
+    if (!result) throw new Error('AI returned no JSON');
     console.log('[AI] Parsed result:', result.items?.length || 0, 'items');
 
     // CRITICAL: Validate AI output against schema
@@ -125,26 +105,17 @@ ${noteText}`;
         result.items.map(async (item) => {
           if (item.type === 'task' && !item.duration_min_minutes) {
             try {
-              const enrichment = await groq.chat.completions.create({
-                model: 'mixtral-8x7b-32768',
-                messages: [
-                  {
-                    role: 'user',
-                    content: `Estimate duration and deadline for this task. Return ONLY valid JSON (no markdown):
+              const enrichment = await prompt(
+                `Estimate duration and deadline for this task. Return ONLY valid JSON (no markdown):
 {"min_minutes": <5-480>, "max_minutes": <5-480>, "days_until_due": <1-30>, "confidence": <0.0-1.0>}
 Task: "${item.title}" ${item.description ? `(${item.description})` : ''}
 Importance: ${item.importance || 'medium'}`,
-                  },
-                ],
-                temperature: 0.3,
-                max_tokens: 300,
-              });
+                { allowClaude, temperature: 0.3, maxTokens: 300 }
+              );
 
-              const enrichContent = enrichment.choices[0]?.message?.content;
-              if (enrichContent) {
-                const jsonMatch = enrichContent.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                  const parsed = JSON.parse(jsonMatch[0]);
+              {
+                const parsed = extractJson(enrichment.text);
+                if (parsed) {
                   const minMin = Math.max(5, Math.min(480, parsed.min_minutes ?? parsed.min ?? 15));
                   const maxMin = Math.max(minMin, Math.min(480, parsed.max_minutes ?? parsed.max ?? 30));
                   const daysUntilDue = Math.max(1, Math.min(30, parsed.days_until_due ?? parsed.days ?? 3));
@@ -175,7 +146,7 @@ Importance: ${item.importance || 'medium'}`,
     result.metadata = {
       ...result.metadata,
       processing_time_ms: Date.now() - startTime,
-      algorithm_version: GROQ_MODEL,
+      algorithm_version: `${llm.provider}:${llm.model}`,
     };
 
     return res.status(200).json(result);

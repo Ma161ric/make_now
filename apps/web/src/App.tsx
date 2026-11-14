@@ -21,6 +21,7 @@ export default function App() {
           {isAuthenticated && (
             <nav className="nav">
               <Link className={location.pathname === '/' ? 'active' : ''} to="/">Inbox</Link>
+              <Link className={location.pathname === '/chat' ? 'active' : ''} to="/chat">Chat</Link>
               <Link className={location.pathname === '/today' ? 'active' : ''} to="/today">Today</Link>
               <Link className={location.pathname === '/week' ? 'active' : ''} to="/week">Calendar</Link>
               <Link className={location.pathname === '/tasks' ? 'active' : ''} to="/tasks">Tasks</Link>

@@ -1,39 +1,21 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import Groq from 'groq-sdk';
+import { prompt, extractJson } from './_lib/llm.js';
+import { optionalUser } from './_lib/firebaseAdmin.js';
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
-async function estimateDurationAI(taskTitle: string) {
+async function estimateDurationAI(taskTitle: string, allowClaude: boolean) {
   try {
-    const completion = await groq.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      messages: [
-        {
-          role: 'user',
-          content: `Estimate duration for this task. Return ONLY JSON (no other text):
+    const llm = await prompt(
+      `Estimate how long this task realistically takes a student. Return ONLY JSON (no other text):
 {"min_minutes": <5-480>, "max_minutes": <5-480>}
 
 Task: "${taskTitle}"`,
-        },
-      ],
-      temperature: 0.2,
-      max_tokens: 100,
-    });
+      { allowClaude, temperature: 0.2, maxTokens: 100 }
+    );
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from API');
-    }
-
-    // Parse JSON response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    const parsed = extractJson(llm.text);
+    if (!parsed) {
       throw new Error('No JSON found in response');
     }
-
-    const parsed = JSON.parse(jsonMatch[0]);
 
     // Validate response
     const minMin = Math.max(5, Math.min(480, parsed.min_minutes ?? 15));
@@ -60,7 +42,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -81,7 +63,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
   try {
     console.log('[Duration] Estimating for:', taskTitle);
-    const result = await estimateDurationAI(taskTitle);
+    const allowClaude = (await optionalUser(req)) !== null;
+    const result = await estimateDurationAI(taskTitle, allowClaude);
     console.log('[Duration] Result:', result);
     return res.status(200).json(result);
   } catch (error: any) {
