@@ -30,107 +30,132 @@ html, body {
 }
 
 /*
- * Two palettes, both "calm ground + sage + one warm accent":
- *   dark  = Graphit & Salbei: graphite #121413, sage #B5C4AE for actions and
- *           to-dos, apricot #F2A65A for your own calendar events
- *   light = Leinen & Salbei: linen #EFECE5, deep sage #3F5A47 for actions,
- *           honey #F0C062 for your own calendar events
- * --hero-*      the "Jetzt" card and the active nav item
- * --accent-*    buttons, progress, links, selected states
- * --highlight   brand dot and the now-marker, nothing else
+ * Every color in the app comes from the theme's palette below (--p-*).
+ * Tints (borders, muted text, tracks) are mixes of palette colors, never new hues.
+ *
+ * Dunkel · Graphit & Salbei          Hell · Leinen & Salbei
+ *   --p-ground   #121413 graphite      #EFECE5 linen
+ *   --p-surface  #1A1D1B               #FAF8F3
+ *   --p-raised   #232724               #E4DFD3
+ *   --p-ink      #F2F2EE text          #1C1F1A text
+ *   --p-sage     #B5C4AE               #3F5A47 deep sage
+ *   --p-sage-2   #121413 (on sage)     #DDE5D8 light sage
+ *   --p-accent   #F2A65A apricot       #F0C062 honey
+ *
+ * Roles: sage = actions, to-dos, sport; accent = your calendar events,
+ * the now-marker, brand dot and highlights; raised = free time.
  */
 :root[data-theme="dark"] {
-  --bg-primary: #121413;
-  --bg-secondary: #1a1d1b;
-  --bg-tertiary: #232724;
-  --text-primary: #f2f2ee;
-  --text-secondary: #ecece7;
-  --text-muted: #c9cec7;
-  --border-color: #2a2e2b;
-  --border-strong: #3a403b;
+  --p-ground: #121413;
+  --p-surface: #1a1d1b;
+  --p-raised: #232724;
+  --p-ink: #f2f2ee;
+  --p-sage: #b5c4ae;
+  --p-accent: #f2a65a;
+
+  --bg-primary: var(--p-ground);
+  --bg-secondary: var(--p-surface);
+  --bg-tertiary: var(--p-raised);
+  --text-primary: var(--p-ink);
+  --text-secondary: var(--p-ink);
+  --text-muted: color-mix(in srgb, var(--p-ink) 78%, var(--p-ground));
+  --border-color: color-mix(in srgb, var(--p-ink) 10%, var(--p-ground));
+  --border-strong: color-mix(in srgb, var(--p-ink) 20%, var(--p-ground));
   --shadow: rgba(0, 0, 0, 0.4);
 
-  --hero-bg: #b5c4ae;
-  --hero-text: #121413;
-  --hero-muted: #3f4a3b;
-  --hero-track: rgba(18, 20, 19, 0.18);
-  --hero-accent: #93450a;        /* apricot, darkened for the sage card */
-  --hero-on-accent: #ffffff;
+  /* "Jetzt" card = sage; apricot can't be read on sage, so text there is graphite */
+  --hero-bg: var(--p-sage);
+  --hero-text: var(--p-ground);
+  --hero-muted: color-mix(in srgb, var(--p-ground) 72%, var(--p-sage));
+  --hero-track: color-mix(in srgb, var(--p-ground) 18%, var(--p-sage));
+  --hero-bar: var(--p-ground);
+  --hero-accent: var(--p-accent);
+  --hero-on-accent: var(--p-ground);
 
-  --accent-primary: #b5c4ae;
-  --accent-primary-hover: #c6d3c0;
-  --on-accent: #121413;
-  --accent-line: #b5c4ae;
-  --accent-bg: #26302a;
-  --accent-text: #f2f2ee;
-  --highlight: #f2a65a;
-  --highlight-on-hero: #93450a;   /* apricot, darkened so the title stays readable on sage */
-  --highlight-on-sport: #93450a;
-  --highlight-on-free: #f2a65a;
+  --accent-primary: var(--p-sage);
+  --accent-primary-hover: color-mix(in srgb, var(--p-sage) 85%, var(--p-ink));
+  --on-accent: var(--p-ground);
+  --accent-line: var(--p-sage);
+  --accent-bg: color-mix(in srgb, var(--p-sage) 16%, var(--p-ground));
+  --accent-text: var(--p-ink);
+  --highlight: var(--p-accent);
+  --highlight-on-hero: var(--p-ground);
+  --highlight-on-sport: var(--p-ground);
+  --highlight-on-free: var(--p-accent);
 
-  --task-bg: #b5c4ae;
-  --task-border: #b5c4ae;
-  --task-text: #121413;
-  --sport-bg: #b5c4ae;
-  --sport-border: #b5c4ae;
-  --sport-text: #121413;
-  --sport-muted: #3f4a3b;
-  --free-bg: #232724;
-  --free-border: #232724;
-  --free-text: #f2f2ee;
-  --free-muted: #c9cec7;
-  --busy-border: #3a403b;
-  --event-bg: #f2a65a;
-  --event-border: #f2a65a;
-  --event-text: #121413;
-  --danger: #ff8a7a;
+  --task-bg: var(--p-sage);
+  --task-border: var(--p-sage);
+  --task-text: var(--p-ground);
+  --sport-bg: var(--p-sage);
+  --sport-border: var(--p-sage);
+  --sport-text: var(--p-ground);
+  --sport-muted: var(--hero-muted);
+  --free-bg: var(--p-raised);
+  --free-border: var(--p-raised);
+  --free-text: var(--p-ink);
+  --free-muted: var(--text-muted);
+  --busy-border: var(--border-strong);
+  --event-bg: var(--p-accent);
+  --event-border: var(--p-accent);
+  --event-text: var(--p-ground);
+  --danger: var(--p-accent);
 }
 
 :root[data-theme="light"] {
-  --bg-primary: #efece5;
-  --bg-secondary: #faf8f3;
-  --bg-tertiary: #e4dfd3;
-  --text-primary: #1c1f1a;
-  --text-secondary: #22261f;
-  --text-muted: #4f554a;
-  --border-color: #ded9ce;
-  --border-strong: #c8c1b2;
+  --p-ground: #efece5;
+  --p-surface: #faf8f3;
+  --p-raised: #e4dfd3;
+  --p-ink: #1c1f1a;
+  --p-sage: #3f5a47;
+  --p-sage-2: #dde5d8;
+  --p-accent: #f0c062;
+
+  --bg-primary: var(--p-ground);
+  --bg-secondary: var(--p-surface);
+  --bg-tertiary: var(--p-raised);
+  --text-primary: var(--p-ink);
+  --text-secondary: var(--p-ink);
+  --text-muted: color-mix(in srgb, var(--p-ink) 78%, var(--p-ground));
+  --border-color: color-mix(in srgb, var(--p-ink) 9%, var(--p-ground));
+  --border-strong: color-mix(in srgb, var(--p-ink) 20%, var(--p-ground));
   --shadow: rgba(28, 31, 26, 0.08);
 
-  --hero-bg: #3f5a47;
-  --hero-text: #f4f1ea;
-  --hero-muted: #c4d0c3;
-  --hero-track: rgba(244, 241, 234, 0.2);
-  --hero-accent: #f0c062;
-  --hero-on-accent: #1c1f1a;
+  /* "Jetzt" card = deep sage, honey reads well on it */
+  --hero-bg: var(--p-sage);
+  --hero-text: var(--p-surface);
+  --hero-muted: color-mix(in srgb, var(--p-surface) 75%, var(--p-sage));
+  --hero-track: color-mix(in srgb, var(--p-surface) 20%, var(--p-sage));
+  --hero-bar: var(--p-accent);
+  --hero-accent: var(--p-accent);
+  --hero-on-accent: var(--p-ink);
 
-  --accent-primary: #3f5a47;
-  --accent-primary-hover: #4c6b55;
-  --on-accent: #f4f1ea;
-  --accent-line: #3f5a47;
-  --accent-bg: #dde5d8;
-  --accent-text: #1c1f1a;
-  --highlight: #d99a2b;
-  --highlight-on-hero: #f0c062;   /* honey title on the sage card */
-  --highlight-on-sport: #8a5a00;  /* honey, darkened for the light sage card */
-  --highlight-on-free: #8a5a00;
+  --accent-primary: var(--p-sage);
+  --accent-primary-hover: color-mix(in srgb, var(--p-sage) 85%, var(--p-surface));
+  --on-accent: var(--p-surface);
+  --accent-line: var(--p-sage);
+  --accent-bg: var(--p-sage-2);
+  --accent-text: var(--p-ink);
+  --highlight: var(--p-accent);
+  --highlight-on-hero: var(--p-accent);
+  --highlight-on-sport: var(--p-sage);   /* honey can't be read on light sage */
+  --highlight-on-free: var(--p-sage);
 
-  --task-bg: #dde5d8;
-  --task-border: #dde5d8;
-  --task-text: #24352a;
-  --sport-bg: #dde5d8;
-  --sport-border: #dde5d8;
-  --sport-text: #24352a;
-  --sport-muted: #4f5f52;
-  --free-bg: #e4dfd3;
-  --free-border: #e4dfd3;
-  --free-text: #1c1f1a;
-  --free-muted: #4f554a;
-  --busy-border: #c8c1b2;
-  --event-bg: #f0c062;
-  --event-border: #f0c062;
-  --event-text: #2b1e03;
-  --danger: #b3261e;
+  --task-bg: var(--p-sage-2);
+  --task-border: var(--p-sage-2);
+  --task-text: var(--p-sage);
+  --sport-bg: var(--p-sage-2);
+  --sport-border: var(--p-sage-2);
+  --sport-text: var(--p-sage);
+  --sport-muted: color-mix(in srgb, var(--p-sage) 80%, var(--p-sage-2));
+  --free-bg: var(--p-raised);
+  --free-border: var(--p-raised);
+  --free-text: var(--p-ink);
+  --free-muted: var(--text-muted);
+  --busy-border: var(--border-strong);
+  --event-bg: var(--p-accent);
+  --event-border: var(--p-accent);
+  --event-text: var(--p-ink);
+  --danger: #b3261e;   /* errors only */
 }
 
 /* ---------- App shell ---------- */

@@ -144,10 +144,10 @@
   background: var(--hero-track);
   overflow: hidden;
 }
-.progress > div { height: 100%; background: var(--hero-accent); transition: width 1s linear; }
-.nowInner.sport .progress { background: rgba(0, 0, 0, 0.2); }
+.progress > div { height: 100%; background: var(--hero-bar); transition: width 1s linear; }
+.nowInner.sport .progress { background: var(--hero-track); }
 .nowInner.sport .progress > div { background: var(--highlight-on-sport); }
-.nowInner.free .progress { background: rgba(0, 0, 0, 0.2); }
+.nowInner.free .progress { background: var(--border-strong); }
 .nowInner.free .progress > div { background: var(--highlight-on-free); }
 
 .actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }

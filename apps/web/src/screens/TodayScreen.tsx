@@ -361,7 +361,7 @@ export default function TodayScreen() {
       <div className="grid" style={{ gap: 16 }}>
         <div className="card">
           <div className="section-title">Today Plan</div>
-          {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
+          {error && <div style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</div>}
           {!error && <div className="muted">Plan wird geladen...</div>}
         </div>
       </div>
@@ -438,12 +438,12 @@ export default function TodayScreen() {
         </ul>
 
         {plan?.reasoning_brief && (
-          <div style={{ marginTop: 12, padding: 12, background: '#f3f4f6', borderRadius: 8 }}>
+          <div style={{ marginTop: 12, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8 }}>
             <div className="muted" style={{ fontSize: 14 }}>{plan.reasoning_brief}</div>
           </div>
         )}
 
-        {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
+        {error && <div style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</div>}
 
         <div className="flex" style={{ justifyContent: 'space-between', marginTop: 12 }}>
           {isConfirmed ? (
@@ -467,7 +467,7 @@ export default function TodayScreen() {
       </div>
 
       {showReplanDialog && (
-        <div className="card" style={{ borderColor: '#3b82f6' }}>
+        <div className="card" style={{ borderColor: 'var(--accent-primary)' }}>
           <div className="section-title">Neu planen?</div>
           <div className="muted" style={{ marginBottom: 12 }}>
             Replan {dayPlanState.replan_count + 1} von 3

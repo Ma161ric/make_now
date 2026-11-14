@@ -35,7 +35,7 @@
   padding: 8px 16px;
   background: transparent;
   border: none;
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
   border-radius: 6px;
@@ -43,8 +43,8 @@
 }
 
 .skipButton:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .content {
@@ -71,14 +71,14 @@
   margin: 0 0 16px 0;
   font-size: 32px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .description {
   margin: 0;
   font-size: 16px;
   line-height: 1.6;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .footer {
@@ -97,7 +97,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #d1d5db;
+  background: var(--border-strong);
   transition: all 0.3s;
 }
 
@@ -118,12 +118,12 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .nextButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 6px 20px var(--shadow);
 }
 
 .nextButton:active {

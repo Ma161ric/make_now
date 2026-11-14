@@ -92,7 +92,7 @@ export function EditTaskModal({ task, onClose, onSave }: EditTaskModalProps) {
             style={{
               width: '100%',
               padding: '8px 12px',
-              border: '1px solid #d1d5db',
+              border: '1px solid var(--border-strong)',
               borderRadius: '6px',
               fontSize: '14px',
               fontFamily: 'inherit',
@@ -127,7 +127,7 @@ export function EditTaskModal({ task, onClose, onSave }: EditTaskModalProps) {
             style={{
               width: '100%',
               padding: '8px 12px',
-              border: '1px solid #d1d5db',
+              border: '1px solid var(--border-strong)',
               borderRadius: '6px',
               fontSize: '14px',
               fontFamily: 'inherit',
@@ -146,7 +146,7 @@ export function EditTaskModal({ task, onClose, onSave }: EditTaskModalProps) {
             style={{
               width: '100%',
               padding: '8px 12px',
-              border: '1px solid #d1d5db',
+              border: '1px solid var(--border-strong)',
               borderRadius: '6px',
               fontSize: '14px',
               fontFamily: 'inherit',
@@ -154,7 +154,7 @@ export function EditTaskModal({ task, onClose, onSave }: EditTaskModalProps) {
           />
         </div>
 
-        {error && <div style={{ color: '#b91c1c', marginTop: 12 }}>{error}</div>}
+        {error && <div style={{ color: 'var(--danger)', marginTop: 12 }}>{error}</div>}
 
         <div className="flex" style={{ gap: 8, marginTop: 16, justifyContent: 'space-between' }}>
           <button

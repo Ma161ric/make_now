@@ -144,7 +144,7 @@ export const SettingsScreen: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
             <p className={styles.settingLabel} style={{ marginBottom: '12px' }}>
               Automatische Task-Limits basierend auf {tempHours}h/Tag:
             </p>
@@ -153,46 +153,46 @@ export const SettingsScreen: React.FC = () => {
               gridTemplateColumns: '1fr 1fr 1fr',
               gap: '8px',
               padding: '12px',
-              backgroundColor: '#f9fafb',
+              backgroundColor: 'var(--bg-secondary)',
               borderRadius: '8px',
             }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   Lange
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   {preferences.schedulingLimits.max_long_tasks}
                 </div>
-                <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   60-120 min
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   Mittel
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   {preferences.schedulingLimits.max_middle_tasks}
                 </div>
-                <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   20-60 min
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   Kurz
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   {preferences.schedulingLimits.max_short_tasks}
                 </div>
-                <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   5-20 min
                 </div>
               </div>
             </div>
             <p style={{
               fontSize: '12px',
-              color: '#6b7280',
+              color: 'var(--text-muted)',
               marginTop: '12px',
               fontStyle: 'italic',
             }}>

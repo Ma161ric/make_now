@@ -198,7 +198,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
 
         <div className="grid" style={{ gap: 12 }}>
           {tasks.map(task => (
-            <div key={task.id} className="card" style={{ borderColor: '#e5e7eb' }}>
+            <div key={task.id} className="card" style={{ borderColor: 'var(--border-color)' }}>
               <div className="label">{task.title}</div>
               <div className="flex" style={{ gap: 8, marginTop: 8 }}>
                 <button
@@ -231,7 +231,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
         </div>
 
         {allReviewed && (
-          <div style={{ marginTop: 12, padding: 12, background: '#ecfeff', borderRadius: 8 }}>
+          <div style={{ marginTop: 12, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8 }}>
             <div style={{ fontWeight: 600 }}>{motivationText}</div>
             <div className="muted">{doneCount} von {tasks.length} Aufgaben erledigt</div>
           </div>
@@ -281,8 +281,8 @@ Please respond with valid JSON (no markdown, just the JSON object):
         )}
 
         {aiSuggestions && (
-          <div style={{ marginTop: 12, padding: 12, background: '#f0f9ff', borderRadius: 0, borderLeft: '4px solid #0284c7' }}>
-            <div style={{ fontWeight: 600, color: '#0c4a6e', marginBottom: 8 }}>✨ KI-Analyse</div>
+          <div style={{ marginTop: 12, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 0, borderLeft: '4px solid var(--accent-primary)' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>✨ KI-Analyse</div>
             
             {aiSuggestions.insight && (
               <div style={{ marginBottom: 8 }}>
@@ -294,7 +294,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
             {aiSuggestions.suggestions && aiSuggestions.suggestions.length > 0 && (
               <div style={{ marginBottom: 8 }}>
                 <div className="label" style={{ fontSize: '0.875rem' }}>Verbesserungsvorschläge</div>
-                <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569' }}>
+                <ul style={{ marginLeft: 16, marginTop: 4, color: 'var(--text-muted)' }}>
                   {aiSuggestions.suggestions.map((s, i) => (
                     <li key={i}>{s}</li>
                   ))}
@@ -320,24 +320,24 @@ Please respond with valid JSON (no markdown, just the JSON object):
           </div>
         )}
 
-        {error && <div style={{ color: '#b91c1c', marginTop: 8 }}>{error}</div>}
+        {error && <div style={{ color: 'var(--danger)', marginTop: 8 }}>{error}</div>}
 
         {completed && !aiPlanSuggestions && (
-          <div style={{ marginTop: 12, padding: 12, background: '#dcfce7', borderRadius: 0, borderLeft: '4px solid #22c55e' }}>
-            <div style={{ fontWeight: 600, color: '#166534', marginBottom: 8 }}>✅ Tag gespeichert!</div>
+          <div style={{ marginTop: 12, padding: 12, background: 'var(--accent-bg)', borderRadius: 0, borderLeft: '4px solid var(--accent-primary)' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>✅ Tag gespeichert!</div>
             <div className="muted">Dein Review wurde erfolgreich gespeichert und KI plant morgen für dich...</div>
             {loadingPlanAI && <div className="muted" style={{ marginTop: 8, fontSize: '0.875rem' }}>⏳ Generiere optimalen Plan für morgen...</div>}
           </div>
         )}
 
         {aiPlanSuggestions && (
-          <div style={{ marginTop: 12, padding: 12, background: '#fef3c7', borderRadius: 0, borderLeft: '4px solid #f59e0b' }}>
-            <div style={{ fontWeight: 600, color: '#92400e', marginBottom: 12 }}>🎯 KI-Plan für Morgen</div>
+          <div style={{ marginTop: 12, padding: 12, background: 'var(--bg-tertiary)', borderRadius: 0, borderLeft: '4px solid var(--highlight)' }}>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>🎯 KI-Plan für Morgen</div>
             
             {aiPlanSuggestions.focus_recommendation && (
-              <div style={{ marginBottom: 12, padding: 8, background: '#fef08a', borderRadius: 4 }}>
+              <div style={{ marginBottom: 12, padding: 8, background: 'var(--bg-tertiary)', borderRadius: 4 }}>
                 <div className="label" style={{ fontSize: '0.875rem', marginBottom: 4 }}>🔥 Fokus</div>
-                <div style={{ fontSize: '0.95rem', color: '#78350f' }}>{aiPlanSuggestions.focus_recommendation}</div>
+                <div style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{aiPlanSuggestions.focus_recommendation}</div>
               </div>
             )}
             
@@ -346,9 +346,9 @@ Please respond with valid JSON (no markdown, just the JSON object):
                 <div className="label" style={{ fontSize: '0.875rem', marginBottom: 6 }}>📋 Vorgeschlagene Tasks</div>
                 <div style={{ display: 'grid', gap: 6 }}>
                   {aiPlanSuggestions.suggested_tasks.map((task, i) => (
-                    <div key={i} style={{ padding: 8, background: 'white', borderRadius: 4, borderLeft: `3px solid ${task.priority === 'high' ? '#ef4444' : task.priority === 'medium' ? '#f59e0b' : '#10b981'}` }}>
+                    <div key={i} style={{ padding: 8, background: 'white', borderRadius: 4, borderLeft: `3px solid ${task.priority === 'high' ? 'var(--danger)' : task.priority === 'medium' ? 'var(--highlight)' : 'var(--accent-primary)'}` }}>
                       <div style={{ fontWeight: 500, fontSize: '0.95rem' }}>{task.title}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: 4 }}>⏱️ {task.duration_minutes}min • {task.priority === 'high' ? '🔴 Hoch' : task.priority === 'medium' ? '🟡 Mittel' : '🟢 Niedrig'}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>⏱️ {task.duration_minutes}min • {task.priority === 'high' ? '🔴 Hoch' : task.priority === 'medium' ? '🟡 Mittel' : '🟢 Niedrig'}</div>
                     </div>
                   ))}
                 </div>
@@ -358,7 +358,7 @@ Please respond with valid JSON (no markdown, just the JSON object):
             {aiPlanSuggestions.planning_tips && aiPlanSuggestions.planning_tips.length > 0 && (
               <div style={{ marginBottom: 12 }}>
                 <div className="label" style={{ fontSize: '0.875rem', marginBottom: 6 }}>💡 Tipps</div>
-                <ul style={{ marginLeft: 16, marginTop: 4, color: '#475569', gap: 4 }}>
+                <ul style={{ marginLeft: 16, marginTop: 4, color: 'var(--text-muted)', gap: 4 }}>
                   {aiPlanSuggestions.planning_tips.map((tip, i) => (
                     <li key={i} style={{ marginBottom: 4, fontSize: '0.9rem' }}>{tip}</li>
                   ))}
