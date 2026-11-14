@@ -204,7 +204,19 @@ export const HeuteScreen: React.FC = () => {
       <div className={styles.layout}>
         <section aria-label="Jetzt" className={styles.nowCard}>
           {!timeline ? (
-            <p className={styles.muted}>Lade deinen Tag …</p>
+            <div className={`${styles.nowInner} ${styles.loading}`} aria-busy="true">
+              <div>
+                <p className={styles.eyebrow}>Jetzt</p>
+                <span className="visually-hidden">Lade deinen Tag …</span>
+                <div className={styles.skelTitle} />
+                <div className={`${styles.skelTitle} ${styles.skelShort}`} />
+                <div className={styles.skelLine} />
+              </div>
+              <div className={styles.nowBottom}>
+                <div className={styles.skelCount} />
+                <div className={styles.progress} />
+              </div>
+            </div>
           ) : current ? (
             <NowCard item={current} now={t} next={next} done={!!current.task_id && done.has(current.task_id)} onDone={() => markDone(current)} />
           ) : (

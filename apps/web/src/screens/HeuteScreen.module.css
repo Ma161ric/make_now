@@ -108,6 +108,27 @@
 
 .nowBottom { display: flex; flex-direction: column; gap: 20px; }
 
+/* Loading: the card's own shape, softly pulsing, in the card's colors */
+.loading .skelTitle,
+.loading .skelLine,
+.loading .skelCount {
+  border-radius: 10px;
+  background: var(--hero-text);
+  opacity: 0.14;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.loading .skelTitle { height: 44px; width: 80%; margin-top: var(--space-4); }
+.loading .skelShort { width: 55%; margin-top: 10px; }
+.loading .skelLine { height: 16px; width: 60%; margin-top: var(--space-5); opacity: 0.1; }
+.loading .skelCount { height: 56px; width: 180px; }
+@keyframes pulse {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.22; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading .skelTitle, .loading .skelLine, .loading .skelCount { animation: none; }
+}
+
 .countdown { display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
 .countdownValue {
   font-family: var(--font-display);
