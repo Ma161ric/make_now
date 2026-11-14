@@ -3,6 +3,8 @@
  * Generates task suggestions based on daily reflection
  */
 
+import { authHeaders } from './apiAuth';
+
 export interface PlanTask {
   title: string;
   duration_minutes: number;
@@ -95,7 +97,7 @@ Wichtig:
 
     const response = await fetch('/api/planDayWithAI', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
       body: JSON.stringify({ 
         prompt, 
         reflection: reflection.substring(0, 500),

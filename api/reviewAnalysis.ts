@@ -1,11 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Import Groq using require for CommonJS compatibility
-const Groq = require('groq-sdk').default;
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+import { prompt as askAi, extractJson } from './_lib/llm.js';
+import { optionalUser } from './_lib/firebaseAdmin.js';
 
 interface ReviewInput {
   prompt: string;
@@ -20,7 +16,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -40,22 +36,11 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
-    const completion = await groq.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      max_tokens: 500,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
+    const allowClaude = (await optionalUser(req)) !== null;
+    const llm = await askAi(prompt, { allowClaude, maxTokens: 500 });
 
-    const content = completion.choices[0]?.message?.content || '';
-
-    // Parse JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    const analysis = extractJson(llm.text);
+    if (!analysis) {
       console.warn('No JSON found in response, using defaults');
       return res.status(200).json({
         suggestions: ['Continue with consistent daily planning', 'Reflect on what worked well'],
@@ -63,8 +48,6 @@ export default async (req: VercelRequest, res: VercelResponse) => {
         tomorrow_focus: 'Focus on one key priority',
       });
     }
-
-    const analysis = JSON.parse(jsonMatch[0]);
 
     return res.status(200).json({
       suggestions: Array.isArray(analysis.suggestions) ? analysis.suggestions : [],

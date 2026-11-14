@@ -12,6 +12,7 @@ import AITestScreen from './screens/AITestScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { ChatScreen } from './screens/ChatScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from './screens/TermsOfServiceScreen';
@@ -48,6 +49,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="today" element={<ProtectedRoute><OnboardingGuard><TodayScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="tasks" element={<ProtectedRoute><OnboardingGuard><TasksOverviewScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="daily-review" element={<ProtectedRoute><OnboardingGuard><DailyReviewScreen /></OnboardingGuard></ProtectedRoute>} />
+                <Route path="chat" element={<ProtectedRoute><OnboardingGuard><ChatScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="settings" element={<ProtectedRoute><OnboardingGuard><SettingsScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="ai-test" element={<ProtectedRoute><AITestScreen /></ProtectedRoute>} />
               </Route>

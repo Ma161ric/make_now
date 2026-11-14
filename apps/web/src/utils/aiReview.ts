@@ -3,6 +3,8 @@
  * Analyzes daily reflection and mood to provide AI-powered suggestions
  */
 
+import { authHeaders } from './apiAuth';
+
 interface ReviewAnalysis {
   suggestions: string[];
   insight: string;
@@ -19,7 +21,7 @@ export async function generateReviewAnalysis(
   try {
     const response = await fetch('/api/reviewAnalysis', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
       body: JSON.stringify({ prompt, reflection, mood, tasksDone, tasksTotal }),
     });
 

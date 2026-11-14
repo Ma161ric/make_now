@@ -1,9 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import Groq from 'groq-sdk';
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+import { prompt as askAi, extractJson } from './_lib/llm.js';
+import { optionalUser } from './_lib/firebaseAdmin.js';
 
 interface TaskMetadataRequest {
   title: string;
@@ -18,14 +15,10 @@ interface TaskMetadataResponse {
   confidence: number;
 }
 
-async function enrichTaskMetadata(req: TaskMetadataRequest): Promise<TaskMetadataResponse> {
+async function enrichTaskMetadata(req: TaskMetadataRequest, allowClaude: boolean): Promise<TaskMetadataResponse> {
   const { title, description, importance = 'medium' } = req;
 
   try {
-    if (!process.env.GROQ_API_KEY) {
-      throw new Error('GROQ_API_KEY not configured');
-    }
-
     // Create detailed prompt for Groq to estimate task metadata
     const prompt = `You are a task management expert. Analyze the following task and provide realistic estimates.
 
@@ -48,28 +41,9 @@ Guidelines:
 - Look for keywords like "today", "tomorrow", "urgent", "deadline" to adjust due dates
 - Be realistic with time estimates based on task complexity`;
 
-    const message = await groq.messages.create({
-      model: 'mixtral-8x7b-32768',
-      max_tokens: 300,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
-
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-    
-    // Parse JSON response - handle potential markdown code blocks
-    let jsonStr = responseText;
-    if (jsonStr.includes('```json')) {
-      jsonStr = jsonStr.split('```json')[1].split('```')[0];
-    } else if (jsonStr.includes('```')) {
-      jsonStr = jsonStr.split('```')[1].split('```')[0];
-    }
-    
-    const parsed = JSON.parse(jsonStr.trim());
+    const llm = await askAi(prompt, { allowClaude, maxTokens: 300 });
+    const parsed = extractJson(llm.text);
+    if (!parsed) throw new Error('AI returned no JSON');
 
     // Calculate due date
     const dueDate = new Date();
@@ -109,7 +83,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -129,11 +103,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   }
 
   try {
-    const result = await enrichTaskMetadata({
-      title,
-      description,
-      importance,
-    });
+    const allowClaude = (await optionalUser(req)) !== null;
+    const result = await enrichTaskMetadata({ title, description, importance }, allowClaude);
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Task enrichment error:', error);

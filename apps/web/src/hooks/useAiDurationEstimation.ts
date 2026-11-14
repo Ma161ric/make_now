@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { authHeaders } from '../utils/apiAuth';
 
 export interface DurationEstimate {
   min_minutes: number;
@@ -20,7 +21,7 @@ export function useAiDurationEstimation() {
       
       const response = await fetch(`${apiUrl}/estimateDuration`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({ taskTitle }),
       });
 

@@ -1,5 +1,6 @@
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 import type { ExtractionOutput, PlanningOutput } from '@make-now/core';
+import { authHeaders } from '../utils/apiAuth';
 
 // Initialize Functions
 const functions = getFunctions();
@@ -22,6 +23,7 @@ export async function extractFromNoteCloud(noteText: string): Promise<Extraction
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(await authHeaders()),
       },
       body: JSON.stringify({ noteText }),
     });
