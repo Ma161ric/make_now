@@ -268,3 +268,24 @@ export function planFreeTime(
     idea: list.length ? list[(dayIndex + i) % list.length] : '',
   }));
 }
+
+/**
+ * Picks a slot for a longer block such as sport: the gap that fits and starts
+ * latest (sport tends to fit better in the afternoon/evening), placed at the
+ * start of that gap. Returns null if nothing fits.
+ */
+export function pickLongBlockSlot(slots: BusyInterval[], minutes: number): BusyInterval | null {
+  const fitting = slots.filter((s) => s.end.getTime() - s.start.getTime() >= minutes * MINUTE);
+  if (!fitting.length) return null;
+  const slot = fitting.reduce((a, b) => (b.start > a.start ? b : a));
+  return { start: slot.start, end: new Date(slot.start.getTime() + minutes * MINUTE) };
+}
+
+/** Days from local date a to local date b (YYYY-MM-DD), b - a. */
+export function daysBetween(a: string, b: string): number {
+  const t = (d: string) => {
+    const [y, m, day] = d.split('-').map(Number);
+    return Date.UTC(y, m - 1, day);
+  };
+  return Math.round((t(b) - t(a)) / 86_400_000);
+}

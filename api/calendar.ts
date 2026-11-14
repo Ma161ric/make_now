@@ -50,6 +50,11 @@ function sanitizeSettings(input: any, current: CalendarSettings): CalendarSettin
           .filter(Boolean)
           .slice(0, 12)
       : current.freeTimeIdeas,
+    sportEnabled: typeof input?.sportEnabled === 'boolean' ? input.sportEnabled : current.sportEnabled,
+    sportEveryDays: int(input?.sportEveryDays, 1, 7, current.sportEveryDays),
+    sportMinutes: int(input?.sportMinutes, 30, 240, current.sportMinutes),
+    sportLabel:
+      typeof input?.sportLabel === 'string' && input.sportLabel.trim() ? input.sportLabel.trim().slice(0, 40) : current.sportLabel,
   };
   if (s.windowEndHour <= s.windowStartHour) throw new HttpError(400, 'Ende muss nach dem Start liegen');
   return s;
