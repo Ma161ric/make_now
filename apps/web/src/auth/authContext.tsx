@@ -3,6 +3,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   updateProfile,
   onAuthStateChanged,
@@ -11,7 +13,7 @@ import {
   AuthError,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { auth } from '../firebase/firebaseConfig';
+import { auth, isStandalone } from '../firebase/firebaseConfig';
 
 export interface User {
   id: string;
@@ -99,6 +101,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
     });
 
+    // Coming back from a Google redirect (installed app): surface errors
+    getRedirectResult(auth).catch((err) => setError(getErrorMessage(err)));
+
     return () => unsubscribe();
   }, []);
 
@@ -161,6 +166,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
+      // Popups break in the installed iPhone app; there the page redirects to Google and back
+      if (isStandalone) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
       await signInWithPopup(auth, provider);
       // Firebase auth state listener will handle setting user
     } catch (err) {

@@ -3,6 +3,14 @@
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://make-now-3867c.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/__/firebase/:path*",
+      "destination": "https://make-now-3867c.firebaseapp.com/__/firebase/:path*"
+    },
+    {
       "source": "/api/calendar/:action",
       "destination": "/api/calendar?action=:action"
     },

@@ -30,6 +30,14 @@ body {
     user-select: none;
     -webkit-user-select: none;
   }
+
+  /* while typing, the tab bar would sit on top of the keyboard and eat space */
+  .kb-open .bottom-nav {
+    display: none;
+  }
+  .kb-open .app-main {
+    padding-bottom: 0;
+  }
 }
 
 :root {
