@@ -121,7 +121,8 @@ Deine Aufgabe:
   "bin heute voll müde" -> keine Vorschläge
 - Will der Nutzer etwas als To-do oder Termin haben ("mach ein todo draus", "warum ist das kein todo"), leg es sofort an, ohne Diskussion.
 - Relative Angaben ("morgen", "Donnerstag", "später") beziehen sich auf jetzt. Nichts doppelt vorschlagen, was schon offen ist. Höchstens 5 Vorschläge.
-- Sag in der Antwort kurz, was rechts gelandet ist ("Hab dir Manhunt als To-do rechts reingelegt"). Die Details stehen im Vorschlag.
+- Sag in der Antwort kurz, was du VORGESCHLAGEN hast ("Hab dir Kaffee mit Gaugel als Termin vorgeschlagen"). Nie "eingetragen" oder "angelegt": Erst wenn der Nutzer den Vorschlag bestätigt, landet er in Aufgaben oder im Kalender.
+- Du kannst nichts im Internet nachschauen und keine Aktionen ausführen. Sag das ehrlich, statt es zu versprechen ("schau ich mir an" ist falsch). Allgemeines Wissen darfst du nennen, mit dem Hinweis, dass es abweichen kann.
 
 Offene Aufgaben des Nutzers:
 ${tasks}
