@@ -85,6 +85,12 @@ export const WocheScreen: React.FC = () => {
     return [Math.max(0, a), Math.min(24, Math.max(b, a + 1))];
   }, [week]);
 
+  // Phones: jump to today in the list once the week has loaded
+  useEffect(() => {
+    if (!week?.days.length || !window.matchMedia('(max-width: 700px)').matches) return;
+    document.getElementById('agenda-today')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [week]);
+
   if (week && !week.connected) {
     return (
       <div className={styles.connectHint}>
@@ -141,7 +147,7 @@ export const WocheScreen: React.FC = () => {
           const isToday = d.date === todayYmd;
           const isPast = d.date < todayYmd;
           return (
-            <section key={d.date} className={`${styles.aDay} ${isPast ? styles.aPast : ''}`} aria-label={date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}>
+            <section key={d.date} id={isToday ? 'agenda-today' : undefined} className={`${styles.aDay} ${isPast ? styles.aPast : ''}`} aria-label={date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}>
               <h2 className={`${styles.aHead} ${isToday ? styles.aToday : ''}`}>
                 <span>{date.toLocaleDateString('de-DE', { weekday: 'long' })}</span>
                 <span className={styles.aDate}>{isToday ? 'heute' : date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}</span>
