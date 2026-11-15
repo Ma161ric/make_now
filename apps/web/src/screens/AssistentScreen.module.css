@@ -470,6 +470,10 @@
   transition: transform 0.18s ease-out;
 }
 
+.inlineCard.cardEvent {
+  border-left-color: var(--event-bg);
+}
+
 .inlineMain {
   flex: 1;
   min-width: 0;
