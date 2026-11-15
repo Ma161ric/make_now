@@ -134,6 +134,45 @@ export const WocheScreen: React.FC = () => {
       )}
       {error && <p className={styles.banner} role="alert">{error}</p>}
 
+      {/* Phone: the week as a list, one day after another */}
+      <div className={styles.agenda}>
+        {days.map((d) => {
+          const date = new Date(`${d.date}T12:00:00`);
+          const isToday = d.date === todayYmd;
+          const isPast = d.date < todayYmd;
+          return (
+            <section key={d.date} className={`${styles.aDay} ${isPast ? styles.aPast : ''}`} aria-label={date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}>
+              <h2 className={`${styles.aHead} ${isToday ? styles.aToday : ''}`}>
+                <span>{date.toLocaleDateString('de-DE', { weekday: 'long' })}</span>
+                <span className={styles.aDate}>{isToday ? 'heute' : date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}</span>
+              </h2>
+              {d.all_day.length > 0 && (
+                <div className={styles.aChips}>
+                  {d.all_day.map((t, i) => (
+                    <span key={i} className={styles.allDay}>{t}</span>
+                  ))}
+                </div>
+              )}
+              {d.items.length === 0 ? (
+                <p className={styles.aEmpty}>Nichts eingetragen</p>
+              ) : (
+                <ul className={styles.aList}>
+                  {d.items.map((i) => (
+                    <li key={`${i.kind}-${i.start}-${i.title}`} className={`${styles.aItem} ${styles[`a_${i.kind}`]}`}>
+                      <span className={styles.aTime}>{hhmm(i.start)}<br />{hhmm(i.end)}</span>
+                      <span className={styles.aBody}>
+                        <span className={styles.aTitle}>{i.title}</span>
+                        {i.location && <span className={styles.aMeta}>{i.location}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          );
+        })}
+      </div>
+
       <div className={styles.scroller}>
         <div className={styles.grid}>
           <div className={styles.corner} />

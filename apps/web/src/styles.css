@@ -246,7 +246,7 @@ html, body {
   .app-main { padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)); }
   .bottom-nav {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     position: fixed;
     left: 0;
     right: 0;
