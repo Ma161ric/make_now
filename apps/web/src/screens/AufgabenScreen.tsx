@@ -108,18 +108,19 @@ export const AufgabenScreen: React.FC = () => {
     setExpanded(null);
   };
 
-  const planToday = async () => {
+  // "Heute noch einplanen": only this task, into the next free gap; the rest of the plan stays
+  const planToday = async (t: Task) => {
     setBusy(true);
     try {
-      const res = await fetch(`${API_BASE}/calendar/plan`, {
+      const res = await fetch(`${API_BASE}/calendar/place`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-        body: JSON.stringify({ day: 'today' }),
+        body: JSON.stringify({ task_id: t.id, title: t.title, minutes: t.duration_max_minutes || t.duration_min_minutes || 30 }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Planen fehlgeschlagen');
+      if (!res.ok) throw new Error(json.error || 'Einplanen fehlgeschlagen');
       await loadToday();
-      flash(json.blocks?.length ? `Heute eingeplant: ${json.blocks.length} ${json.blocks.length === 1 ? 'Aufgabe' : 'Aufgaben'}.` : 'Heute ist kein Platz mehr frei.');
+      flash(json.placed ? `Eingeplant: heute ${hhmm(json.start)}–${hhmm(json.end)}.` : 'Heute ist keine Lücke mehr frei. Kommt morgen dran.');
     } catch (e: any) {
       flash(e.message);
     } finally {
@@ -176,7 +177,7 @@ export const AufgabenScreen: React.FC = () => {
         </button>
         {t.importance === 'high' && t.status !== 'done' && <span className={styles.tag}>wichtig</span>}
       </div>
-      {expanded === t.id && <TaskEditor task={t} onSave={(p) => saveEdit(t, p)} onDelete={() => remove(t)} onPlanToday={planToday} busy={busy} />}
+      {expanded === t.id && <TaskEditor task={t} onSave={(p) => saveEdit(t, p)} onDelete={() => remove(t)} onPlanToday={() => planToday(t)} busy={busy} />}
     </li>
   );
 

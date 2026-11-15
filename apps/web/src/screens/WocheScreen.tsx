@@ -48,9 +48,11 @@ export const WocheScreen: React.FC = () => {
   const [monday, setMonday] = useState(() => mondayOf(new Date()));
   const [week, setWeek] = useState<Week | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async (m: Date) => {
     setWeek((w) => (w ? { ...w, days: [] } : w));
+    setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/calendar/week?start=${ymd(m)}`, { headers: await authHeaders() });
       const json = await res.json().catch(() => ({}));
@@ -59,6 +61,8 @@ export const WocheScreen: React.FC = () => {
       setError(null);
     } catch (e: any) {
       setError(e.message);
+    } finally {
+      setLoading(false);
     }
   }, []);
   useEffect(() => {
@@ -88,7 +92,7 @@ export const WocheScreen: React.FC = () => {
 
   // Phones: jump to today in the list once the week has loaded
   useEffect(() => {
-    if (!week?.days.length || !window.matchMedia('(max-width: 700px)').matches) return;
+    if (!week?.days.length || !window.matchMedia('(max-width: 768px)').matches) return;
     document.getElementById('agenda-today')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, [week]);
 
@@ -123,6 +127,7 @@ export const WocheScreen: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.h1}>{title}</h1>
+        {loading && <span className={styles.loadingNote} role="status">Lädt …</span>}
         <div className={styles.nav}>
           <button className={styles.navBtn} onClick={() => shift(-7)} aria-label="Vorherige Woche">‹</button>
           <button className={styles.navBtn} onClick={() => setMonday(mondayOf(new Date()))} disabled={isThisWeek}>Heute</button>
@@ -142,7 +147,7 @@ export const WocheScreen: React.FC = () => {
       {error && <p className={styles.banner} role="alert">{error}</p>}
 
       {/* Phone: the week as a list, one day after another */}
-      <div className={styles.agenda}>
+      <div className={`${styles.agenda} ${loading ? styles.isLoading : ''}`} aria-busy={loading}>
         {days.map((d) => {
           const date = new Date(`${d.date}T12:00:00`);
           const isToday = d.date === todayYmd;
@@ -180,7 +185,7 @@ export const WocheScreen: React.FC = () => {
         })}
       </div>
 
-      <div className={styles.scroller}>
+      <div className={`${styles.scroller} ${loading ? styles.isLoading : ''}`} aria-busy={loading}>
         <div className={styles.grid}>
           <div className={styles.corner} />
           {days.map((d) => {
