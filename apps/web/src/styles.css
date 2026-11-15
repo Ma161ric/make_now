@@ -9,6 +9,29 @@ html, body {
   padding: 0;
 }
 
+/* Feel like an app on phones, not a web page */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none; /* no rubber-band bounce of the whole app */
+}
+@media (max-width: 768px) {
+  /* iOS zooms into any field with text smaller than 16px: keep them at 16px */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  .bottom-nav,
+  .app-header {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
 :root {
   --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
