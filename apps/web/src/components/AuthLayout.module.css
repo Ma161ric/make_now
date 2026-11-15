@@ -104,9 +104,8 @@
 }
 
 .free {
-  background: transparent;
+  background: var(--hero-track);
   color: var(--hero-text);
-  box-shadow: inset 0 0 0 1.5px var(--hero-track);
 }
 
 /* ---------- form side ---------- */

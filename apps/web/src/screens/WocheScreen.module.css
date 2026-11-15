@@ -173,7 +173,7 @@
 
   .a_task, .a_sport { background: var(--task-bg); color: var(--task-text); }
   .a_event, .a_busy { background: var(--event-bg); color: var(--event-text); }
-  .a_free { background: transparent; color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--border-strong); }
+  .a_free { background: var(--free-bg); color: var(--free-text); }
 
   .page { padding: 16px 16px 24px; gap: 14px; }
   .header { flex-wrap: nowrap; align-items: center; }
