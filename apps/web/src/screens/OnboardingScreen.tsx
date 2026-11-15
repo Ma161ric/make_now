@@ -5,6 +5,7 @@
  */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { IconCheck } from '../components/Icons';
 import styles from './OnboardingScreen.module.css';
 
 const finish = () => localStorage.setItem('onboarding-completed', 'true');
@@ -28,7 +29,7 @@ const VisualProposals = () => (
           <strong>{p.title}</strong>
           <span>{p.meta}</span>
         </span>
-        <span className={styles.vCheck} aria-hidden="true">✓</span>
+        <span className={styles.vCheck} aria-hidden="true"><IconCheck size={16} /></span>
       </div>
     ))}
   </div>
@@ -70,7 +71,7 @@ const steps = [
   },
   {
     title: 'Du entscheidest',
-    text: 'Jeder Vorschlag zeigt Titel, Dauer und Frist. Ein Tipp auf ✓ übernimmt ihn, ✕ verwirft ihn, ✎ ändert ihn.',
+    text: 'Jeder Vorschlag zeigt Titel, Dauer und Frist. Haken übernimmt ihn, Antippen ändert ihn. Am Handy geht auch Wischen: rechts übernehmen, links verwerfen.',
     visual: <VisualProposals />,
   },
   {
