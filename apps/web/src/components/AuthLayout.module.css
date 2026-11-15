@@ -30,7 +30,7 @@
 
 .logo span,
 .logoMobile span {
-  color: var(--highlight);
+  color: var(--accent-primary);
 }
 
 .claim {
