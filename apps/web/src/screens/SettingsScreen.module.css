@@ -133,6 +133,13 @@
   object-fit: cover;
 }
 
+.profile .hint,
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .name {
   margin: 0;
   font-weight: 600;
@@ -348,9 +355,28 @@
     justify-content: flex-start;
   }
 
-  .row:has(.switch) {
+  /* small controls stay on the right, wide ones go below the text */
+  .row:has(.switch),
+  .row:has(> .control > .ghost),
+  .row:has(> .control > .select) {
     flex-direction: row;
     align-items: center;
+  }
+
+  .section {
+    padding: 6px 16px;
+  }
+
+  .page {
+    padding: 20px 16px 32px;
+  }
+
+  .segment {
+    width: 100%;
+  }
+
+  .segment button {
+    flex: 1;
   }
 
   .inline {

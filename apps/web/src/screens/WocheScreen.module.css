@@ -125,7 +125,56 @@
   .h1 { font-size: 22px; }
 }
 
-/* Narrow screens: swipe sideways through the week, never scroll up/down inside */
-@media (max-width: 900px) {
-  .scroller { overflow-x: auto; overflow-y: hidden; }
+/* ---------- agenda (phones) ---------- */
+.agenda { display: none; }
+
+@media (max-width: 700px) {
+  .scroller { display: none; }
+  .legend { display: none; }
+  .agenda { display: flex; flex-direction: column; gap: 12px; }
+
+  .aDay {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: var(--bg-secondary);
+  }
+  .aPast { opacity: 0.55; }
+
+  .aHead {
+    margin: 0 0 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .aToday span:first-child { color: var(--accent-primary); }
+  .aDate { font-size: 0.82rem; font-weight: 500; color: var(--text-muted); }
+
+  .aChips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .aEmpty { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+
+  .aList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .aItem {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 12px;
+  }
+  .aTime { font-size: 0.72rem; line-height: 1.35; font-variant-numeric: tabular-nums; opacity: 0.8; }
+  .aBody { display: flex; flex-direction: column; min-width: 0; }
+  .aTitle { font-size: 0.9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .aMeta { font-size: 0.75rem; opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .a_task, .a_sport { background: var(--task-bg); color: var(--task-text); }
+  .a_event, .a_busy { background: var(--event-bg); color: var(--event-text); }
+  .a_free { background: transparent; color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--border-strong); }
+
+  .page { padding: 16px 16px 24px; gap: 14px; }
+  .header { flex-wrap: nowrap; align-items: center; }
+  .h1 { font-size: 1.3rem; }
+  .nav { flex: none; }
 }

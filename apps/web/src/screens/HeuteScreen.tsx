@@ -431,7 +431,7 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
         return (
           <div
             key={`${i.kind}-${i.start}-${i.title}`}
-            className={`${styles.block} ${styles[`block_${i.kind}`]} ${isDone ? styles.blockDone : ''} ${s <= now && now < e ? styles.blockNow : ''}`}
+            className={`${styles.block} ${styles[`block_${i.kind}`]} ${h < 34 ? styles.blockSmall : ''} ${isDone ? styles.blockDone : ''} ${s <= now && now < e ? styles.blockNow : ''}`}
             style={{ top, height: h }}
           >
             <span className={styles.blockTitle}>{i.title}</span>

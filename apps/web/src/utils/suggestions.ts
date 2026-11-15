@@ -96,7 +96,9 @@ export function durationLabel(min?: number, max?: number): string {
   const a = min || max!;
   const b = max || min!;
   const fmt = (m: number) => (m >= 60 ? `${Math.round((m / 60) * 10) / 10} h`.replace('.', ',') : `${m} min`);
-  return a === b ? fmt(a) : `${fmt(a)}–${fmt(b)}`.replace(' min–', '–');
+  if (a === b) return fmt(a);
+  // "15–30 min", but "30 min – 1 h" when the units differ
+  return a < 60 && b < 60 ? `${a}–${b} min` : a >= 60 && b >= 60 ? `${fmt(a).replace(' h', '')}–${fmt(b)}` : `${fmt(a)} – ${fmt(b)}`;
 }
 
 /** Chat proposals → suggestions for the Assistent panel. */
