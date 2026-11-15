@@ -11,7 +11,7 @@ export const SignupScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const { signup, loginWithGoogle, loginWithApple, error } = useAuth();
+  const { signup, loginWithGoogle, error } = useAuth();
   const navigate = useNavigate();
 
   const run = async (fn: () => Promise<unknown>) => {
@@ -68,9 +68,6 @@ export const SignupScreen: React.FC = () => {
         </button>
       </form>
 
-      <button type="button" className={styles.secondary} onClick={() => run(loginWithApple)} disabled={isLoading}>
-        Mit Apple registrieren
-      </button>
 
       <p className={styles.legal}>
         Mit der Registrierung stimmst du den <Link to="/terms">Nutzungsbedingungen</Link> und der <Link to="/privacy">Datenschutzerklärung</Link> zu.

@@ -8,7 +8,7 @@ export const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, loginWithGoogle, loginWithApple, error } = useAuth();
+  const { login, loginWithGoogle, error } = useAuth();
   const navigate = useNavigate();
 
   const run = async (fn: () => Promise<unknown>) => {
@@ -53,9 +53,6 @@ export const LoginScreen: React.FC = () => {
         </button>
       </form>
 
-      <button type="button" className={styles.secondary} onClick={() => run(loginWithApple)} disabled={isLoading}>
-        Mit Apple anmelden
-      </button>
 
       <p className={styles.footer}>
         Neu hier? <Link to="/signup" className={styles.switchLink}>Konto erstellen</Link>
