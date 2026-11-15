@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
 import { layoutLanes } from '../utils/lanes';
+import { readCache, writeCache } from '../utils/viewCache';
 import styles from './WocheScreen.module.css';
 
 type Kind = 'task' | 'sport' | 'free' | 'event' | 'busy';
@@ -46,18 +47,20 @@ const hhmm = (iso: string) => new Date(iso).toLocaleTimeString('de-DE', { hour: 
 
 export const WocheScreen: React.FC = () => {
   const [monday, setMonday] = useState(() => mondayOf(new Date()));
-  const [week, setWeek] = useState<Week | null>(null);
+  const [week, setWeek] = useState<Week | null>(() => readCache<Week>(`week_${ymd(mondayOf(new Date()))}`));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async (m: Date) => {
-    setWeek((w) => (w ? { ...w, days: [] } : w));
+    const cached = readCache<Week>(`week_${ymd(m)}`);
+    setWeek((w) => cached ?? (w ? { ...w, days: [] } : w));
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/calendar/week?start=${ymd(m)}`, { headers: await authHeaders() });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `Fehler ${res.status}`);
       setWeek(json);
+      writeCache(`week_${ymd(m)}`, json);
       setError(null);
     } catch (e: any) {
       setError(e.message);
@@ -147,7 +150,7 @@ export const WocheScreen: React.FC = () => {
       {error && <p className={styles.banner} role="alert">{error}</p>}
 
       {/* Phone: the week as a list, one day after another */}
-      <div className={`${styles.agenda} ${loading ? styles.isLoading : ''}`} aria-busy={loading}>
+      <div className={`${styles.agenda} ${loading && !week?.days.length ? styles.isLoading : ''}`} aria-busy={loading}>
         {days.map((d) => {
           const date = new Date(`${d.date}T12:00:00`);
           const isToday = d.date === todayYmd;
@@ -166,7 +169,7 @@ export const WocheScreen: React.FC = () => {
                 </div>
               )}
               {d.items.length === 0 ? (
-                <p className={styles.aEmpty}>Nichts eingetragen</p>
+                <p className={styles.aEmpty}>{loading && !week?.days.length ? '…' : 'Nichts eingetragen'}</p>
               ) : (
                 <ul className={styles.aList}>
                   {d.items.map((i) => (
@@ -185,7 +188,7 @@ export const WocheScreen: React.FC = () => {
         })}
       </div>
 
-      <div className={`${styles.scroller} ${loading ? styles.isLoading : ''}`} aria-busy={loading}>
+      <div className={`${styles.scroller} ${loading && !week?.days.length ? styles.isLoading : ''}`} aria-busy={loading}>
         <div className={styles.grid}>
           <div className={styles.corner} />
           {days.map((d) => {

@@ -10,6 +10,7 @@ import { saveTask, updateTaskStatus } from '../storage';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
 import { IconCheck } from '../components/Icons';
 import { durationLabel } from '../utils/suggestions';
+import { readCache, writeCache } from '../utils/viewCache';
 import { uuid } from '../utils';
 import styles from './AufgabenScreen.module.css';
 
@@ -45,7 +46,7 @@ export const AufgabenScreen: React.FC = () => {
   const uid = user?.id || '';
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [todayTimes, setTodayTimes] = useState<Record<string, string>>({});
+  const [todayTimes, setTodayTimes] = useState<Record<string, string>>(() => readCache<Record<string, string>>(`times_${new Date().toLocaleDateString('en-CA')}`) || {});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [tab, setTab] = useState<'open' | 'done'>('open');
@@ -70,6 +71,7 @@ export const AufgabenScreen: React.FC = () => {
       const map: Record<string, string> = {};
       for (const i of json.items || []) if (i.task_id) map[i.task_id] = i.start;
       setTodayTimes(map);
+      writeCache(`times_${new Date().toLocaleDateString('en-CA')}`, map);
     } catch {
       /* calendar is optional here */
     }

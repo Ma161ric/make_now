@@ -14,6 +14,7 @@ import { IconArrowRight, IconCheck } from '../components/Icons';
 import { MicButton } from '../components/MicButton';
 import { loadSuggestions, saveSuggestions, fromExtraction } from '../utils/suggestions';
 import { layoutLanes } from '../utils/lanes';
+import { readCache, writeCache } from '../utils/viewCache';
 import styles from './HeuteScreen.module.css';
 
 type Kind = 'task' | 'sport' | 'free' | 'event' | 'busy';
@@ -31,6 +32,7 @@ interface Timeline {
   connected: boolean;
   status?: 'ok' | 'needs_reauth';
   needs_upgrade?: boolean;
+  date?: string;
   window?: { start: string; end: string };
   all_day?: string[];
   items: Item[];
@@ -38,6 +40,8 @@ interface Timeline {
 
 const MIN = 60_000;
 const PX_PER_MIN = 0.9;
+/** Phones: a bit more compact, the day should not need endless scrolling */
+const pxPerMin = () => (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 0.7 : PX_PER_MIN);
 
 const hhmm = (d: Date | string) => new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
@@ -73,7 +77,11 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
 
 export const HeuteScreen: React.FC = () => {
   const { user, firebaseUser } = useAuth();
-  const [timeline, setTimeline] = useState<Timeline | null>(null);
+  const [timeline, setTimeline] = useState<Timeline | null>(() => {
+    const cached = readCache<Timeline>('today');
+    // only today's cached plan is useful
+    return cached && cached.date === new Date().toLocaleDateString('en-CA') ? cached : null;
+  });
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [done, setDone] = useState<Set<string>>(new Set());
@@ -85,7 +93,9 @@ export const HeuteScreen: React.FC = () => {
 
   const load = useCallback(async () => {
     try {
-      setTimeline(await api<Timeline>('today'));
+      const fresh = await api<Timeline>('today');
+      setTimeline(fresh);
+      writeCache('today', fresh);
       setError(null);
     } catch (e: any) {
       setError(e.message);
@@ -397,6 +407,7 @@ const FreeCard: React.FC<{ now: number; next: Item | null; onPlan: () => void; b
 );
 
 const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; done: Set<string> }> = ({ items, now, windowEnd, done }) => {
+  const PPM = pxPerMin();
   const upcoming = items.filter((i) => new Date(i.end).getTime() > now);
   if (!upcoming.length) {
     return <p className={styles.empty}>Für den Rest des Tages ist nichts eingetragen.</p>;
@@ -410,8 +421,8 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
   const fromT = from.getTime();
   const lastEnd = Math.max(...upcoming.map((i) => new Date(i.end).getTime()), windowEnd ? new Date(windowEnd).getTime() : 0);
   const toT = Math.ceil(lastEnd / (60 * MIN)) * 60 * MIN;
-  const height = ((toT - fromT) / MIN) * PX_PER_MIN;
-  const y = (ms: number) => ((Math.max(ms, fromT) - fromT) / MIN) * PX_PER_MIN;
+  const height = ((toT - fromT) / MIN) * PPM;
+  const y = (ms: number) => ((Math.max(ms, fromT) - fromT) / MIN) * PPM;
 
   const hours: number[] = [];
   for (let h = fromT; h <= toT; h += 60 * MIN) hours.push(h);

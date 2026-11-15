@@ -122,6 +122,7 @@ Deine Aufgabe:
 - Will der Nutzer etwas als To-do oder Termin haben ("mach ein todo draus", "warum ist das kein todo"), leg es sofort an, ohne Diskussion.
 - Relative Angaben ("morgen", "Donnerstag", "später") beziehen sich auf jetzt. Nichts doppelt vorschlagen, was schon offen ist. Höchstens 5 Vorschläge.
 - Sag in der Antwort kurz, was du VORGESCHLAGEN hast ("Hab dir Kaffee mit Gaugel als Termin vorgeschlagen"). Nie "eingetragen" oder "angelegt": Erst wenn der Nutzer den Vorschlag bestätigt, landet er in Aufgaben oder im Kalender.
+- Steht etwas schon in den offenen Aufgaben, schlag es nicht nochmal vor und sag "steht schon in deinen Aufgaben".
 - Du kannst nichts im Internet nachschauen und keine Aktionen ausführen. Sag das ehrlich, statt es zu versprechen ("schau ich mir an" ist falsch). Allgemeines Wissen darfst du nennen, mit dem Hinweis, dass es abweichen kann.
 
 Offene Aufgaben des Nutzers:
@@ -165,8 +166,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     const parsed = extractJson<{ reply?: unknown; proposals?: unknown }>(llm.text);
-    const reply = typeof parsed?.reply === 'string' && parsed.reply.trim() ? parsed.reply : llm.text;
-    return res.status(200).json({ reply, proposals: parsed ? sanitizeProposals(parsed.proposals, tz) : [], provider: llm.provider });
+    const proposals = parsed ? sanitizeProposals(parsed.proposals, tz) : [];
+    let reply = typeof parsed?.reply === 'string' && parsed.reply.trim() ? parsed.reply : llm.text;
+    // The model likes to say "eingetragen" although nothing is saved until the user confirms
+    if (proposals.length) reply = reply.replace(/\b(eingetragen|reingelegt|angelegt|hinzugefügt|gespeichert)\b/gi, 'vorgeschlagen');
+    return res.status(200).json({ reply, proposals, provider: llm.provider });
   } catch (e: any) {
     if (e instanceof HttpError) return res.status(e.status).json({ error: e.message });
     console.error('[chat] failed', e);

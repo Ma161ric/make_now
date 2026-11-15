@@ -1,7 +1,7 @@
 /* DayFlow service worker: makes the app installable and opens it fast.
  * Pages: network first, last copy when offline. Built assets: cache first
  * (their file names change with every build). API and Firebase: never cached. */
-const CACHE = 'dayflow-v1';
+const CACHE = 'dayflow-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -15,7 +15,8 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  // never touch API calls or the Google sign-in pages (/__/auth/…)
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/__/')) return;
 
   if (req.mode === 'navigate') {
     event.respondWith(

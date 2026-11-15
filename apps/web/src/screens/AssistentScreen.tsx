@@ -99,6 +99,12 @@ export const AssistentScreen: React.FC = () => {
   /** phone bottom sheet: list of open proposals, or one proposal being edited */
   const [sheet, setSheet] = useState<null | 'list' | { edit: string }>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  // Scroll only the message list (scrollIntoView would also move the whole page on iPhones)
+  const toBottom = (smooth = true) => {
+    const el = listRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+  };
 
   useEffect(() => {
     if (!uid) return;
@@ -109,7 +115,7 @@ export const AssistentScreen: React.FC = () => {
 
   useEffect(() => {
     if (uid) localStorage.setItem(chatKey(uid), JSON.stringify(messages.slice(-HISTORY_LIMIT)));
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    toBottom();
   }, [messages, uid]);
 
   useEffect(() => {
@@ -372,7 +378,7 @@ export const AssistentScreen: React.FC = () => {
           )}
         </div>
 
-        <div className={styles.messages}>
+        <div className={styles.messages} ref={listRef}>
           {messages.length === 0 && (
             <div className={styles.empty}>
               <p>Erzähl einfach, was ansteht.</p>
@@ -449,6 +455,7 @@ export const AssistentScreen: React.FC = () => {
                 send();
               }
             }}
+            onFocus={() => setTimeout(() => toBottom(false), 300)}
             placeholder="Was steht an?"
             rows={1}
             maxLength={4000}

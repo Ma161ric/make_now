@@ -325,6 +325,8 @@
   .layout { grid-template-columns: 1fr; }
   .nowCard { position: static; min-height: 0; }
   .nowInner { padding: var(--space-5); gap: var(--space-5); }
+  /* phones: the note field right under the Jetzt card, not after the long timeline */
+  .side .capture { order: -1; }
 }
 
 .allDay {

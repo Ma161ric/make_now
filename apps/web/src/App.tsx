@@ -4,12 +4,14 @@ import { useAuth } from './auth/authContext';
 import styles from './App.module.css';
 import './styles.css';
 import { IconToday, IconChat, IconWeek, IconTasks, IconSun, IconMoon, IconSettings } from './components/Icons';
+import { useVisualViewport } from './hooks/useVisualViewport';
 
 export default function App() {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  useVisualViewport();
 
   // Hide header on auth pages
   const isAuthPage = ['/login', '/signup', '/onboarding'].includes(location.pathname);
