@@ -12,7 +12,7 @@ export default function App() {
   const navigate = useNavigate();
 
   // Hide header on auth pages
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+  const isAuthPage = ['/login', '/signup', '/onboarding'].includes(location.pathname);
   
   const navItems = [
     { to: '/today', label: 'Heute', icon: <IconToday /> },

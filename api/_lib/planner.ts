@@ -195,7 +195,7 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
 
   if (sport) {
     await google.insertEvent(accessToken, calendarId, {
-      summary: `🏋️ ${settings.sportLabel}`,
+      summary: settings.sportLabel,
       description: 'Von DayFlow eingeplant: Zeit für Bewegung.',
       start: sport.start,
       end: sport.end,
@@ -209,7 +209,7 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
 
   for (const block of plan.blocks) {
     await google.insertEvent(accessToken, calendarId, {
-      summary: `🎯 ${block.title}`,
+      summary: block.title,
       description: `Von DayFlow eingeplant · geschätzt ${block.duration_minutes} min`,
       start: block.start,
       end: block.end,
@@ -222,7 +222,7 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
   const freeTime = settings.freeTimeEnabled ? planFreeTime(plan.remaining_slots, date, settings.freeTimeIdeas) : [];
   for (const block of freeTime) {
     await google.insertEvent(accessToken, calendarId, {
-      summary: block.idea ? `🌿 Freizeit · ${block.idea}` : '🌿 Freizeit',
+      summary: block.idea ? `Freizeit · ${block.idea}` : 'Freizeit',
       description: block.idea
         ? `Keine Aufgabe eingeplant, die Zeit gehört dir. Vorschlag: ${block.idea}`
         : 'Keine Aufgabe eingeplant, die Zeit gehört dir.',
@@ -601,7 +601,7 @@ export async function placeTaskToday(uid: string, task: { id: string; title: str
   const start = slot.start;
   const end = new Date(start.getTime() + ms);
   await google.insertEvent(accessToken, calendarId, {
-    summary: `🎯 ${task.title}`,
+    summary: task.title,
     description: `Von DayFlow eingeplant · geschätzt ${task.minutes} min`,
     start,
     end,

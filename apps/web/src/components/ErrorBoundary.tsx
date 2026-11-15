@@ -73,7 +73,6 @@ export class ErrorBoundary extends Component<Props, State> {
               boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
             }}
           >
-            <h1 style={{ fontSize: '48px', margin: '0 0 16px 0' }}>😔</h1>
             <h2 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>
               Etwas ist schief gelaufen
             </h2>

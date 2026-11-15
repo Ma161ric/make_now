@@ -65,10 +65,12 @@
 .userRow,
 .botRow {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .userRow {
-  justify-content: flex-end;
+  align-items: flex-end;
 }
 
 .userBubble,
@@ -416,6 +418,240 @@
 }
 
 /* ---------- mobile: chat first, proposals stacked above composer ---------- */
+/* ---------- proposals under a reply (phones) + done lines (everywhere) ---------- */
+.inline {
+  width: min(100%, 520px);
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.swipeWrap {
+  position: relative;
+  display: none; /* phones only, see below */
+}
+
+.swipeHint {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.swipeYes {
+  justify-content: flex-start;
+  background: var(--accent-primary);
+  color: var(--on-accent);
+}
+
+.swipeNo {
+  justify-content: flex-end;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.inlineCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 10px 10px 14px;
+  border-radius: 16px;
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--task-bg);
+  touch-action: pan-y;
+  user-select: none;
+  transition: transform 0.18s ease-out;
+}
+
+.inlineMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  cursor: pointer;
+  outline: none;
+}
+
+.inlineMain:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-primary);
+  border-radius: 8px;
+}
+
+.inlineDrop,
+.inlineAccept {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.inlineDrop {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.inlineAccept {
+  background: var(--accent-primary);
+  color: var(--on-accent);
+}
+
+.inlineAccept:disabled {
+  opacity: 0.5;
+}
+
+.doneLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.doneLine svg {
+  flex: none;
+  color: var(--accent-primary);
+}
+
+.doneText {
+  flex: 1;
+  min-width: 0;
+}
+
+.doneText strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.doneAction {
+  flex: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.doneAction:disabled {
+  opacity: 0.6;
+}
+
+.pill {
+  display: none; /* phones only */
+  align-self: center;
+  margin: 0 0 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: var(--accent-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---------- bottom sheet (phones) ---------- */
+.sheetBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  animation: fade 0.15s ease-out;
+}
+
+.sheet {
+  width: 100%;
+  max-height: 85dvh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 10px 18px calc(18px + env(safe-area-inset-bottom));
+  border-radius: 22px 22px 0 0;
+  background: var(--bg-secondary);
+  animation: up 0.2s ease-out;
+}
+
+.sheet .card {
+  background: var(--bg-primary);
+}
+
+.sheet :global(.input) {
+  background: var(--bg-primary);
+}
+
+.sheetGrip {
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: 2px;
+  background: var(--border-strong);
+}
+
+.sheetTitle {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sheetActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.sheetPrimary,
+.sheetSecondary {
+  flex: 1;
+  border: 0;
+  border-radius: 14px;
+  padding: 13px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sheetPrimary {
+  background: var(--accent-primary);
+  color: var(--on-accent);
+}
+
+.sheetSecondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+}
+
+@keyframes up {
+  from { transform: translateY(24px); opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheetBackdrop, .sheet { animation: none; }
+  .inlineCard { transition: none; }
+}
+
 /* ---------- phone: proposals on top, chat fills the rest, input above the tab bar ---------- */
 @media (max-width: 860px) {
   .page {
@@ -426,18 +662,21 @@
     gap: 12px;
   }
 
-  /* the empty panel would only push the chat down */
-  .panelIdle {
+  /* proposals live in the chat on phones; the side panel goes away */
+  .panel {
     display: none;
   }
 
-  .panel {
-    order: -1;
-    flex: none;
-    margin-bottom: 0;
-    max-height: 30dvh;
-    padding: 12px 12px 14px;
-    border-radius: 16px;
+  .swipeWrap {
+    display: block;
+  }
+
+  .pill {
+    display: inline-block;
+  }
+
+  .inline {
+    width: 100%;
   }
 
   .chat {

@@ -7,7 +7,7 @@ export const TermsOfServiceScreen: React.FC = () => {
     <div className={styles.container}>
       <div className={styles.content}>
         <Link to="/" className={styles.backLink}>
-          ← Zurück
+          Zurück
         </Link>
 
         <h1>Nutzungsbedingungen</h1>
