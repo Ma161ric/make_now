@@ -134,6 +134,7 @@
   .agenda { display: flex; flex-direction: column; gap: 12px; }
 
   .aDay {
+    scroll-margin-top: calc(var(--nav-height) + 12px);
     padding: 14px 16px;
     border-radius: 18px;
     background: var(--bg-secondary);
@@ -175,6 +176,8 @@
 
   .page { padding: 16px 16px 24px; gap: 14px; }
   .header { flex-wrap: nowrap; align-items: center; }
-  .h1 { font-size: 1.3rem; }
+  .h1 { font-size: 1.15rem; white-space: nowrap; }
+  .nav { gap: 6px; }
+  .navBtn { min-width: 36px; min-height: 36px; padding: 0 10px; font-size: 13px; }
   .nav { flex: none; }
 }

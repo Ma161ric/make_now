@@ -432,9 +432,10 @@
   }
 
   .panel {
+    order: -1;
     flex: none;
     margin-bottom: 0;
-    max-height: 34dvh;
+    max-height: 30dvh;
     padding: 12px 12px 14px;
     border-radius: 16px;
   }
