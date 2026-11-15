@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
-import { usePreferences } from '../context/PreferencesContext';
-import styles from './SignupScreen.module.css';
+import { AuthLayout, GoogleMark } from '../components/AuthLayout';
+import styles from './Auth.module.css';
 
 export const SignupScreen: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
@@ -12,156 +12,72 @@ export const SignupScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const { signup, loginWithGoogle, loginWithApple, error } = useAuth();
-  const { preferences } = usePreferences();
   const navigate = useNavigate();
 
-    const getDefaultPath = () => {
-    if (preferences.defaultScreen === 'notes') {
-      return '/inbox';
+  const run = async (fn: () => Promise<unknown>) => {
+    setIsLoading(true);
+    try {
+      await fn();
+      navigate('/today');
+    } catch {
+      // shown via AuthContext error
+    } finally {
+      setIsLoading(false);
     }
-    return `/${preferences.defaultScreen}`;
   };
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
-
     if (password !== confirmPassword) {
-      setValidationError('Passwörter stimmen nicht überein');
+      setValidationError('Die Passwörter stimmen nicht überein.');
       return;
     }
-
-    setIsLoading(true);
-    try {
-      await signup(email, password, displayName);
-      navigate(getDefaultPath());
-    } catch (err) {
-      // Error is handled by AuthContext
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignup = async () => {
-    setIsLoading(true);
-    try {
-      await loginWithGoogle();
-      navigate('/today');
-    } catch (err) {
-      // Error is handled by AuthContext
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAppleSignup = async () => {
-    setIsLoading(true);
-    try {
-      await loginWithApple();
-      navigate('/today');
-    } catch (err) {
-      // Error is handled by AuthContext
-    } finally {
-      setIsLoading(false);
-    }
+    run(() => signup(email, password, displayName));
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h1 className={styles.title}>Neues Konto erstellen</h1>
-        <p className={styles.subtitle}>Starten Sie mit Ihrer Planung</p>
+    <AuthLayout title="Konto erstellen" subtitle="In einer Minute startklar. Kostenlos.">
+      {(validationError || error) && <div className={styles.error} role="alert">{validationError || error}</div>}
 
-        {error && <div className={styles.error}>{error}</div>}
-        {validationError && <div className={styles.error}>{validationError}</div>}
+      <button type="button" className={styles.google} onClick={() => run(loginWithGoogle)} disabled={isLoading}>
+        <GoogleMark /> Mit Google registrieren
+      </button>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="displayName">Name</label>
-            <input
-              id="displayName"
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Dein Name"
-              disabled={isLoading}
-              required
-            />
-          </div>
+      <div className={styles.divider}>oder mit E-Mail</div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="email">E-Mail-Adresse</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="deine@email.com"
-              disabled={isLoading}
-              required
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="password">Passwort</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mindestens 6 Zeichen"
-              disabled={isLoading}
-              required
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="confirmPassword">Passwort wiederholen</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Passwort wiederholen"
-              disabled={isLoading}
-              required
-            />
-          </div>
-
-          <button type="submit" className={styles.submitButton} disabled={isLoading}>
-            {isLoading ? 'Wird registriert...' : 'Registrieren'}
-          </button>
-        </form>
-
-        <div className={styles.divider}>oder</div>
-
-        <div className={styles.oauthButtons}>
-          <button
-            type="button"
-            onClick={handleGoogleSignup}
-            disabled={isLoading}
-            className={styles.oauthButton}
-          >
-            🔵 Google
-          </button>
-          <button
-            type="button"
-            onClick={handleAppleSignup}
-            disabled={isLoading}
-            className={styles.oauthButton}
-          >
-            🍎 Apple
-          </button>
+      <form className={styles.form} onSubmit={submit}>
+        <div className={styles.field}>
+          <label htmlFor="displayName">Name</label>
+          <input id="displayName" type="text" autoComplete="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} disabled={isLoading} required />
         </div>
+        <div className={styles.field}>
+          <label htmlFor="email">E-Mail</label>
+          <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@beispiel.de" disabled={isLoading} required />
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="password">Passwort</label>
+          <input id="password" type="password" autoComplete="new-password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} required />
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="confirmPassword">Passwort wiederholen</label>
+          <input id="confirmPassword" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={isLoading} required />
+        </div>
+        <button type="submit" className={styles.submit} disabled={isLoading}>
+          {isLoading ? 'Erstelle Konto …' : 'Konto erstellen'}
+        </button>
+      </form>
 
-        <p className={styles.footer}>
-          Bereits registriert?{' '}
-          <a href="/login" className={styles.link}>
-            Hier anmelden
-          </a>
-        </p>
-      </div>
-    </div>
+      <button type="button" className={styles.secondary} onClick={() => run(loginWithApple)} disabled={isLoading}>
+        Mit Apple registrieren
+      </button>
+
+      <p className={styles.legal}>
+        Mit der Registrierung stimmst du den <Link to="/terms">Nutzungsbedingungen</Link> und der <Link to="/privacy">Datenschutzerklärung</Link> zu.
+      </p>
+      <p className={styles.footer}>
+        Schon dabei? <Link to="/login" className={styles.switchLink}>Anmelden</Link>
+      </p>
+    </AuthLayout>
   );
 };
