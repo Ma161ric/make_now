@@ -1,0 +1,163 @@
+/* Form parts shared by login and signup */
+.google,
+.secondary {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.google {
+  border: 1px solid var(--border-strong);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.google:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+}
+
+.secondary {
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 8px;
+}
+
+.secondary:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.field input {
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.submit {
+  margin-top: 6px;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--accent-primary);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+}
+
+.google:disabled,
+.secondary:disabled,
+.submit:disabled,
+.field input:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.google:focus-visible,
+.secondary:focus-visible,
+.submit:focus-visible,
+.switchLink:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  border-left: 3px solid var(--danger);
+}
+
+.footer {
+  margin: 28px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.switchLink {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal {
+  margin: 16px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.legal a {
+  color: inherit;
+}
