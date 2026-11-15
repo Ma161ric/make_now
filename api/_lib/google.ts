@@ -81,13 +81,20 @@ async function api<T>(accessToken: string, path: string, init: RequestInit = {})
   return json as T;
 }
 
-/** Ids of the calendars the user has switched on in Google Calendar. */
+/**
+ * Ids of the calendars the user has switched on in Google Calendar.
+ * DayFlow's own calendars are left out: the current one is handled
+ * separately, and an older one (left behind when DayFlow had to create a
+ * new calendar) would otherwise show its stale blocks as "appointments".
+ */
 export async function listVisibleCalendarIds(accessToken: string): Promise<string[]> {
-  const out = await api<{ items: { id: string; selected?: boolean; primary?: boolean }[] }>(
+  const out = await api<{ items: { id: string; summary?: string; description?: string; selected?: boolean; primary?: boolean }[] }>(
     accessToken,
     '/users/me/calendarList?minAccessRole=freeBusyReader&maxResults=250'
   );
-  return out.items.filter((c) => c.primary || c.selected).map((c) => c.id);
+  const isDayFlow = (c: { summary?: string; description?: string }) =>
+    c.summary === 'DayFlow' && (c.description || '').startsWith('Von DayFlow');
+  return out.items.filter((c) => (c.primary || c.selected) && !isDayFlow(c)).map((c) => c.id);
 }
 
 export async function freeBusy(accessToken: string, calendarIds: string[], timeMin: Date, timeMax: Date) {
