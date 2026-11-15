@@ -1,39 +1,42 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { complete, prompt, extractJson } from './_lib/llm.js';
-import { optionalUser } from './_lib/firebaseAdmin.js';
+import { FieldValue } from 'firebase-admin/firestore';
+import { db, requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import { toSchemaResponse, type FlatItem } from './_lib/extractionFormat.js';
 import { validateExtraction } from '../packages/core/src/validation.js';
 
 
+const DAILY_LIMIT = () => Number(process.env.EXTRACT_DAILY_LIMIT || 100);
+
 export default async (req: VercelRequest, res: VercelResponse) => {
-  // CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { noteText } = req.body;
-
-  if (!noteText || typeof noteText !== 'string') {
-    return res.status(400).json({
-      error: 'Invalid request: noteText must be a non-empty string',
-    });
+  // Signed-in users only: this endpoint spends the AI key
+  let uid: string;
+  try {
+    uid = await requireUser(req);
+  } catch (e) {
+    const status = e instanceof HttpError ? e.status : 401;
+    return res.status(status).json({ error: 'Bitte anmelden' });
   }
 
-  // Paid model only for signed-in users
-  const allowClaude = (await optionalUser(req)) !== null;
+  const { noteText } = req.body || {};
+  if (!noteText || typeof noteText !== 'string' || noteText.length > 4000) {
+    return res.status(400).json({ error: 'noteText: 1-4000 Zeichen' });
+  }
+
+  // Per-user daily limit, shared counter document with the chat
+  const date = new Date().toISOString().slice(0, 10);
+  const ref = db().doc(`ai_usage/${uid}_${date}`);
+  await ref.set({ uid, date, extract: FieldValue.increment(1) }, { merge: true });
+  if (((await ref.get()).data()?.extract ?? 0) > DAILY_LIMIT()) {
+    return res.status(429).json({ error: 'Tageslimit erreicht, morgen geht es weiter.' });
+  }
+  const allowClaude = true;
 
   try {
-    console.log('[AI] Extracting from note:', noteText.substring(0, 100) + '...');
     const startTime = Date.now();
 
     const today = new Date().toISOString().slice(0, 10);

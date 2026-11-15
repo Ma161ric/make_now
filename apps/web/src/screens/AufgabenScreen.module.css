@@ -60,6 +60,9 @@
   cursor: pointer;
   padding: 0;
 }
+.check { position: relative; }
+/* bigger invisible tap area (44px) around the small box */
+.check::after { content: ''; position: absolute; inset: -10px; }
 .check:hover { border-color: var(--accent-primary); }
 .check:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .checked { background: var(--accent-primary); border-color: var(--accent-primary); }

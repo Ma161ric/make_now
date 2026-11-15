@@ -54,7 +54,8 @@
 .connectHint a { text-decoration: none; display: inline-flex; align-items: center; }
 
 .scroller {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 12px;
   border-radius: 20px;
   border: 1px solid var(--border-color);
@@ -128,7 +129,7 @@
 /* ---------- agenda (phones) ---------- */
 .agenda { display: none; }
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .scroller { display: none; }
   .legend { display: none; }
   .agenda { display: flex; flex-direction: column; gap: 12px; }
@@ -181,3 +182,9 @@
   .navBtn { min-width: 36px; min-height: 36px; padding: 0 10px; font-size: 13px; }
   .nav { flex: none; }
 }
+
+/* while the week loads: quiet pulse instead of an empty grid that looks "done" */
+.isLoading { animation: weekPulse 1.2s ease-in-out infinite; }
+.loadingNote { font-size: 13px; color: var(--text-muted); }
+@keyframes weekPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .isLoading { animation: none; opacity: 0.7; } }
