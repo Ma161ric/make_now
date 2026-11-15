@@ -110,6 +110,7 @@ body {
   --accent-bg: color-mix(in srgb, var(--p-sage) 16%, var(--p-ground));
   --accent-text: var(--p-ink);
   --highlight: var(--p-accent);
+  --brand-dot: var(--p-accent);   /* apricot pops more than sage on graphite */
   --highlight-on-hero: var(--p-accent);
   --highlight-on-sport: var(--p-accent);
   /* the sport "Jetzt" card looks like the normal one here */
@@ -172,6 +173,7 @@ body {
   --accent-bg: var(--p-sage-2);
   --accent-text: var(--p-ink);
   --highlight: var(--p-accent);
+  --brand-dot: var(--p-sage);     /* honey is too faint on linen */
   --highlight-on-hero: var(--p-accent);
   --highlight-on-sport: var(--p-sage);   /* honey can't be read on light sage */
   --highlight-on-free: var(--p-sage);
@@ -230,7 +232,7 @@ body {
   text-decoration: none;
   margin-right: var(--space-4);
 }
-.brand-dot { color: var(--accent-primary); }
+.brand-dot { color: var(--brand-dot); }
 
 .nav { display: flex; align-items: center; gap: var(--space-1); }
 .nav a {
