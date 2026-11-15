@@ -72,3 +72,24 @@ export const IconCheck = (p: { size?: number }) => (
     <path d="M5 12l5 5L20 7" />
   </Icon>
 );
+export const IconX = (p: { size?: number }) => (
+  <Icon {...p}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </Icon>
+);
+export const IconPencil = (p: { size?: number }) => (
+  <Icon {...p}>
+    <path d="M4 20h4L19 9l-4-4L4 16z" />
+    <path d="M13.5 6.5l4 4" />
+  </Icon>
+);
+export const IconArrowUp = (p: { size?: number }) => (
+  <Icon {...p}>
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </Icon>
+);
+export const IconArrowLeft = (p: { size?: number }) => (
+  <Icon {...p}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </Icon>
+);

@@ -19,6 +19,7 @@ export interface Suggestion {
   end_at?: string; // ISO
   location?: string;
   source: string; // the note or chat message it came from
+  msg_id?: string; // assistant message it belongs to (shown inline under it on phones)
   created_at: string;
 }
 
@@ -102,11 +103,11 @@ export function durationLabel(min?: number, max?: number): string {
 }
 
 /** Chat proposals → suggestions for the Assistent panel. */
-export function fromChatProposals(proposals: any[], source: string): Suggestion[] {
+export function fromChatProposals(proposals: any[], source: string, msgId?: string): Suggestion[] {
   const now = new Date().toISOString();
   return (proposals || []).flatMap((p): Suggestion[] => {
     if (!p?.title) return [];
-    const base = { id: uuid(), title: String(p.title), source, created_at: now, importance: (p.importance || 'medium') as Importance };
+    const base = { id: uuid(), title: String(p.title), source, msg_id: msgId, created_at: now, importance: (p.importance || 'medium') as Importance };
     if (p.kind === 'event' && p.start_at) {
       const mins = p.end_at ? Math.max(15, Math.round((+new Date(p.end_at) - +new Date(p.start_at)) / 60000)) : 60;
       return [{ ...base, kind: 'event', importance: 'high', start_at: p.start_at, end_at: p.end_at, location: p.location, duration_min_minutes: mins, duration_max_minutes: mins }];

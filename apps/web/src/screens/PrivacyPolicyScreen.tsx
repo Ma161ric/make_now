@@ -7,7 +7,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
     <div className={styles.container}>
       <div className={styles.content}>
         <Link to="/" className={styles.backLink}>
-          ← Zurück
+          Zurück
         </Link>
 
         <h1>Datenschutzerklärung</h1>
