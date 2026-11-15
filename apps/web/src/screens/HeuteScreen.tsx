@@ -13,6 +13,7 @@ import { API_BASE, authHeaders } from '../utils/apiAuth';
 import { IconArrowRight, IconCheck } from '../components/Icons';
 import { MicButton } from '../components/MicButton';
 import { loadSuggestions, saveSuggestions, fromExtraction } from '../utils/suggestions';
+import { layoutLanes } from '../utils/lanes';
 import styles from './HeuteScreen.module.css';
 
 type Kind = 'task' | 'sport' | 'free' | 'event' | 'busy';
@@ -422,7 +423,7 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
           <span>{hhmm(new Date(h))}</span>
         </div>
       ))}
-      {upcoming.map((i) => {
+      {layoutLanes(upcoming).map(({ item: i, lane, lanes }) => {
         const s = new Date(i.start).getTime();
         const e = new Date(i.end).getTime();
         const top = y(s);
@@ -432,7 +433,7 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
           <div
             key={`${i.kind}-${i.start}-${i.title}`}
             className={`${styles.block} ${styles[`block_${i.kind}`]} ${h < 34 ? styles.blockSmall : ''} ${isDone ? styles.blockDone : ''} ${s <= now && now < e ? styles.blockNow : ''}`}
-            style={{ top, height: h }}
+            style={{ top, height: h, ...(lanes > 1 ? { left: `calc(${(lane * 100) / lanes}% + ${lane ? 2 : 0}px)`, right: 'auto', width: `calc(${100 / lanes}% - 2px)` } : {}) }}
           >
             <span className={styles.blockTitle}>{i.title}</span>
             {h >= 38 && (

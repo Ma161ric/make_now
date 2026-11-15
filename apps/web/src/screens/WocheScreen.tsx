@@ -7,6 +7,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
+import { layoutLanes } from '../utils/lanes';
 import styles from './WocheScreen.module.css';
 
 type Kind = 'task' | 'sport' | 'free' | 'event' | 'busy';
@@ -206,7 +207,7 @@ export const WocheScreen: React.FC = () => {
               {hours.map((h) => (
                 <div key={h} className={styles.hourLine} style={{ top: (h - fromH) * 60 * PX_PER_MIN }} />
               ))}
-              {d.items.map((i) => {
+              {layoutLanes(d.items).map(({ item: i, lane, lanes }) => {
                 const s = new Date(i.start);
                 const e = new Date(i.end);
                 const top = ((s.getHours() - fromH) * 60 + s.getMinutes()) * PX_PER_MIN;
@@ -215,7 +216,7 @@ export const WocheScreen: React.FC = () => {
                   <div
                     key={`${i.kind}-${i.start}-${i.title}`}
                     className={`${styles.block} ${styles[`b_${i.kind}`]}`}
-                    style={{ top, height: h }}
+                    style={{ top, height: h, ...(lanes > 1 ? { left: `calc(${(lane * 100) / lanes}% + 2px)`, right: 'auto', width: `calc(${100 / lanes}% - 4px)` } : {}) }}
                     title={`${i.title} · ${hhmm(i.start)}–${hhmm(i.end)}${i.location ? ` · ${i.location}` : ''}`}
                   >
                     <span className={styles.bTitle}>{i.title}</span>
