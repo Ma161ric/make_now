@@ -209,8 +209,10 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
 
   for (const block of plan.blocks) {
     await google.insertEvent(accessToken, calendarId, {
-      summary: block.title,
-      description: `Von DayFlow eingeplant · geschätzt ${block.duration_minutes} min`,
+      summary: block.partial ? `${block.title} · Teil` : block.title,
+      description: block.partial
+        ? `Von DayFlow eingeplant · ein Teil (${block.duration_minutes} min), der Rest kommt an einem der nächsten Tage`
+        : `Von DayFlow eingeplant · geschätzt ${block.duration_minutes} min`,
       start: block.start,
       end: block.end,
       timeZone: tz,

@@ -49,7 +49,12 @@ export interface PlannedBlock {
   start: Date;
   end: Date;
   duration_minutes: number;
+  /** Only part of a long task: no gap (or not enough budget) for the whole thing today */
+  partial?: boolean;
 }
+
+/** Long tasks that fit nowhere in one piece get a part of at least this length */
+export const MIN_PART_MINUTES = 45;
 
 export interface FreeSlotPlan {
   date: string; // YYYY-MM-DD (local)
@@ -216,19 +221,41 @@ export function planIntoFreeSlots(
   for (const task of orderTasksForPlanning(tasks, now)) {
     if (blocks.length >= config.maxBlocks) break;
     const duration = taskDuration(task, config.defaultDurationMinutes);
-    if (plannedMinutes + duration > config.maxPlannedMinutes) {
-      skipped.push(task.id);
-      continue;
+    const budget = config.maxPlannedMinutes - plannedMinutes;
+    let minutes = duration;
+    let partial = false;
+    let slot = duration <= budget ? remaining.find((s) => s.end - s.start >= duration * MINUTE) : undefined;
+
+    // Too long for any gap (or for what's left of the day's budget): plan a
+    // part of it in the biggest gap, so long tasks still move forward
+    if (!slot && duration >= 60) {
+      const biggest = remaining.reduce<(typeof remaining)[number] | undefined>(
+        (best, s) => (!best || s.end - s.start > best.end - best.start ? s : best),
+        undefined
+      );
+      const room = biggest ? Math.floor((biggest.end - biggest.start) / MINUTE) : 0;
+      const part = Math.floor(Math.min(duration, budget, room) / 15) * 15;
+      if (biggest && part >= MIN_PART_MINUTES) {
+        slot = biggest;
+        minutes = part;
+        partial = true;
+      }
     }
-    const slot = remaining.find((s) => s.end - s.start >= duration * MINUTE);
     if (!slot) {
       skipped.push(task.id);
       continue;
     }
     const start = slot.start;
-    const end = start + duration * MINUTE;
-    blocks.push({ task_id: task.id, title: task.title, start: new Date(start), end: new Date(end), duration_minutes: duration });
-    plannedMinutes += duration;
+    const end = start + minutes * MINUTE;
+    blocks.push({
+      task_id: task.id,
+      title: task.title,
+      start: new Date(start),
+      end: new Date(end),
+      duration_minutes: minutes,
+      ...(partial ? { partial: true } : {}),
+    });
+    plannedMinutes += minutes;
     slot.start = end + config.bufferMinutes * MINUTE;
   }
 

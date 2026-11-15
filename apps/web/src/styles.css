@@ -9,6 +9,29 @@ html, body {
   padding: 0;
 }
 
+/* Feel like an app on phones, not a web page */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none; /* no rubber-band bounce of the whole app */
+}
+@media (max-width: 768px) {
+  /* iOS zooms into any field with text smaller than 16px: keep them at 16px */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  .bottom-nav,
+  .app-header {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
 :root {
   --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
@@ -94,8 +117,9 @@ html, body {
   --sport-border: var(--p-sage);
   --sport-text: var(--p-ground);
   --sport-muted: var(--hero-muted);
-  --free-bg: var(--p-raised);
-  --free-border: var(--p-raised);
+  /* free time: neutral, but clearly lighter than the cards it sits on */
+  --free-bg: color-mix(in srgb, var(--p-ink) 11%, var(--p-surface));
+  --free-border: var(--free-bg);
   --free-text: var(--p-ink);
   --free-muted: var(--text-muted);
   --busy-border: var(--border-strong);
@@ -198,7 +222,7 @@ html, body {
   text-decoration: none;
   margin-right: var(--space-4);
 }
-.brand-dot { color: var(--highlight); }
+.brand-dot { color: var(--accent-primary); }
 
 .nav { display: flex; align-items: center; gap: var(--space-1); }
 .nav a {

@@ -120,11 +120,35 @@ describe('planIntoFreeSlots', () => {
     expect(plan.blocks.map((b) => b.task_id)).toEqual(['open']);
   });
 
-  it('skips a task that fits nowhere but keeps planning smaller ones', () => {
-    const busy = [{ start: local(11), end: local(20) }];
-    const plan = planIntoFreeSlots([task('big', 120, { importance: 'high' }), task('small', 30)], busy, DAY, BEFORE_DAY, cfg());
+  it('skips a short task that fits nowhere but keeps planning others', () => {
+    const busy = [{ start: local(10, 35), end: local(20) }]; // free 10:00-10:25
+    const plan = planIntoFreeSlots([task('mid', 45, { importance: 'high' }), task('small', 10)], busy, DAY, BEFORE_DAY, cfg());
     expect(plan.blocks.map((b) => b.task_id)).toEqual(['small']);
-    expect(plan.skipped_task_ids).toEqual(['big']);
+    expect(plan.skipped_task_ids).toEqual(['mid']);
+  });
+
+  it('plans a part of a long task when no gap is big enough for all of it', () => {
+    const busy = [{ start: local(11, 30), end: local(20) }]; // free 10:00-11:20
+    const plan = planIntoFreeSlots([task('tax', 240, { importance: 'high' })], busy, DAY, BEFORE_DAY, cfg({ maxPlannedMinutes: 480 }));
+    expect(plan.blocks).toHaveLength(1);
+    expect(plan.blocks[0].partial).toBe(true);
+    expect(plan.blocks[0].duration_minutes).toBe(75);
+    expect(plan.blocks[0].start.toISOString()).toBe(local(10).toISOString());
+  });
+
+  it('plans a part when the daily budget is almost used up', () => {
+    const plan = planIntoFreeSlots([task('a', 120), task('b', 120)], [], DAY, BEFORE_DAY, cfg({ maxPlannedMinutes: 180 }));
+    expect(plan.blocks.map((b) => [b.task_id, b.duration_minutes, !!b.partial])).toEqual([
+      ['a', 120, false],
+      ['b', 60, true],
+    ]);
+  });
+
+  it('does not create tiny parts', () => {
+    const busy = [{ start: local(10, 40), end: local(20) }]; // only 30 min free
+    const plan = planIntoFreeSlots([task('tax', 240)], busy, DAY, BEFORE_DAY, cfg());
+    expect(plan.blocks).toHaveLength(0);
+    expect(plan.skipped_task_ids).toEqual(['tax']);
   });
 
   it('uses the default duration when a task has no estimate', () => {
