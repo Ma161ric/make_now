@@ -20,6 +20,7 @@ import styles from './HeuteScreen.module.css';
 type Kind = 'task' | 'sport' | 'free' | 'event' | 'busy';
 
 interface Item {
+  id?: string;
   start: string;
   end: string;
   kind: Kind;
@@ -41,6 +42,7 @@ interface Timeline {
   needs_upgrade?: boolean;
   provider?: 'google' | 'local';
   undo?: { label: string; at: string } | null;
+  evening_review?: boolean;
   date?: string;
   window?: { start: string; end: string };
   all_day?: string[];
@@ -97,6 +99,7 @@ export const HeuteScreen: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [moving, setMoving] = useState(false);
+  const [editing, setEditing] = useState<Item | null>(null);
   const [note, setNote] = useState('');
   const [noteState, setNoteState] = useState<{ kind: 'saving' | 'saved' | 'error'; count?: number } | null>(null);
 
@@ -160,6 +163,38 @@ export const HeuteScreen: React.FC = () => {
     return missed ? { text: `${base} · ${missed} offen geblieben`, ok: false } : { text: `${base} · im Zeitplan`, ok: true };
   }, [items, doneIds, t]);
 
+  // Evening: ask what got done. From 19:00, or earlier once every planned task is over.
+  const reviewKey = `dayflow-review-${timeline?.date || ''}`;
+  const [answered, setAnswered] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      setAnswered(JSON.parse(localStorage.getItem(reviewKey) || '[]'));
+    } catch {
+      setAnswered([]);
+    }
+  }, [reviewKey]);
+  const answer = (id: string) => {
+    setAnswered((a) => {
+      const next = [...a, id];
+      try { localStorage.setItem(reviewKey, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  const review = useMemo(() => {
+    if (!timeline?.evening_review || answered.includes('closed')) return [];
+    const tasks = new Map<string, Item>(); // first block of each task, with its last end
+    let lastEnd = 0;
+    for (const i of items) {
+      if (i.kind !== 'task' || !i.task_id) continue;
+      lastEnd = Math.max(lastEnd, new Date(i.end).getTime());
+      if (!tasks.has(i.task_id)) tasks.set(i.task_id, i);
+    }
+    const hour = new Date(t).getHours();
+    const evening = hour >= 19 || (hour >= 16 && lastEnd > 0 && lastEnd <= t);
+    if (!evening) return [];
+    return [...tasks.values()].filter((i) => new Date(i.start).getTime() <= t && !doneIds.has(i.task_id!) && !answered.includes(i.task_id!));
+  }, [timeline?.evening_review, answered, items, t, doneIds]);
+
   const conflicts = useMemo(
     () => items.filter((i) => i.conflict && i.task_id && new Date(i.end).getTime() > t && !doneIds.has(i.task_id)),
     [items, t, doneIds]
@@ -196,6 +231,12 @@ export const HeuteScreen: React.FC = () => {
     }
     // the real finishing time, so DayFlow can learn how long things take
     api('done', { task_id: item.task_id }).catch(() => {});
+  };
+
+  const missed = (item: Item) => {
+    if (!item.task_id) return;
+    answer(item.task_id);
+    api('missed', { task_id: item.task_id }).catch(() => {});
   };
 
   const startLocal = async () => {
@@ -238,6 +279,21 @@ export const HeuteScreen: React.FC = () => {
   };
 
   // "Brauche länger": block gets longer, later DayFlow blocks move back
+  const moveTo = async (item: Item, change: { start: Date } | { remove: true }) => {
+    if (!item.id) return;
+    setMoving(true);
+    try {
+      const r = await api<{ start?: string }>('move', 'remove' in change ? { id: item.id, remove: true } : { id: item.id, start: change.start.toISOString() });
+      setInfo('remove' in change ? `„${item.title}“ ist für heute raus.` : `„${item.title}“ ist jetzt um ${hhmm(r.start || change.start)}. DayFlow lässt den Block dort.`);
+      setEditing(null);
+      await load();
+    } catch (e: any) {
+      setError(`Verschieben hat nicht geklappt: ${e.message}`);
+    } finally {
+      setMoving(false);
+    }
+  };
+
   const extend = async (item: Item, minutes: number) => {
     if (!item.task_id) return;
     setMoving(true);
@@ -322,6 +378,27 @@ export const HeuteScreen: React.FC = () => {
       )}
       {error && <div className={styles.banner} role="alert">{error}</div>}
       {info && <div className={styles.banner} role="status">{info}</div>}
+      {review.length > 0 && (
+        <section className={styles.review} aria-labelledby="review-h">
+          <div className={styles.reviewHead}>
+            <h2 id="review-h">Wie lief dein Tag?</h2>
+            <button className={styles.textButton} onClick={() => answer('closed')}>Später</button>
+          </div>
+          <p className={styles.reviewSub}>Was nicht geschafft ist, plant DayFlow wieder ein.</p>
+          <ul className={styles.reviewList}>
+            {review.map((i) => (
+              <li key={i.task_id} className={styles.reviewItem}>
+                <span className={styles.reviewTitle}>{i.title.replace(/ · Teil$/, '')}</span>
+                <span className={styles.reviewButtons}>
+                  <button className={styles.reviewNo} onClick={() => missed(i)}>Nicht geschafft</button>
+                  <button className={styles.reviewYes} onClick={() => { answer(i.task_id!); markDone(i); }}>Geschafft</button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {editing && <MoveSheet item={editing} busy={moving} onClose={() => setEditing(null)} onMove={(c) => moveTo(editing, c)} />}
       {conflicts.map((c) => (
         <div key={`c-${c.start}-${c.task_id}`} className={styles.banner} role="alert">
           <span>„{c.title}“ überschneidet sich mit „{c.conflict}“.</span>
@@ -373,7 +450,7 @@ export const HeuteScreen: React.FC = () => {
                 ))}
               </ul>
             )}
-            <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={doneIds} />
+            <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={doneIds} onPick={setEditing} />
           </section>
 
           <form className={styles.capture} onSubmit={saveNote}>
@@ -513,7 +590,60 @@ const FreeCard: React.FC<{ now: number; next: Item | null; onPlan: () => void; b
   </div>
 );
 
-const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; done: Set<string> }> = ({ items, now, windowEnd, done }) => {
+const toTimeValue = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+const MoveSheet: React.FC<{ item: Item; busy: boolean; onClose: () => void; onMove: (c: { start: Date } | { remove: true }) => void }> = ({ item, busy, onClose, onMove }) => {
+  const original = new Date(item.start);
+  const length = new Date(item.end).getTime() - original.getTime();
+  const [time, setTime] = useState(toTimeValue(original));
+  const startFor = (v: string) => {
+    const [h, m] = v.split(':').map(Number);
+    const d = new Date(original);
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+  const shift = (minutes: number) => setTime(toTimeValue(new Date(startFor(time).getTime() + minutes * MIN)));
+  const start = startFor(time);
+  const changed = start.getTime() !== original.getTime();
+  const isPlan = item.kind === 'task' || item.kind === 'sport';
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div className={styles.sheetBackdrop} onClick={onClose}>
+      <div className={styles.sheet} role="dialog" aria-modal="true" aria-label={`„${item.title}“ verschieben`} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.sheetGrip} aria-hidden="true" />
+        <h2 className={styles.sheetTitle}>{item.title}</h2>
+        <p className={styles.sheetSub}>
+          {hhmm(original)} – {hhmm(item.end)}
+          {isPlan && ' · Verschobene Blöcke plant DayFlow nicht mehr um.'}
+        </p>
+        <div className={styles.timeRow}>
+          <button className={styles.stepButton} onClick={() => shift(-15)} disabled={busy} aria-label="15 Minuten früher">−15</button>
+          <input className={styles.timeInput} type="time" step={300} value={time} onChange={(e) => e.target.value && setTime(e.target.value)} aria-label="Neue Startzeit" disabled={busy} />
+          <button className={styles.stepButton} onClick={() => shift(15)} disabled={busy} aria-label="15 Minuten später">+15</button>
+        </div>
+        <p className={styles.sheetSub}>bis {hhmm(new Date(start.getTime() + length))}</p>
+        <div className={styles.sheetActions}>
+          {isPlan ? (
+            <button className={styles.sheetSecondary} onClick={() => onMove({ remove: true })} disabled={busy}>Heute nicht mehr</button>
+          ) : (
+            <button className={styles.sheetSecondary} onClick={onClose} disabled={busy}>Abbrechen</button>
+          )}
+          <button className={styles.sheetPrimary} onClick={() => onMove({ start })} disabled={busy || !changed}>
+            {busy ? 'Speichere …' : 'Verschieben'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; done: Set<string>; onPick: (i: Item) => void }> = ({ items, now, windowEnd, done, onPick }) => {
   const PPM = pxPerMin();
   const upcoming = items.filter((i) => new Date(i.end).getTime() > now);
   if (!upcoming.length) {
@@ -547,11 +677,21 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
         const top = y(s);
         const h = Math.max(22, y(e) - top - 3);
         const isDone = !!i.task_id && done.has(i.task_id);
+        const movable = !!i.id && !isDone && i.kind !== 'free' && i.kind !== 'busy';
         return (
           <div
             key={`${i.kind}-${i.start}-${i.title}`}
-            className={`${styles.block} ${styles[`block_${i.kind}`]} ${h < 34 ? styles.blockSmall : ''} ${isDone ? styles.blockDone : ''} ${s <= now && now < e ? styles.blockNow : ''}`}
+            className={`${styles.block} ${styles[`block_${i.kind}`]} ${h < 34 ? styles.blockSmall : ''} ${isDone ? styles.blockDone : ''} ${s <= now && now < e ? styles.blockNow : ''} ${movable ? styles.blockMovable : ''}`}
             style={{ top, height: h, ...(lanes > 1 ? { left: `calc(${(lane * 100) / lanes}% + ${lane ? 2 : 0}px)`, right: 'auto', width: `calc(${100 / lanes}% - 2px)` } : {}) }}
+            {...(movable
+              ? {
+                  role: 'button',
+                  tabIndex: 0,
+                  'aria-label': `${i.title}, ${hhmm(i.start)} bis ${hhmm(i.end)}, verschieben`,
+                  onClick: () => onPick(i),
+                  onKeyDown: (ev: React.KeyboardEvent) => (ev.key === 'Enter' || ev.key === ' ') && (ev.preventDefault(), onPick(i)),
+                }
+              : {})}
           >
             <span className={styles.blockTitle}>
               {i.kind === 'free' && i.idea ? `Frei · ${i.idea}` : i.title}

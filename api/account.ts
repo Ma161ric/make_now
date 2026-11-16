@@ -9,6 +9,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { db, adminAuth, requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import { FieldPath } from 'firebase-admin/firestore';
 import * as google from './_lib/google.js';
+import { loadLearning } from './_lib/learning.js';
 
 async function deleteCollection(path: string): Promise<number> {
   const col = db().collection(path);
@@ -51,8 +52,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const uid = await requireUser(req);
     if (req.method === 'GET') {
-      const learned = await db().collection(`users/${uid}/time_log`).count().get();
-      return res.status(200).json({ learned_entries: learned.data().count });
+      const [learned, learning] = await Promise.all([db().collection(`users/${uid}/time_log`).count().get(), loadLearning(uid)]);
+      return res.status(200).json({ learned_entries: learned.data().count, learning });
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     const action = req.body?.action;

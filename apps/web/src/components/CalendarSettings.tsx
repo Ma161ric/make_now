@@ -18,6 +18,7 @@ interface Settings {
   sportMinutes: number;
   sportLabel: string;
   bufferBeforeEventsMinutes?: number;
+  eveningReview?: boolean;
 }
 
 interface PlanBlock {
@@ -390,6 +391,9 @@ export const CalendarSettings: React.FC = () => {
                 </div>
               </Row>
             )}
+            <Row label="Abends nachfragen" hint="Ab 19 Uhr fragt Heute, welche Aufgaben du geschafft hast. Der Rest wird wieder eingeplant.">
+              <Switch checked={s.eveningReview !== false} onChange={(v) => save({ eveningReview: v })} disabled={busy} label="Abends nachfragen" />
+            </Row>
             <Row label="Freie Lücken anzeigen" hint="Zeigt freie Zeit in der App mit einem Vorschlag. In deinen Kalender kommt dafür nichts.">
               <Switch checked={s.freeTimeEnabled} onChange={(v) => save({ freeTimeEnabled: v })} disabled={busy} label="Freie Lücken anzeigen" />
             </Row>

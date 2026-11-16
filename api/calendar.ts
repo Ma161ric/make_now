@@ -26,7 +26,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
 import { createState, verifyState } from './_lib/oauthState.js';
-import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, placeTaskToday, resolveConflict, undoLast, logDone, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
+import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, placeTaskToday, resolveConflict, undoLast, logDone, moveBlock, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 import { providerOf, NotConnectedError, NeedsReauthError, newFeedToken, readCalendarLink, openWorkspace } from './_lib/workspace.js';
 import { buildIcs, normalizeCalendarUrl } from './_lib/ics.js';
 import { db } from './_lib/firebaseAdmin.js';
@@ -69,6 +69,7 @@ function sanitizeSettings(input: any, current: CalendarSettings): CalendarSettin
     sportMinutes: int(input?.sportMinutes, 30, 240, current.sportMinutes),
     sportLabel:
       typeof input?.sportLabel === 'string' && input.sportLabel.trim() ? input.sportLabel.trim().slice(0, 40) : current.sportLabel,
+    eveningReview: typeof input?.eveningReview === 'boolean' ? input.eveningReview : current.eveningReview ?? true,
     bufferBeforeEventsMinutes: int(input?.bufferBeforeEventsMinutes, 0, 120, current.bufferBeforeEventsMinutes ?? 30),
   };
   if (s.windowEndHour <= s.windowStartHour) throw new HttpError(400, 'Ende muss nach dem Start liegen');
@@ -258,10 +259,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json(await resolveConflict(uid, taskId));
       }
 
-      case 'done': {
+      case 'move': {
+        const { id, start, remove } = req.body || {};
+        if (typeof id !== 'string' || !id) throw new HttpError(400, 'id fehlt');
+        if (remove === true) return res.status(200).json(await moveBlock(uid, id, { remove: true }));
+        const d = new Date(start);
+        if (typeof start !== 'string' || isNaN(d.getTime())) throw new HttpError(400, 'start fehlt');
+        return res.status(200).json(await moveBlock(uid, id, { start: d }));
+      }
+
+      case 'done':
+      case 'missed': {
         const taskId = req.body?.task_id;
         if (typeof taskId !== 'string' || !taskId) throw new HttpError(400, 'task_id fehlt');
-        await logDone(uid, taskId);
+        await logDone(uid, taskId, new Date(), action as 'done' | 'missed');
         return res.status(200).json({ ok: true });
       }
 
