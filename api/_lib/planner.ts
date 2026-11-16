@@ -299,6 +299,8 @@ export interface TimelineItem {
   conflict?: string;
   /** free gap shown in the app only */
   idea?: string;
+  /** task already marked done */
+  done?: boolean;
 }
 
 export interface Timeline {
@@ -374,6 +376,40 @@ function freeGaps(items: TimelineItem[], fromMs: number, toMs: number, ideas: st
   return out;
 }
 
+/** flag task items whose task is already done (best effort) */
+async function markDone(uid: string, items: TimelineItem[]): Promise<void> {
+  const ids = [...new Set(items.map((i) => i.task_id).filter((id): id is string => !!id))];
+  if (!ids.length) return;
+  try {
+    const col = db().collection(`users/${uid}/items`);
+    const docs = await Promise.all(ids.map((id) => col.doc(id).get()));
+    const done = new Set(docs.filter((d) => d.exists && (d.data() as any)?.status === 'done').map((d) => d.id));
+    for (const i of items) if (i.task_id && done.has(i.task_id)) i.done = true;
+  } catch {
+    /* not important enough to fail the timeline */
+  }
+}
+
+/** remember when a planned task was really finished (for learning durations later) */
+export async function logDone(uid: string, taskId: string, now = new Date()): Promise<void> {
+  const ws = await openWorkspace(uid);
+  const date = localDateString(now, ws.tz);
+  const { from, to } = dayRange(date, ws.tz);
+  const blocks = (await ws.blocks.list(from, to)).filter((b) => b.taskId === taskId);
+  const first = blocks.sort((a, b) => a.start.getTime() - b.start.getTime())[0];
+  await db()
+    .collection(`users/${uid}/time_log`)
+    .add({
+      type: 'done',
+      task_id: taskId,
+      title: first?.title || null,
+      planned_start: first ? first.plannedStart || first.start.toISOString() : null,
+      planned_end: first ? blocks[blocks.length - 1].plannedEnd || blocks[blocks.length - 1].end.toISOString() : null,
+      done_at: now.toISOString(),
+      at: FieldValue.serverTimestamp(),
+    });
+}
+
 export async function getTimeline(uid: string, now = new Date()): Promise<Timeline> {
   let ws: Workspace;
   try {
@@ -390,6 +426,7 @@ export async function getTimeline(uid: string, now = new Date()): Promise<Timeli
   const { items, allDay } = toItems(blocks, external);
   const windowStart = zonedTimeToUtc(date, settings.windowStartHour, 0, tz);
   const windowEnd = zonedTimeToUtc(date, settings.windowEndHour, 0, tz);
+  await markDone(uid, items);
   if (settings.freeTimeEnabled) items.push(...freeGaps(items, Math.max(now.getTime(), windowStart.getTime()), windowEnd.getTime(), settings.freeTimeIdeas, date));
   items.sort((a, b) => a.start.localeCompare(b.start));
   const undo = ws.conn.undo && ws.conn.undo.date === date ? { label: ws.conn.undo.label, at: ws.conn.undo.at } : null;

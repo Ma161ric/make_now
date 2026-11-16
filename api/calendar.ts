@@ -26,7 +26,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
 import { createState, verifyState } from './_lib/oauthState.js';
-import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, placeTaskToday, resolveConflict, undoLast, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
+import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, placeTaskToday, resolveConflict, undoLast, logDone, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 import { providerOf, NotConnectedError, NeedsReauthError, newFeedToken, readCalendarLink, openWorkspace } from './_lib/workspace.js';
 import { buildIcs, normalizeCalendarUrl } from './_lib/ics.js';
 import { db } from './_lib/firebaseAdmin.js';
@@ -256,6 +256,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const taskId = req.body?.task_id;
         if (typeof taskId !== 'string' || !taskId) throw new HttpError(400, 'task_id fehlt');
         return res.status(200).json(await resolveConflict(uid, taskId));
+      }
+
+      case 'done': {
+        const taskId = req.body?.task_id;
+        if (typeof taskId !== 'string' || !taskId) throw new HttpError(400, 'task_id fehlt');
+        await logDone(uid, taskId);
+        return res.status(200).json({ ok: true });
       }
 
       case 'undo': {

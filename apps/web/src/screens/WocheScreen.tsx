@@ -102,8 +102,8 @@ export const WocheScreen: React.FC = () => {
   if (week && !week.connected) {
     return (
       <div className={styles.connectHint}>
-        <span>Verbinde deinen Google Kalender, dann siehst du hier deine ganze Woche.</span>
-        <Link to="/settings" className="button">Kalender verbinden</Link>
+        <span>Verbinde deinen Google Kalender oder nutze DayFlow ohne Google, dann siehst du hier deine ganze Woche.</span>
+        <Link to="/today" className="button">Einrichten</Link>
       </div>
     );
   }
@@ -141,7 +141,6 @@ export const WocheScreen: React.FC = () => {
       <div className={styles.legend} aria-hidden="true">
         <span><i className={styles.swTask} />Aufgaben &amp; Sport</span>
         <span><i className={styles.swEvent} />Deine Termine</span>
-        <span><i className={styles.swFree} />Freizeit</span>
       </div>
 
       {week?.needs_upgrade && (
