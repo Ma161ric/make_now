@@ -133,6 +133,10 @@ describe('planIntoFreeSlots', () => {
     expect(plan.blocks).toHaveLength(1);
     expect(plan.blocks[0].partial).toBe(true);
     expect(plan.blocks[0].duration_minutes).toBe(75);
+    // a part never takes more than 2 h, even with a long gap
+    const wide = planIntoFreeSlots([task('tax', 480)], [{ start: local(13), end: local(14) }], DAY, BEFORE_DAY, cfg({ maxPlannedMinutes: 600 }));
+    expect(wide.blocks[0].duration_minutes).toBe(120);
+    expect(wide.blocks[0].partial).toBe(true);
     expect(plan.blocks[0].start.toISOString()).toBe(local(10).toISOString());
   });
 

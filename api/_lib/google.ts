@@ -170,7 +170,16 @@ export async function insertEvent(
       },
       ...(event.transparent ? { transparency: 'transparent' } : {}),
       ...(event.colorId ? { colorId: event.colorId } : {}),
-      extendedProperties: { private: { dayflow: '1', dayflow_task_id: event.taskId, dayflow_plan_date: event.planDate } },
+      extendedProperties: {
+        private: {
+          dayflow: '1',
+          dayflow_task_id: event.taskId,
+          dayflow_plan_date: event.planDate,
+          // where DayFlow put it: if the user moves the event, DayFlow leaves it alone
+          dayflow_start: event.start.toISOString(),
+          dayflow_end: event.end.toISOString(),
+        },
+      },
     }),
   });
 }
@@ -224,5 +233,22 @@ export async function patchEventTimes(accessToken: string, calendarId: string, e
   return api(accessToken, `/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`, {
     method: 'PATCH',
     body: JSON.stringify({ start: { dateTime: start.toISOString(), timeZone }, end: { dateTime: end.toISOString(), timeZone } }),
+  });
+}
+
+/** New times for an event; privateProps (all of them) replaces DayFlow's markers. */
+export async function patchEvent(
+  accessToken: string,
+  calendarId: string,
+  eventId: string,
+  p: { start: Date; end: Date; timeZone: string; privateProps?: Record<string, string> }
+) {
+  return api(accessToken, `/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      start: { dateTime: p.start.toISOString(), timeZone: p.timeZone },
+      end: { dateTime: p.end.toISOString(), timeZone: p.timeZone },
+      ...(p.privateProps ? { extendedProperties: { private: p.privateProps } } : {}),
+    }),
   });
 }

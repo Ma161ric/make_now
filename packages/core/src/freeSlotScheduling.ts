@@ -55,6 +55,8 @@ export interface PlannedBlock {
 
 /** Long tasks that fit nowhere in one piece get a part of at least this length */
 export const MIN_PART_MINUTES = 45;
+/** …and at most this long, so one big task does not eat the whole day's budget */
+export const MAX_PART_MINUTES = 120;
 
 export interface FreeSlotPlan {
   date: string; // YYYY-MM-DD (local)
@@ -234,7 +236,7 @@ export function planIntoFreeSlots(
         undefined
       );
       const room = biggest ? Math.floor((biggest.end - biggest.start) / MINUTE) : 0;
-      const part = Math.floor(Math.min(duration, budget, room) / 15) * 15;
+      const part = Math.floor(Math.min(duration, budget, room, MAX_PART_MINUTES) / 15) * 15;
       if (biggest && part >= MIN_PART_MINUTES) {
         slot = biggest;
         minutes = part;
