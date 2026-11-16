@@ -338,10 +338,10 @@ export const CalendarSettings: React.FC = () => {
                 <span className={styles.value}>{String(preferences.maxHoursPerDay).replace('.', ',')} h</span>
               </div>
             </Row>
-            <Row label="Aufgaben pro Tag" hint="Höchstzahl an Aufgaben-Blöcken.">
-              <select className={styles.select} value={s.maxBlocks} onChange={(e) => save({ maxBlocks: Number(e.target.value) })} disabled={busy} aria-label="Aufgaben pro Tag">
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <option key={n} value={n}>{n} {n === 1 ? 'Block' : 'Blöcke'}</option>
+            <Row label="Größere Aufgaben pro Tag" hint="Kurze Aufgaben bis 30 min zählen nicht mit, für die gelten nur die Stunden pro Tag.">
+              <select className={styles.select} value={s.maxBlocks} onChange={(e) => save({ maxBlocks: Number(e.target.value) })} disabled={busy} aria-label="Größere Aufgaben pro Tag">
+                {[0, 1, 2, 3, 4, 5, 6, 8].map((n) => (
+                  <option key={n} value={n}>{n === 0 ? 'keine Grenze' : `höchstens ${n}`}</option>
                 ))}
               </select>
             </Row>

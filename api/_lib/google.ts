@@ -117,6 +117,12 @@ export async function createCalendar(accessToken: string, timeZone: string): Pro
   return cal.id;
 }
 
+export async function deleteCalendar(accessToken: string, calendarId: string): Promise<void> {
+  await api(accessToken, `/calendars/${encodeURIComponent(calendarId)}`, { method: 'DELETE' }).catch((e: Error) => {
+    if (!/404|410|not found|deleted/i.test(e.message)) throw e;
+  });
+}
+
 /** True if the calendar still exists and we can access it. */
 export async function calendarExists(accessToken: string, calendarId: string): Promise<boolean> {
   const res = await fetch(`${CAL}/calendars/${encodeURIComponent(calendarId)}`, {

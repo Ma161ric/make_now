@@ -54,7 +54,7 @@ function sanitizeSettings(input: any, current: CalendarSettings): CalendarSettin
     enabled: typeof input?.enabled === 'boolean' ? input.enabled : current.enabled,
     windowStartHour: int(input?.windowStartHour, 0, 23, current.windowStartHour),
     windowEndHour: int(input?.windowEndHour, 1, 24, current.windowEndHour),
-    maxBlocks: int(input?.maxBlocks, 1, 10, current.maxBlocks),
+    maxBlocks: int(input?.maxBlocks, 0, 10, current.maxBlocks),
     maxPlannedMinutes: int(input?.maxPlannedMinutes, 15, 720, current.maxPlannedMinutes),
     freeTimeEnabled: typeof input?.freeTimeEnabled === 'boolean' ? input.freeTimeEnabled : current.freeTimeEnabled,
     freeTimeIdeas: Array.isArray(input?.freeTimeIdeas)
