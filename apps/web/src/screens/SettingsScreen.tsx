@@ -74,13 +74,27 @@ async function account<T>(body?: unknown): Promise<T> {
   return json as T;
 }
 
+function learningText(l: { factor: number; active: boolean; days_needed: number } | null): string {
+  if (!l) return '';
+  if (!l.active) return l.days_needed > 0 ? `Lernen startet in frühestens ${l.days_needed} ${l.days_needed === 1 ? 'Tag' : 'Tagen'}.` : 'Lernen startet, sobald genug Aufgaben abgehakt sind.';
+  if (l.factor === 1) return 'Deine Schätzungen passen, DayFlow ändert nichts.';
+  const pct = Math.round(Math.abs(l.factor - 1) * 100);
+  return l.factor > 1 ? `DayFlow plant Aufgaben ${pct} % länger ein.` : `DayFlow plant Aufgaben ${pct} % kürzer ein.`;
+}
+
 const DataSettings: React.FC<{ onDeleted: () => void }> = ({ onDeleted }) => {
   const [learned, setLearned] = useState<number | null>(null);
+  const [learning, setLearning] = useState<{ factor: number; active: boolean; days_needed: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    account<{ learned_entries: number }>().then((r) => setLearned(r.learned_entries)).catch(() => {});
+    account<{ learned_entries: number; learning?: { factor: number; active: boolean; days_needed: number } }>()
+      .then((r) => {
+        setLearned(r.learned_entries);
+        setLearning(r.learning || null);
+      })
+      .catch(() => {});
   }, []);
 
   const forget = async () => {
@@ -89,6 +103,7 @@ const DataSettings: React.FC<{ onDeleted: () => void }> = ({ onDeleted }) => {
     try {
       await account({ action: 'forget_learning' });
       setLearned(0);
+      setLearning((l) => (l ? { factor: 1, active: false, days_needed: 21 } : l));
       setMessage('Gelernte Zeiten gelöscht.');
     } catch (e: any) {
       setMessage(e.message);
@@ -119,7 +134,7 @@ const DataSettings: React.FC<{ onDeleted: () => void }> = ({ onDeleted }) => {
       {message && <p className={styles.notice} role="status">{message}</p>}
       <Row
         label="Gelernte Zeiten"
-        hint={`Wann du Aufgaben wirklich fertig hast und wie oft du verlängerst. Daraus lernt DayFlow, wie lange Dinge dauern.${learned !== null ? ` Gespeichert: ${learned} ${learned === 1 ? 'Eintrag' : 'Einträge'}.` : ''}`}
+        hint={`Wann du Aufgaben wirklich fertig hast und wie oft du verlängerst. Daraus lernt DayFlow, wie lange Dinge dauern.${learned !== null ? ` Gespeichert: ${learned} ${learned === 1 ? 'Eintrag' : 'Einträge'}.` : ''} ${learningText(learning)}`}
       >
         <button className={styles.ghost} onClick={forget} disabled={busy || learned === 0}>Zurücksetzen</button>
       </Row>

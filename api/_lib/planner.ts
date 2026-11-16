@@ -17,6 +17,7 @@
  *  - every change first saves the day's blocks, so it can be undone
  *  - free time is not written into the calendar any more, it is only shown
  */
+import { loadLearning, scaleMinutes } from './learning.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db } from './firebaseAdmin.js';
 import {
@@ -50,6 +51,8 @@ export interface CalendarSettings {
   sportLabel: string;
   /** Kept free before every appointment (way to uni etc.) */
   bufferBeforeEventsMinutes: number;
+  /** Ask in the evening what got done */
+  eveningReview: boolean;
 }
 
 export const DEFAULT_FREE_TIME_IDEAS = ['Sport / Gym', 'Spaziergang', 'Freunde treffen', 'Lesen', 'Kochen', 'Musik / Hobby'];
@@ -67,6 +70,7 @@ export const DEFAULT_SETTINGS: CalendarSettings = {
   sportMinutes: 120,
   sportLabel: 'Sport / Gym',
   bufferBeforeEventsMinutes: 30,
+  eveningReview: true,
 };
 
 export interface CalendarConnection {
@@ -211,12 +215,19 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
   for (const b of previous) if (!pinned.includes(b)) await ws.blocks.remove(b);
 
   const kept = existing.filter((b) => !previous.includes(b) || pinned.includes(b));
-  const [external, allTasks] = await Promise.all([ws.external(from, to), loadOpenTasks(uid)]);
+  const [external, allTasks, learning] = await Promise.all([ws.external(from, to), loadOpenTasks(uid), loadLearning(uid, now)]);
   const busy = fixedBusy(ws, external, kept);
 
-  // tasks that already have a block that day (moved by the user) are done planning
+  // tasks that already have a block that day (moved by the user) are done planning.
+  // Estimates are scaled by what DayFlow learned (only after 3 weeks of data).
   const alreadyThere = new Set(pinned.map((b) => b.taskId));
-  const tasks = allTasks.filter((t) => !alreadyThere.has(t.id));
+  const tasks = allTasks
+    .filter((t) => !alreadyThere.has(t.id))
+    .map((t) =>
+      learning.factor === 1
+        ? t
+        : { ...t, duration_min_minutes: scaleMinutes(t.duration_min_minutes, learning.factor), duration_max_minutes: scaleMinutes(t.duration_max_minutes, learning.factor) }
+    );
 
   const config: FreeSlotConfig = {
     ...DEFAULT_FREE_SLOT_CONFIG,
@@ -225,6 +236,7 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
     windowEndHour: settings.windowEndHour,
     maxBlocks: settings.maxBlocks,
     maxPlannedMinutes: settings.maxPlannedMinutes,
+    defaultDurationMinutes: scaleMinutes(DEFAULT_FREE_SLOT_CONFIG.defaultDurationMinutes, learning.factor)!,
   };
   const conn = ws.conn;
   const sportDue =
@@ -287,6 +299,8 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
 export type TimelineKind = 'task' | 'sport' | 'free' | 'event' | 'busy';
 
 export interface TimelineItem {
+  /** DayFlow's own blocks: id for moving */
+  id?: string;
   start: string;
   end: string;
   kind: TimelineKind;
@@ -314,6 +328,7 @@ export interface Timeline {
   all_day?: string[];
   items: TimelineItem[];
   undo?: { label: string; at: string } | null;
+  evening_review?: boolean;
 }
 
 function toItems(blocks: Block[], external: ExternalEvent[]): { items: TimelineItem[]; allDay: { title: string; startDate: string; endDate: string }[] } {
@@ -325,6 +340,7 @@ function toItems(blocks: Block[], external: ExternalEvent[]): { items: TimelineI
     const kind: TimelineKind = b.kind === 'appointment' ? 'event' : b.kind;
     const clash = kind === 'task' || kind === 'sport' ? appts.find((a) => a.start < b.end && a.end > b.start) : undefined;
     items.push({
+      id: b.id,
       start: b.start.toISOString(),
       end: b.end.toISOString(),
       kind,
@@ -391,7 +407,7 @@ async function markDone(uid: string, items: TimelineItem[]): Promise<void> {
 }
 
 /** remember when a planned task was really finished (for learning durations later) */
-export async function logDone(uid: string, taskId: string, now = new Date()): Promise<void> {
+export async function logDone(uid: string, taskId: string, now = new Date(), type: 'done' | 'missed' = 'done'): Promise<void> {
   const ws = await openWorkspace(uid);
   const date = localDateString(now, ws.tz);
   const { from, to } = dayRange(date, ws.tz);
@@ -400,7 +416,7 @@ export async function logDone(uid: string, taskId: string, now = new Date()): Pr
   await db()
     .collection(`users/${uid}/time_log`)
     .add({
-      type: 'done',
+      type,
       task_id: taskId,
       title: first?.title || null,
       planned_start: first ? first.plannedStart || first.start.toISOString() : null,
@@ -441,6 +457,7 @@ export async function getTimeline(uid: string, now = new Date()): Promise<Timeli
     all_day: allDay.filter((a) => a.startDate <= date && a.endDate > date).map((a) => a.title),
     items,
     undo,
+    evening_review: ws.settings.eveningReview,
   };
 }
 
@@ -525,7 +542,15 @@ export async function extendTask(uid: string, taskId: string, minutes: number, n
   // real durations, so DayFlow can later learn how long things really take
   await db()
     .collection(`users/${uid}/time_log`)
-    .add({ type: 'extend', task_id: taskId, title: block.title, minutes: added, planned_start: block.plannedStart || block.start.toISOString(), at: FieldValue.serverTimestamp() })
+    .add({
+      type: 'extend',
+      task_id: taskId,
+      title: block.title,
+      minutes: added,
+      planned_start: block.plannedStart || block.start.toISOString(),
+      planned_end: block.plannedEnd || block.end.toISOString(),
+      at: FieldValue.serverTimestamp(),
+    })
     .catch(() => {});
 
   const movable = blocks
@@ -597,6 +622,38 @@ export async function placeTaskToday(uid: string, task: { id: string; title: str
 }
 
 /** A block that collides with an appointment moves to the next free gap today. */
+/**
+ * The user moves a DayFlow block by hand in the app (or takes it out of today).
+ * A moved task/sport block counts as pinned, exactly like moving it in Google.
+ */
+export async function moveBlock(
+  uid: string,
+  blockId: string,
+  change: { start: Date } | { remove: true },
+  now = new Date()
+): Promise<{ moved: boolean; start?: string; end?: string }> {
+  const ws = await openWorkspace(uid);
+  const date = localDateString(now, ws.tz);
+  const { from, to } = dayRange(date, ws.tz);
+  const blocks = await ws.blocks.list(from, to);
+  const block = blocks.find((b) => b.id === blockId);
+  if (!block) throw new Error('Block nicht gefunden');
+  const label = `„${block.title}“ ${'remove' in change ? 'aus dem Plan genommen' : 'verschoben'}`;
+  if (block.kind !== 'appointment') await saveUndo(ws, label, date, blocks);
+  if ('remove' in change) {
+    await ws.blocks.remove(block);
+    return { moved: true };
+  }
+  const length = block.end.getTime() - block.start.getTime();
+  const start = new Date(Math.round(change.start.getTime() / (5 * MIN)) * 5 * MIN);
+  if (start.getTime() < from.getTime() || start.getTime() + length > to.getTime() + 60 * MIN) {
+    throw new Error('Nur innerhalb von heute verschiebbar');
+  }
+  const end = new Date(start.getTime() + length);
+  await ws.blocks.move(block, start, end, false);
+  return { moved: true, start: start.toISOString(), end: end.toISOString() };
+}
+
 export async function resolveConflict(uid: string, taskId: string, now = new Date()): Promise<PlaceResult> {
   const ws = await openWorkspace(uid);
   const date = localDateString(now, ws.tz);
