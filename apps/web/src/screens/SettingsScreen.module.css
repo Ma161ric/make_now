@@ -397,3 +397,8 @@
 
 .ghost.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
 .ghost.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+
+/* link fields: field takes the room, button stays next to it */
+.stack .inline { flex-wrap: nowrap; justify-content: flex-start; }
+.stack .inline .input { flex: 1; width: auto; }
+.stack .inline > button { flex-shrink: 0; }

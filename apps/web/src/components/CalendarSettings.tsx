@@ -195,9 +195,9 @@ export const CalendarSettings: React.FC = () => {
   const lastPlan = status?.last_plan;
   const planRows = lastPlan
     ? [
-        ...lastPlan.blocks.map((b) => ({ key: b.task_id, start: b.start, end: b.end, label: b.title, kind: 'task' })),
+        ...(Array.isArray(lastPlan.blocks) ? lastPlan.blocks : []).map((b) => ({ key: b.task_id, start: b.start, end: b.end, label: b.title, kind: 'task' })),
         ...(lastPlan.sport ? [{ key: 'sport', start: lastPlan.sport.start, end: lastPlan.sport.end, label: s?.sportLabel || 'Sport', kind: 'sport' }] : []),
-        ...(lastPlan.free_time || []).map((f) => ({ key: `free-${f.start}`, start: f.start, end: f.end, label: f.idea ? `Freizeit · ${f.idea}` : 'Freizeit', kind: 'free' })),
+        ...(Array.isArray(lastPlan.free_time) ? lastPlan.free_time : []).map((f) => ({ key: `free-${f.start}`, start: f.start, end: f.end, label: f.idea ? `Freizeit · ${f.idea}` : 'Freizeit', kind: 'free' })),
       ].sort((a, b) => a.start.localeCompare(b.start))
     : [];
 
@@ -317,6 +317,9 @@ export const CalendarSettings: React.FC = () => {
             <Row label="Jeden Abend automatisch planen" hint="Gegen 20 Uhr wird der nächste Tag geplant.">
               <Switch checked={s.enabled} onChange={(v) => save({ enabled: v })} disabled={busy} label="Jeden Abend automatisch planen" />
             </Row>
+            <Row label="Abends nachfragen" hint="Ab 19 Uhr fragt Heute, welche Aufgaben du geschafft hast. Der Rest wird wieder eingeplant.">
+              <Switch checked={s.eveningReview !== false} onChange={(v) => save({ eveningReview: v })} disabled={busy} label="Abends nachfragen" />
+            </Row>
             <Row label="Zeitfenster" hint="Nur in diesem Fenster werden Aufgaben eingeplant.">
               <div className={styles.inline}>
                 <HourSelect value={s.windowStartHour} min={0} max={23} onChange={(v) => save({ windowStartHour: v })} disabled={busy} label="Beginn" />
@@ -391,9 +394,6 @@ export const CalendarSettings: React.FC = () => {
                 </div>
               </Row>
             )}
-            <Row label="Abends nachfragen" hint="Ab 19 Uhr fragt Heute, welche Aufgaben du geschafft hast. Der Rest wird wieder eingeplant.">
-              <Switch checked={s.eveningReview !== false} onChange={(v) => save({ eveningReview: v })} disabled={busy} label="Abends nachfragen" />
-            </Row>
             <Row label="Freie Lücken anzeigen" hint="Zeigt freie Zeit in der App mit einem Vorschlag. In deinen Kalender kommt dafür nichts.">
               <Switch checked={s.freeTimeEnabled} onChange={(v) => save({ freeTimeEnabled: v })} disabled={busy} label="Freie Lücken anzeigen" />
             </Row>

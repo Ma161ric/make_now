@@ -377,7 +377,7 @@ export const HeuteScreen: React.FC = () => {
         </div>
       )}
       {error && <div className={styles.banner} role="alert">{error}</div>}
-      {info && <div className={styles.banner} role="status">{info}</div>}
+      {info && <div className={styles.toast} role="status" onClick={() => setInfo(null)}>{info}</div>}
       {review.length > 0 && (
         <section className={styles.review} aria-labelledby="review-h">
           <div className={styles.reviewHead}>
@@ -681,7 +681,7 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
         return (
           <div
             key={`${i.kind}-${i.start}-${i.title}`}
-            className={`${styles.block} ${styles[`block_${i.kind}`]} ${h < 34 ? styles.blockSmall : ''} ${isDone ? styles.blockDone : ''} ${s <= now && now < e ? styles.blockNow : ''} ${movable ? styles.blockMovable : ''}`}
+            className={`${styles.block} ${styles[`block_${i.kind}`]} ${h < 34 ? styles.blockSmall : h < 50 ? styles.blockOneLine : ''} ${isDone ? styles.blockDone : ''} ${s <= now && now < e ? styles.blockNow : ''} ${movable ? styles.blockMovable : ''}`}
             style={{ top, height: h, ...(lanes > 1 ? { left: `calc(${(lane * 100) / lanes}% + ${lane ? 2 : 0}px)`, right: 'auto', width: `calc(${100 / lanes}% - 2px)` } : {}) }}
             {...(movable
               ? {
@@ -697,11 +697,13 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
               {i.kind === 'free' && i.idea ? `Frei · ${i.idea}` : i.title}
               {i.pinned && <span className={styles.pin} title="Von dir verschoben">fest</span>}
             </span>
-            {h >= 38 && (
+            {h >= 50 ? (
               <span className={styles.blockMeta}>
                 {hhmm(i.start)} – {hhmm(i.end)} · {i.location ? i.location : duration(e - s)}
                 {i.conflict && ` · überschneidet „${i.conflict}“`}
               </span>
+            ) : (
+              h >= 34 && <span className={styles.blockMeta}>{hhmm(i.start)}</span>
             )}
           </div>
         );

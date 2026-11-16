@@ -171,7 +171,7 @@ export const WocheScreen: React.FC = () => {
                 <p className={styles.aEmpty}>{loading && !week?.days.length ? '…' : 'Nichts eingetragen'}</p>
               ) : (
                 <ul className={styles.aList}>
-                  {d.items.map((i) => (
+                  {[...d.items].sort((a, b) => a.start.localeCompare(b.start)).map((i) => (
                     <li key={`${i.kind}-${i.start}-${i.title}`} className={`${styles.aItem} ${styles[`a_${i.kind}`]}`}>
                       <span className={styles.aTime}>{hhmm(i.start)}<br />{hhmm(i.end)}</span>
                       <span className={styles.aBody}>
