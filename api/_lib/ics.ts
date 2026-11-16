@@ -258,7 +258,14 @@ export function parseIcs(text: string, from: Date, to: Date, defaultTz = 'Europe
 
 // ---------------------------------------------------------------- writing
 
-const icsText = (s: string) => s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1');
+const icsText = (s: string) =>
+  s
+    .replace(/\r\n?/g, '\n')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/([,;])/g, '\\$1');
 const icsUtc = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 
 /** RFC 5545 wants lines of at most 75 octets */
@@ -318,11 +325,32 @@ export function buildIcs(name: string, events: FeedEvent[], now = new Date()): s
 }
 
 /** webcal://… (as iCloud hands it out) -> https://… */
+/**
+ * Only real internet hosts: no localhost, no IP addresses of private networks,
+ * no cloud metadata endpoints (the server fetches these links).
+ */
+export function isPublicHost(host: string): boolean {
+  const h = host.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
+  if (!h || h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return false;
+  if (h.includes(':')) return false; // IPv6 literals: never needed for calendar links
+  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])];
+    if (a === 10 || a === 127 || a === 0 || a >= 224) return false;
+    if (a === 169 && b === 254) return false;
+    if (a === 172 && b >= 16 && b <= 31) return false;
+    if (a === 192 && b === 168) return false;
+    if (a === 100 && b >= 64 && b <= 127) return false;
+  }
+  if (/^\d+$/.test(h)) return false; // decimal IP tricks like https://2130706433
+  return h.includes('.');
+}
+
 export function normalizeCalendarUrl(input: string): string | null {
   const url = input.trim().replace(/^webcals?:\/\//i, 'https://');
   try {
     const u = new URL(url);
-    if (u.protocol !== 'https:') return null;
+    if (u.protocol !== 'https:' || !isPublicHost(u.hostname) || u.username || u.password) return null;
     return u.toString();
   } catch {
     return null;

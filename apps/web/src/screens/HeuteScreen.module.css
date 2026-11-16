@@ -123,6 +123,11 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
+  /* very long titles: three lines, then … */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .nowSub {

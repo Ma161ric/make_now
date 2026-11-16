@@ -146,8 +146,15 @@ export const WocheScreen: React.FC = () => {
       {week?.needs_upgrade && (
         <p className={styles.banner}>Für Termine mit Titel: auf <Link to="/today">Heute</Link> einmal „Jetzt verbinden“ antippen.</p>
       )}
-      {error && <p className={styles.banner} role="alert">{error}</p>}
+      {error && !!week?.days?.length && <p className={styles.banner} role="alert">{error}</p>}
 
+      {error && !week?.days?.length ? (
+        <div className={styles.retry}>
+          <p>Die Woche konnte nicht geladen werden.</p>
+          <button className="button" onClick={() => load(monday)} disabled={loading}>{loading ? 'Lade …' : 'Nochmal versuchen'}</button>
+        </div>
+      ) : (
+      <>
       {/* Phone: the week as a list, one day after another */}
       <div className={`${styles.agenda} ${loading && !week?.days.length ? styles.isLoading : ''}`} aria-busy={loading}>
         {days.map((d) => {
@@ -235,6 +242,8 @@ export const WocheScreen: React.FC = () => {
           ))}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };

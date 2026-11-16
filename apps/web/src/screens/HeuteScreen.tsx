@@ -56,6 +56,9 @@ const pxPerMin = () => (typeof window !== 'undefined' && window.matchMedia('(max
 
 const hhmm = (d: Date | string) => new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
+/** long titles in running text: cut after a few words */
+const short = (t: string, max = 60) => (t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t);
+
 function duration(ms: number): string {
   const total = Math.max(0, Math.round(ms / MIN));
   const h = Math.floor(total / 60);
@@ -419,7 +422,7 @@ export const HeuteScreen: React.FC = () => {
           <button className={styles.textButton} onClick={reconnect}>Jetzt verbinden</button>
         </div>
       )}
-      {error && <div className={styles.banner} role="alert">{error}</div>}
+      {error && timeline && <div className={styles.banner} role="alert">{error}</div>}
       {info && <div className={styles.toast} role="status" onClick={() => setInfo(null)}>{info}</div>}
       {review.length > 0 && (
         <section className={styles.review} aria-labelledby="review-h">
@@ -457,7 +460,18 @@ export const HeuteScreen: React.FC = () => {
 
       <div className={styles.layout}>
         <section aria-label="Jetzt" className={styles.nowCard}>
-          {!timeline ? (
+          {!timeline && error ? (
+            <div className={styles.nowInner}>
+              <div>
+                <p className={styles.eyebrow}>Jetzt</p>
+                <h1 className={styles.nowTitle}>Dein Tag lädt gerade nicht</h1>
+                <p className={styles.nowSub}>Prüf deine Verbindung und versuch es nochmal.</p>
+              </div>
+              <div className={styles.actions}>
+                <button className="button" onClick={() => load()}>Nochmal versuchen</button>
+              </div>
+            </div>
+          ) : !timeline ? (
             <div className={`${styles.nowInner} ${styles.loading}`} aria-busy="true">
               <div>
                 <p className={styles.eyebrow}>Jetzt</p>
@@ -597,7 +611,7 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
           {item.pinned && 'Von dir verschoben, DayFlow lässt den Block hier. '}
           {item.kind === 'busy' && 'Termin aus deinem Kalender. '}
           {item.kind === 'event' && item.location && `Ort: ${item.location}. `}
-          {next ? `Danach: ${next.title} um ${hhmm(next.start)}.` : 'Danach ist nichts mehr geplant.'}
+          {next ? `Danach: ${short(next.title)} um ${hhmm(next.start)}.` : 'Danach ist nichts mehr geplant.'}
         </p>
       </div>
       <div className={styles.nowBottom}>
@@ -653,7 +667,7 @@ const FreeCard: React.FC<{ now: number; next: Item | null; onPlan: () => void; b
       <p className={styles.eyebrow}>Jetzt</p>
       <h1 className={styles.nowTitle}>{next ? 'Gerade frei' : 'Für heute ist nichts mehr geplant'}</h1>
       <p className={styles.nowSub}>
-        {next ? `Als Nächstes: ${next.title} um ${hhmm(next.start)}.` : 'Hast du noch Zeit? DayFlow kann den Rest des Tages mit offenen Aufgaben füllen.'}
+        {next ? `Als Nächstes: ${short(next.title)} um ${hhmm(next.start)}.` : 'Hast du noch Zeit? DayFlow kann den Rest des Tages mit offenen Aufgaben füllen.'}
       </p>
     </div>
     <div className={styles.nowBottom}>

@@ -19,7 +19,7 @@
  */
 import { loadLearning, scaleMinutes } from './learning.js';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db } from './firebaseAdmin.js';
+import { db, HttpError } from './firebaseAdmin.js';
 import {
   planIntoFreeSlots,
   pickLongBlockSlot,
@@ -526,7 +526,7 @@ export async function extendTask(uid: string, taskId: string, minutes: number, n
 
   const blocks = await ws.blocks.list(from, to);
   const block = blocks.filter((b) => b.taskId === taskId && b.end.getTime() > t).sort((a, b) => a.start.getTime() - b.start.getTime())[0];
-  if (!block) throw new Error('Kein Block für diese Aufgabe gefunden');
+  if (!block) throw new HttpError(404, 'Kein Block für diese Aufgabe gefunden');
   await saveUndo(ws, 'Brauche länger', date, blocks);
 
   const external = await ws.external(now, to);
@@ -638,7 +638,7 @@ export async function moveBlock(
   const { from, to } = dayRange(date, ws.tz);
   const blocks = await ws.blocks.list(from, to);
   const block = blocks.find((b) => b.id === blockId);
-  if (!block) throw new Error('Block nicht gefunden');
+  if (!block) throw new HttpError(404, 'Block nicht gefunden');
   const label = `„${block.title}“ ${'remove' in change ? 'aus dem Plan genommen' : 'verschoben'}`;
   if (block.kind !== 'appointment') await saveUndo(ws, label, date, blocks);
   if ('remove' in change) {
@@ -648,7 +648,7 @@ export async function moveBlock(
   const length = block.end.getTime() - block.start.getTime();
   const start = new Date(Math.round(change.start.getTime() / (5 * MIN)) * 5 * MIN);
   if (start.getTime() < from.getTime() || start.getTime() + length > to.getTime() + 60 * MIN) {
-    throw new Error('Nur innerhalb von heute verschiebbar');
+    throw new HttpError(400, 'Nur innerhalb von heute verschiebbar');
   }
   const end = new Date(start.getTime() + length);
   await ws.blocks.move(block, start, end, false);
@@ -661,7 +661,7 @@ export async function resolveConflict(uid: string, taskId: string, now = new Dat
   const { from, to } = dayRange(date, ws.tz);
   const blocks = await ws.blocks.list(from, to);
   const block = blocks.find((b) => b.taskId === taskId && b.end.getTime() > now.getTime());
-  if (!block) throw new Error('Kein Block für diese Aufgabe gefunden');
+  if (!block) throw new HttpError(404, 'Kein Block für diese Aufgabe gefunden');
   await saveUndo(ws, `„${block.title}“ verschoben`, date, blocks);
   await ws.blocks.remove(block);
   const minutes = Math.round((block.end.getTime() - block.start.getTime()) / MIN);

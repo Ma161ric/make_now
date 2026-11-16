@@ -90,6 +90,8 @@ export class FirestoreService {
       const taskRef = doc(db, `users/${userId}/items/${taskId}`);
       await setDoc(taskRef, {
         ...taskData,
+        // the database only accepts titles up to 200 characters
+        ...(typeof taskData.title === 'string' ? { title: taskData.title.slice(0, 200) } : {}),
         user_id: userId,
         created_at: taskData.created_at ? Timestamp.fromDate(new Date(taskData.created_at)) : Timestamp.now(),
         updated_at: Timestamp.now(),

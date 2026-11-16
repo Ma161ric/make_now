@@ -3,6 +3,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  sendPasswordResetEmail,
   signOut,
   updateProfile,
   onAuthStateChanged,
@@ -31,6 +32,7 @@ export interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginWithApple: () => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -46,14 +48,29 @@ const getErrorMessage = (error: unknown): string => {
         return 'Passwort ist zu schwach (mind. 6 Zeichen)';
       case 'auth/invalid-email':
         return 'Ungültige E-Mail-Adresse';
+      // same message for all three: nobody can find out which e-mails have an account
       case 'auth/user-not-found':
-        return 'Benutzer nicht gefunden';
       case 'auth/wrong-password':
-        return 'Passwort ist falsch';
+      case 'auth/invalid-credential':
+      case 'auth/invalid-login-credentials':
+        return 'E-Mail oder Passwort stimmt nicht';
+      case 'auth/missing-password':
+        return 'Bitte gib dein Passwort ein';
+      case 'auth/too-many-requests':
+        return 'Zu viele Versuche. Warte kurz und versuch es dann nochmal.';
+      case 'auth/network-request-failed':
+        return 'Keine Verbindung. Prüf dein Internet und versuch es nochmal.';
+      case 'auth/user-disabled':
+        return 'Dieses Konto ist gesperrt';
       case 'auth/popup-closed-by-user':
+      case 'auth/cancelled-popup-request':
         return 'Anmeldung abgebrochen';
+      case 'auth/popup-blocked':
+        return 'Das Anmeldefenster wurde blockiert. Erlaube Pop-ups für diese Seite und versuch es nochmal.';
+      case 'auth/requires-recent-login':
+        return 'Bitte melde dich einmal neu an und versuch es dann nochmal.';
       default:
-        return authError.message;
+        return 'Anmeldung hat nicht geklappt. Bitte nochmal versuchen.';
     }
   }
   return error instanceof Error ? error.message : 'Ein Fehler ist aufgetreten';
@@ -206,6 +223,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Mail with a link to set a new password. Unknown addresses look the same
+  // (no hint which e-mails have an account).
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+    } catch (err: any) {
+      if (err?.code === 'auth/user-not-found') return;
+      if (err?.code === 'auth/invalid-email' || err?.code === 'auth/missing-email') throw new Error('Gib zuerst eine gültige E-Mail-Adresse ein');
+      throw new Error(getErrorMessage(err));
+    }
+  };
+
   const value: AuthContextType = {
     user,
     firebaseUser,
@@ -216,6 +245,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loginWithGoogle,
     loginWithApple,
     logout,
+    resetPassword,
     isAuthenticated: !!user,
   };
 

@@ -1,91 +1,61 @@
 rules_version = '2';
 
+// Each user reads and writes only their own data. Everything not listed here is
+// denied, including the server-only collections (calendar_connections with the
+// Google tokens, dayflow_blocks, ai_usage, time_log writes).
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
+
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-    
-    function isValidTimestamp(value) {
-      return value is timestamp;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // User data - only accessible by the user themselves
+    // no huge documents: keeps a single account from filling the database
+    function smallDoc() {
+      return request.resource.data.size() <= 60;
+    }
+
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-      
-      // Day Plans
-      match /day_plans/{planId} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId) 
-          && request.resource.data.keys().hasAll(['date', 'plan', 'status', 'created_at', 'updated_at'])
-          && request.resource.data.date is string
-          && request.resource.data.status in ['draft', 'confirmed', 'completed']
-          && isValidTimestamp(request.resource.data.created_at)
-          && isValidTimestamp(request.resource.data.updated_at)
-          && request.resource.data.updated_at >= request.time;  // Prevent backdated updates
-      }
-      
-      // Tasks / Items (stored under 'items' collection)
+      allow read, write: if isOwner(userId);
+
       match /items/{taskId} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId)
-          && request.resource.data.keys().hasAll(['title', 'status', 'created_at', 'updated_at'])
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && smallDoc()
           && request.resource.data.title is string
           && request.resource.data.title.size() > 0
           && request.resource.data.title.size() <= 200
-          && request.resource.data.status in ['open', 'scheduled', 'in_progress', 'done', 'cancelled']
-          && isValidTimestamp(request.resource.data.created_at)
-          && isValidTimestamp(request.resource.data.updated_at);
+          && request.resource.data.status in ['open', 'scheduled', 'in_progress', 'done', 'cancelled'];
       }
-      
-      // Inbox Notes
-      match /inbox_notes/{noteId} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId)
-          && request.resource.data.keys().hasAll(['raw_text', 'status', 'created_at'])
-          && request.resource.data.raw_text is string
-          && request.resource.data.raw_text.size() >= 3
-          && request.resource.data.raw_text.size() <= 2000
-          && request.resource.data.status in ['unprocessed', 'processed', 'archived']
-          && isValidTimestamp(request.resource.data.created_at);
+
+      match /day_plans/{planId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && smallDoc();
       }
-      
-      // Extractions (linked to inbox notes)
-      match /extractions/{extractionId} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId)
-          && request.resource.data.keys().hasAll(['note_id', 'items', 'overall_confidence', 'created_at'])
-          && request.resource.data.overall_confidence >= 0.0
-          && request.resource.data.overall_confidence <= 1.0
-          && isValidTimestamp(request.resource.data.created_at);
-      }
-      
-      // Daily Reviews
+
       match /daily_reviews/{reviewId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && smallDoc();
+      }
+
+      match /inbox_notes/{noteId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && smallDoc()
+          && request.resource.data.raw_text is string
+          && request.resource.data.raw_text.size() <= 4000;
+      }
+
+      match /extractions/{extractionId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && smallDoc();
+      }
+
+      // written by the server only (learning data); you may look at it
+      match /time_log/{entryId} {
         allow read: if isOwner(userId);
-        allow write: if isOwner(userId)
-          && request.resource.data.keys().hasAll(['date', 'day_plan_id', 'tasks_done', 'tasks_total', 'created_at'])
-          && request.resource.data.tasks_done >= 0
-          && request.resource.data.tasks_total >= 0
-          && request.resource.data.tasks_done <= request.resource.data.tasks_total
-          && isValidTimestamp(request.resource.data.created_at);
+        allow write: if false;
       }
     }
-    
-    // Deny all other access by default.
-    // Server-only collections live here too: calendar_connections (Google
-    // refresh tokens) and ai_usage (chat quota) are written by the API with
-    // the Admin SDK and must never be readable by clients.
+
     match /{document=**} {
       allow read, write: if false;
     }

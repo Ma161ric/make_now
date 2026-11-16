@@ -193,3 +193,16 @@
 @media (max-width: 1160px) {
   .connectHint { margin-left: var(--space-4); margin-right: var(--space-4); }
 }
+
+.retry {
+  padding: var(--space-6) var(--space-5);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--text-primary);
+}
+.retry p { margin: 0; }
