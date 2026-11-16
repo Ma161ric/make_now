@@ -357,7 +357,7 @@
   .nowCard { position: static; min-height: 0; }
   .nowInner { padding: var(--space-5); gap: var(--space-5); }
   /* phones: the note field right under the Jetzt card, not after the long timeline */
-  .side .capture { order: -1; }
+  .side .captureBox { order: -1; }
 }
 
 .allDay {
@@ -537,4 +537,60 @@
 /* keep the setup hint off the screen edges */
 @media (max-width: 1160px) {
   .connectHint { margin-left: var(--space-4); margin-right: var(--space-4); }
+}
+
+/* ---------- what a note turned into ---------- */
+.captured { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.capItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 14px;
+  border-radius: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--task-bg, var(--accent-primary));
+  animation: sheetUp 0.18s ease-out;
+}
+.capEvent { border-left-color: var(--event-bg, var(--highlight)); }
+.capText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.capKind { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.capTitle { font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.capMeta { font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.capActions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.capPrimary, .capSecondary {
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 38px;
+}
+.capPrimary { background: var(--accent-primary); color: var(--on-accent); }
+.capSecondary { background: var(--bg-tertiary); color: var(--text-primary); }
+.capDrop {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.capDrop:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+.capPrimary:disabled, .capSecondary:disabled, .capDrop:disabled { opacity: 0.5; cursor: default; }
+.capMore { font-size: 13.5px; padding: 2px 4px; }
+.capMore a { color: var(--text-secondary); }
+.captureBox { display: flex; flex-direction: column; }
+.captureBox .captureState { margin-top: var(--space-2); }
+@media (max-width: 480px) {
+  .capItem { flex-wrap: wrap; row-gap: 10px; }
+  .capActions { width: 100%; }
+  .capActions > .capPrimary, .capActions > .capSecondary { flex: 1; }
+  .capDrop { order: -1; }
 }

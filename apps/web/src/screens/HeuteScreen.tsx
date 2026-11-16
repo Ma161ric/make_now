@@ -7,12 +7,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
-import { updateTaskStatus } from '../storage';
+import { updateTaskStatus, saveTask } from '../storage';
 import { extractFromNoteCloud } from '../firebase/functionsService';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
-import { IconArrowRight, IconCheck } from '../components/Icons';
+import { IconArrowRight, IconCheck, IconX } from '../components/Icons';
 import { MicButton } from '../components/MicButton';
-import { loadSuggestions, saveSuggestions, fromExtraction } from '../utils/suggestions';
+import { loadSuggestions, saveSuggestions, fromExtraction, suggestionToTask, type Suggestion } from '../utils/suggestions';
 import { layoutLanes } from '../utils/lanes';
 import { readCache, writeCache } from '../utils/viewCache';
 import styles from './HeuteScreen.module.css';
@@ -102,6 +102,9 @@ export const HeuteScreen: React.FC = () => {
   const [editing, setEditing] = useState<Item | null>(null);
   const [note, setNote] = useState('');
   const [noteState, setNoteState] = useState<{ kind: 'saving' | 'saved' | 'error'; count?: number } | null>(null);
+  // what the last note turned into: confirm it right here instead of in the Assistent
+  const [captured, setCaptured] = useState<Suggestion[]>([]);
+  const [capBusy, setCapBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -239,6 +242,45 @@ export const HeuteScreen: React.FC = () => {
     api('missed', { task_id: item.task_id }).catch(() => {});
   };
 
+  const forget = (id: string) => {
+    if (!user) return;
+    saveSuggestions(user.id, loadSuggestions(user.id).filter((x) => x.id !== id));
+    setCaptured((c) => c.filter((x) => x.id !== id));
+  };
+
+  /** take a captured suggestion: event → plan/calendar, task → Aufgaben (and optionally into today) */
+  const takeCaptured = async (sg: Suggestion, today: boolean) => {
+    if (!user) return;
+    setCapBusy(sg.id);
+    setError(null);
+    try {
+      if (sg.kind === 'event' && sg.start_at) {
+        const end = sg.end_at || new Date(new Date(sg.start_at).getTime() + (sg.duration_min_minutes || 60) * MIN).toISOString();
+        await api('event', { title: sg.title, start_at: sg.start_at, end_at: end, location: sg.location });
+        setInfo(`„${sg.title}“ steht um ${hhmm(sg.start_at)} im Plan.`);
+      } else {
+        const task = suggestionToTask(sg);
+        await saveTask(user.id, task, firebaseUser);
+        if (today) {
+          const r = await api<{ placed: boolean; start?: string; end?: string }>('place', {
+            task_id: task.id,
+            title: task.title,
+            minutes: task.duration_max_minutes || task.duration_min_minutes || 30,
+          });
+          setInfo(r.placed && r.start ? `„${sg.title}“ ist heute um ${hhmm(r.start)} eingeplant.` : `Heute ist keine Lücke mehr frei. „${sg.title}“ kommt morgen dran.`);
+        } else {
+          setInfo(`„${sg.title}“ ist in Aufgaben.`);
+        }
+      }
+      forget(sg.id);
+      if (sg.kind === 'event' || today) await load();
+    } catch (e: any) {
+      setError(`Konnte nicht übernommen werden: ${e.message}`);
+    } finally {
+      setCapBusy(null);
+    }
+  };
+
   const startLocal = async () => {
     setBusy(true);
     try {
@@ -319,7 +361,7 @@ export const HeuteScreen: React.FC = () => {
 
   useEffect(() => {
     if (!info) return;
-    const t = setTimeout(() => setInfo(null), 8000);
+    const t = setTimeout(() => setInfo(null), 5000);
     return () => clearTimeout(t);
   }, [info]);
 
@@ -336,7 +378,8 @@ export const HeuteScreen: React.FC = () => {
       }
       saveSuggestions(user.id, [...found, ...loadSuggestions(user.id)]);
       setNote('');
-      setNoteState({ kind: 'saved', count: found.length });
+      setCaptured((c) => [...found, ...c]);
+      setNoteState(null);
     } catch {
       setNoteState({ kind: 'error' });
     }
@@ -453,6 +496,7 @@ export const HeuteScreen: React.FC = () => {
             <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={doneIds} onPick={setEditing} />
           </section>
 
+          <div className={styles.captureBox}>
           <form className={styles.capture} onSubmit={saveNote}>
             <label htmlFor="heute-note" className="visually-hidden">Etwas notieren</label>
             <input
@@ -475,14 +519,54 @@ export const HeuteScreen: React.FC = () => {
           {noteState && (
             <p className={styles.captureState} role="status">
               {noteState.kind === 'saving' && 'Wird verarbeitet …'}
-              {noteState.kind === 'saved' && (
-                <>
-                  {noteState.count} {noteState.count === 1 ? 'Vorschlag' : 'Vorschläge'} beim Assistenten. <Link to="/">Jetzt bestätigen</Link>
-                </>
-              )}
               {noteState.kind === 'error' && 'Konnte die Notiz nicht speichern. Versuch es nochmal.'}
             </p>
           )}
+          {captured.length > 0 && (
+            <ul className={styles.captured} aria-label="Erkannt">
+              {captured.slice(0, 3).map((sg) => {
+                const isEvent = sg.kind === 'event' && !!sg.start_at;
+                const busyHere = capBusy === sg.id;
+                const mins = sg.duration_max_minutes || sg.duration_min_minutes;
+                return (
+                  <li key={sg.id} className={`${styles.capItem} ${isEvent ? styles.capEvent : ''}`}>
+                    <div className={styles.capText}>
+                      <span className={styles.capKind}>{isEvent ? 'Termin' : sg.kind === 'idea' ? 'Idee' : 'To-do'}</span>
+                      <span className={styles.capTitle}>{sg.title}</span>
+                      <span className={styles.capMeta}>
+                        {isEvent ? `${hhmm(sg.start_at!)}${sg.end_at ? ` – ${hhmm(sg.end_at)}` : ''}${sg.location ? ` · ${sg.location}` : ''}` : mins ? duration(mins * MIN) : ''}
+                      </span>
+                    </div>
+                    <div className={styles.capActions}>
+                      <button className={styles.capDrop} onClick={() => forget(sg.id)} disabled={busyHere} aria-label={`„${sg.title}“ verwerfen`}>
+                        <IconX size={16} />
+                      </button>
+                      {isEvent ? (
+                        <button className={styles.capPrimary} onClick={() => takeCaptured(sg, false)} disabled={busyHere}>
+                          {busyHere ? '…' : 'Eintragen'}
+                        </button>
+                      ) : (
+                        <>
+                          <button className={styles.capSecondary} onClick={() => takeCaptured(sg, false)} disabled={busyHere}>
+                            Aufgabe
+                          </button>
+                          <button className={styles.capPrimary} onClick={() => takeCaptured(sg, true)} disabled={busyHere}>
+                            {busyHere ? '…' : 'Heute einplanen'}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+              {captured.length > 3 && (
+                <li className={styles.capMore}>
+                  <Link to="/">{captured.length - 3} weitere beim Assistenten</Link>
+                </li>
+              )}
+            </ul>
+          )}
+          </div>
         </div>
       </div>
     </div>
