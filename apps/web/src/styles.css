@@ -421,3 +421,6 @@ select {
   .section-title { font-size: 18px; }
   .flex { flex-wrap: wrap; }
 }
+
+/* chat open: the page itself never bounces, only the message list scrolls */
+html.no-overscroll, html.no-overscroll body { overscroll-behavior: none; }
