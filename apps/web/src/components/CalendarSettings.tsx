@@ -30,6 +30,9 @@ interface PlanBlock {
 
 interface Status {
   connected: boolean;
+  provider?: 'google' | 'local';
+  ics_urls?: string[];
+  feed_url?: string | null;
   status?: 'ok' | 'needs_reauth';
   timezone?: string;
   settings?: Settings;
@@ -73,6 +76,8 @@ export const CalendarSettings: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [ideasDraft, setIdeasDraft] = useState<string | null>(null);
+  const [linkDraft, setLinkDraft] = useState('');
+  const [copied, setCopied] = useState(false);
   const { preferences, updateMaxHoursPerDay } = usePreferences();
 
   const load = useCallback(async () => {
@@ -126,9 +131,39 @@ export const CalendarSettings: React.FC = () => {
       window.location.href = url;
     });
 
+  const startLocal = () =>
+    run(async () => {
+      await call('local', { timezone: browserTz() });
+      setMessage('Fertig. DayFlow plant jetzt hier in der App.');
+      await load();
+    });
+
+  const saveLinks = (urls: string[]) =>
+    run(async () => {
+      const r = await call<{ ics_urls: string[] }>('links', { urls });
+      setStatus((st) => (st ? { ...st, ics_urls: r.ics_urls } : st));
+      setLinkDraft('');
+      setMessage(urls.length > (status?.ics_urls?.length || 0) ? 'Kalender hinzugefügt. Deine Termine werden jetzt berücksichtigt.' : 'Gespeichert.');
+    });
+
+  const copyFeed = async () => {
+    if (!status?.feed_url) return;
+    try {
+      await navigator.clipboard.writeText(status.feed_url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Link kopieren:', status.feed_url);
+    }
+  };
+
   const disconnect = () =>
     run(async () => {
-      if (!window.confirm('Kalender-Verbindung trennen? Bereits eingetragene Termine bleiben im DayFlow-Kalender.')) return;
+      const local = status?.provider === 'local';
+      const question = local
+        ? 'DayFlow-Kalender zurücksetzen? Dein Abo-Link hört auf zu funktionieren, verknüpfte Kalender-Links werden entfernt.'
+        : 'Kalender-Verbindung trennen? Bereits eingetragene Termine bleiben im DayFlow-Kalender.';
+      if (!window.confirm(question)) return;
       await call('disconnect', {});
       await load();
     });
@@ -143,7 +178,7 @@ export const CalendarSettings: React.FC = () => {
         result.sport ? 'Sport' : null,
         f ? `${f} Freizeit-${f === 1 ? 'Block' : 'Blöcke'}` : null,
       ].filter(Boolean);
-      setMessage(parts.length ? `${parts.join(' und ')} in deinen Kalender eingetragen.` : 'Nichts eingeplant: keine offenen Aufgaben und keine freie Lücke.');
+      setMessage(parts.length ? `${parts.join(' und ')} eingeplant.` : 'Nichts eingeplant: keine offenen Aufgaben und keine freie Lücke.');
       await load();
     });
 
@@ -168,18 +203,76 @@ export const CalendarSettings: React.FC = () => {
   return (
     <>
       <section className={styles.section} aria-labelledby="cal-h">
-        <h2 id="cal-h">Google Kalender</h2>
+        <h2 id="cal-h">Kalender</h2>
         {message && <p className={styles.notice} role="status">{message}</p>}
 
         {!status ? (
           <p className={styles.muted}>Lade …</p>
         ) : !status.connected ? (
-          <Row label="Automatisch einplanen" hint="DayFlow trägt offene Aufgaben in die freien Lücken deines Kalenders ein, in einem eigenen Kalender „DayFlow“.">
-            <button className="button" onClick={connect} disabled={busy}>Mit Google verbinden</button>
-          </Row>
+          <>
+            <Row label="Mit Google Kalender" hint="DayFlow liest deine Termine und trägt Aufgaben in einen eigenen Kalender „DayFlow“ ein.">
+              <button className="button" onClick={connect} disabled={busy}>Mit Google verbinden</button>
+            </Row>
+            <Row label="Ohne Google" hint="Für iCloud & Co: DayFlow plant hier in der App. Den Plan kannst du in jedem Kalender abonnieren, deine Termine kommen über einen Freigabe-Link dazu.">
+              <button className={styles.ghost} onClick={startLocal} disabled={busy}>Ohne Google nutzen</button>
+            </Row>
+          </>
         ) : (
           <>
-            {status.status === 'needs_reauth' ? (
+            {status.provider === 'local' ? (
+              <>
+                <Row label={<><span className={styles.dot} aria-hidden="true" />DayFlow ohne Google</>} hint={`Zeitzone ${status.timezone}`}>
+                  <button className={styles.ghost} onClick={disconnect} disabled={busy}>Zurücksetzen</button>
+                </Row>
+                {status.feed_url && (
+                  <div className={styles.stack}>
+                    <p className={styles.label}>Plan im Kalender abonnieren</p>
+                    <div className={styles.inline}>
+                      <input className={styles.input} type="text" readOnly value={status.feed_url} onFocus={(e) => e.target.select()} aria-label="Abo-Link" />
+                      <button className={styles.ghost} onClick={copyFeed}>{copied ? 'Kopiert' : 'Kopieren'}</button>
+                    </div>
+                    <p className={styles.hint}>
+                      iPhone: Einstellungen → Apps → Kalender → Kalender-Accounts → Account hinzufügen → Andere → Kalenderabo hinzufügen, Link einfügen.
+                      Der Kalender aktualisiert sich dann von selbst (iPhone prüft etwa alle 15 Minuten bis stündlich).
+                    </p>
+                  </div>
+                )}
+                <div className={styles.stack}>
+                  <p className={styles.label}>Deine Termine (iCloud oder andere)</p>
+                  {(status.ics_urls || []).map((u) => (
+                    <div key={u} className={styles.inline}>
+                      <input className={styles.input} type="text" readOnly value={u.replace(/^https:\/\//, '').slice(0, 60) + (u.length > 68 ? '…' : '')} aria-label="Verknüpfter Kalender" />
+                      <button className={styles.ghost} onClick={() => saveLinks((status.ics_urls || []).filter((x) => x !== u))} disabled={busy}>Entfernen</button>
+                    </div>
+                  ))}
+                  {(status.ics_urls || []).length < 5 && (
+                    <form
+                      className={styles.inline}
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (linkDraft.trim()) saveLinks([...(status.ics_urls || []), linkDraft.trim()]);
+                      }}
+                    >
+                      <input
+                        className={styles.input}
+                        type="url"
+                        inputMode="url"
+                        placeholder="webcal://p…-caldav.icloud.com/…"
+                        value={linkDraft}
+                        onChange={(e) => setLinkDraft(e.target.value)}
+                        aria-label="Kalender-Link"
+                        disabled={busy}
+                      />
+                      <button className={styles.ghost} type="submit" disabled={busy || !linkDraft.trim()}>Hinzufügen</button>
+                    </form>
+                  )}
+                  <p className={styles.hint}>
+                    iPhone: Kalender-App → Kalender → bei deinem Kalender auf ⓘ → „Öffentlicher Kalender“ an → „Link teilen“ → kopieren und hier einfügen.
+                    DayFlow plant dann um deine Termine herum. Wer den Link hat, kann den Kalender lesen, gib ihn sonst niemandem.
+                  </p>
+                </div>
+              </>
+            ) : status.status === 'needs_reauth' ? (
               <Row label="Zugriff abgelaufen" hint="Google hat den Zugriff beendet. Bitte einmal neu verbinden.">
                 <button className="button" onClick={connect} disabled={busy}>Neu verbinden</button>
               </Row>
@@ -188,7 +281,7 @@ export const CalendarSettings: React.FC = () => {
                 <button className={styles.ghost} onClick={disconnect} disabled={busy}>Trennen</button>
               </Row>
             )}
-            <Row label="Jetzt planen" hint="Ersetzt die DayFlow-Blöcke des Tages durch einen neuen Plan.">
+            <Row label="Jetzt planen" hint="Ersetzt die geplanten Blöcke des Tages durch einen neuen Plan. Blöcke, die du selbst verschoben hast, bleiben, wo sie sind.">
               <div className={styles.segment}>
                 <button onClick={() => plan('today')} disabled={busy}>Rest von heute</button>
                 <button onClick={() => plan('tomorrow')} disabled={busy}>Morgen</button>
@@ -245,10 +338,10 @@ export const CalendarSettings: React.FC = () => {
                 <span className={styles.value}>{String(preferences.maxHoursPerDay).replace('.', ',')} h</span>
               </div>
             </Row>
-            <Row label="Aufgaben pro Tag" hint="Höchstzahl an Aufgaben-Blöcken.">
-              <select className={styles.select} value={s.maxBlocks} onChange={(e) => save({ maxBlocks: Number(e.target.value) })} disabled={busy} aria-label="Aufgaben pro Tag">
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <option key={n} value={n}>{n} {n === 1 ? 'Block' : 'Blöcke'}</option>
+            <Row label="Größere Aufgaben pro Tag" hint="Kurze Aufgaben bis 30 min zählen nicht mit, für die gelten nur die Stunden pro Tag.">
+              <select className={styles.select} value={s.maxBlocks} onChange={(e) => save({ maxBlocks: Number(e.target.value) })} disabled={busy} aria-label="Größere Aufgaben pro Tag">
+                {[0, 1, 2, 3, 4, 5, 6, 8].map((n) => (
+                  <option key={n} value={n}>{n === 0 ? 'keine Grenze' : `höchstens ${n}`}</option>
                 ))}
               </select>
             </Row>
@@ -297,12 +390,12 @@ export const CalendarSettings: React.FC = () => {
                 </div>
               </Row>
             )}
-            <Row label="Freizeit eintragen" hint="Lücken ohne Aufgabe werden als Freizeit mit einem Vorschlag eingetragen.">
-              <Switch checked={s.freeTimeEnabled} onChange={(v) => save({ freeTimeEnabled: v })} disabled={busy} label="Freizeit eintragen" />
+            <Row label="Freie Lücken anzeigen" hint="Zeigt freie Zeit in der App mit einem Vorschlag. In deinen Kalender kommt dafür nichts.">
+              <Switch checked={s.freeTimeEnabled} onChange={(v) => save({ freeTimeEnabled: v })} disabled={busy} label="Freie Lücken anzeigen" />
             </Row>
             {s.freeTimeEnabled && (
               <div className={styles.stack}>
-                <label htmlFor="ideas" className={styles.label}>Freizeit-Vorschläge</label>
+                <label htmlFor="ideas" className={styles.label}>Vorschläge für freie Zeit</label>
                 <input
                   id="ideas"
                   className={styles.input}

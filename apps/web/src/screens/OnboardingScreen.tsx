@@ -76,7 +76,7 @@ const steps = [
   },
   {
     title: 'Dein Tag plant sich selbst',
-    text: 'Verbinde deinen Google Kalender. DayFlow legt Aufgaben in die freien Lücken, mit Puffer vor deinen Terminen.',
+    text: 'Verbinde deinen Google Kalender oder nutze DayFlow ohne Google. DayFlow legt Aufgaben in die freien Lücken, mit Puffer vor deinen Terminen.',
     visual: <VisualDay />,
   },
   {

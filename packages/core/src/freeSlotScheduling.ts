@@ -55,6 +55,10 @@ export interface PlannedBlock {
 
 /** Long tasks that fit nowhere in one piece get a part of at least this length */
 export const MIN_PART_MINUTES = 45;
+/** Tasks up to this long are "quick ones": they don't count against maxBlocks */
+export const SHORT_TASK_MINUTES = 30;
+/** …and at most this long, so one big task does not eat the whole day's budget */
+export const MAX_PART_MINUTES = 120;
 
 export interface FreeSlotPlan {
   date: string; // YYYY-MM-DD (local)
@@ -217,10 +221,16 @@ export function planIntoFreeSlots(
   const blocks: PlannedBlock[] = [];
   const skipped: string[] = [];
   let plannedMinutes = 0;
+  // maxBlocks limits the bigger tasks only (0 = no limit). Quick ones are
+  // limited by the time budget, so a day full of small things still moves.
+  let bigBlocks = 0;
+  const limit = config.maxBlocks > 0 ? config.maxBlocks : Infinity;
 
   for (const task of orderTasksForPlanning(tasks, now)) {
-    if (blocks.length >= config.maxBlocks) break;
+    if (config.maxPlannedMinutes - plannedMinutes < 5) break;
     const duration = taskDuration(task, config.defaultDurationMinutes);
+    const isShort = duration <= SHORT_TASK_MINUTES;
+    if (!isShort && bigBlocks >= limit) continue;
     const budget = config.maxPlannedMinutes - plannedMinutes;
     let minutes = duration;
     let partial = false;
@@ -234,7 +244,7 @@ export function planIntoFreeSlots(
         undefined
       );
       const room = biggest ? Math.floor((biggest.end - biggest.start) / MINUTE) : 0;
-      const part = Math.floor(Math.min(duration, budget, room) / 15) * 15;
+      const part = Math.floor(Math.min(duration, budget, room, MAX_PART_MINUTES) / 15) * 15;
       if (biggest && part >= MIN_PART_MINUTES) {
         slot = biggest;
         minutes = part;
@@ -256,6 +266,7 @@ export function planIntoFreeSlots(
       ...(partial ? { partial: true } : {}),
     });
     plannedMinutes += minutes;
+    if (!isShort) bigBlocks++;
     slot.start = end + config.bufferMinutes * MINUTE;
   }
 

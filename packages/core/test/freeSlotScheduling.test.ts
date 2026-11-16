@@ -105,6 +105,19 @@ describe('planIntoFreeSlots', () => {
     expect(planIntoFreeSlots(tasks, [], DAY, BEFORE_DAY, cfg({ maxPlannedMinutes: 150 })).blocks).toHaveLength(2);
   });
 
+  it('does not count quick tasks against max blocks', () => {
+    const tasks = [task('a', 60), task('b', 60), task('c', 60), task('q1', 15), task('q2', 15), task('q3', 30), task('q4', 10)];
+    const plan = planIntoFreeSlots(tasks, [], DAY, BEFORE_DAY, cfg({ maxBlocks: 2, maxPlannedMinutes: 600 }));
+    const ids = plan.blocks.map((b) => b.task_id);
+    expect(ids.filter((id) => id.startsWith('q'))).toHaveLength(4);
+    expect(ids.filter((id) => !id.startsWith('q'))).toHaveLength(2);
+  });
+
+  it('max blocks 0 means no limit, only the time budget counts', () => {
+    const tasks = [task('a', 60), task('b', 60), task('c', 60), task('d', 60), task('e', 60)];
+    expect(planIntoFreeSlots(tasks, [], DAY, BEFORE_DAY, cfg({ maxBlocks: 0, maxPlannedMinutes: 240 })).blocks).toHaveLength(4);
+  });
+
   it('puts high importance and overdue tasks first', () => {
     const tasks = [
       task('low', 30, { importance: 'low' }),
@@ -133,6 +146,10 @@ describe('planIntoFreeSlots', () => {
     expect(plan.blocks).toHaveLength(1);
     expect(plan.blocks[0].partial).toBe(true);
     expect(plan.blocks[0].duration_minutes).toBe(75);
+    // a part never takes more than 2 h, even with a long gap
+    const wide = planIntoFreeSlots([task('tax', 480)], [{ start: local(13), end: local(14) }], DAY, BEFORE_DAY, cfg({ maxPlannedMinutes: 600 }));
+    expect(wide.blocks[0].duration_minutes).toBe(120);
+    expect(wide.blocks[0].partial).toBe(true);
     expect(plan.blocks[0].start.toISOString()).toBe(local(10).toISOString());
   });
 

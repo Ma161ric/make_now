@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { API_BASE, authHeaders } from '../utils/apiAuth';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
 import { useTheme } from '../theme/themeContext';
@@ -49,9 +50,82 @@ export const SettingsScreen: React.FC = () => {
         </Row>
       </section>
 
+      <DataSettings onDeleted={async () => {
+        try { localStorage.removeItem('make-now-state'); localStorage.removeItem('onboarding-completed'); } catch { /* ignore */ }
+        await logout().catch(() => {});
+        navigate('/login');
+      }} />
+
       <p className={styles.footer}>
         DayFlow · <a href="/privacy">Datenschutz</a> · <a href="/terms">Nutzungsbedingungen</a>
       </p>
     </div>
+  );
+};
+
+async function account<T>(body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}/account`, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || `Fehler ${res.status}`);
+  return json as T;
+}
+
+const DataSettings: React.FC<{ onDeleted: () => void }> = ({ onDeleted }) => {
+  const [learned, setLearned] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    account<{ learned_entries: number }>().then((r) => setLearned(r.learned_entries)).catch(() => {});
+  }, []);
+
+  const forget = async () => {
+    if (!window.confirm('Gelernte Zeiten löschen? DayFlow fängt beim Lernen wieder von vorne an. Deine Aufgaben bleiben.')) return;
+    setBusy(true);
+    try {
+      await account({ action: 'forget_learning' });
+      setLearned(0);
+      setMessage('Gelernte Zeiten gelöscht.');
+    } catch (e: any) {
+      setMessage(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteAll = async () => {
+    const typed = window.prompt(
+      'Dein Konto und alle Daten werden endgültig gelöscht: Aufgaben, Notizen, Pläne, gelernte Zeiten und die Kalender-Verbindung. ' +
+        'Mit Google wird auch der Kalender „DayFlow“ gelöscht, deine anderen Kalender bleiben unberührt.\n\nZum Bestätigen LÖSCHEN eintippen:'
+    );
+    if (typed?.trim().toUpperCase() !== 'LÖSCHEN') return;
+    setBusy(true);
+    try {
+      await account({ action: 'delete_all', confirm: 'LÖSCHEN' });
+      onDeleted();
+    } catch (e: any) {
+      setMessage(e.message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className={styles.section} aria-labelledby="data-h">
+      <h2 id="data-h">Deine Daten</h2>
+      {message && <p className={styles.notice} role="status">{message}</p>}
+      <Row
+        label="Gelernte Zeiten"
+        hint={`Wann du Aufgaben wirklich fertig hast und wie oft du verlängerst. Daraus lernt DayFlow, wie lange Dinge dauern.${learned !== null ? ` Gespeichert: ${learned} ${learned === 1 ? 'Eintrag' : 'Einträge'}.` : ''}`}
+      >
+        <button className={styles.ghost} onClick={forget} disabled={busy || learned === 0}>Zurücksetzen</button>
+      </Row>
+      <Row label="Konto löschen" hint="Löscht dein Konto und alles, was DayFlow über dich gespeichert hat. Das geht nicht rückgängig.">
+        <button className={`${styles.ghost} ${styles.danger}`} onClick={deleteAll} disabled={busy}>Alles löschen</button>
+      </Row>
+    </section>
   );
 };

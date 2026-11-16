@@ -18,6 +18,7 @@ function app(): App {
 }
 
 export const db = () => getFirestore(app());
+export const adminAuth = () => getAuth(app());
 
 export class HttpError extends Error {
   constructor(public status: number, message: string) {

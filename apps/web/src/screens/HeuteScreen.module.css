@@ -19,8 +19,30 @@
   border: 1px solid var(--border-strong);
   background: var(--bg-secondary);
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 .banner a { color: var(--accent-text); }
+.undoBanner { background: transparent; }
+
+.connectActions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.connectActions :global(.button).later { background: transparent; color: var(--text-primary); box-shadow: inset 0 0 0 1.5px var(--border-strong); }
+
+.dayStatus { margin: 0; font-size: 13px; font-weight: 500; color: var(--hero-muted); }
+.dayStatusLate { color: var(--hero-accent); }
+
+.pin {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  vertical-align: 1px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
 
 .connectHint {
   max-width: 1120px;
@@ -52,7 +74,7 @@
 
 .nowCard {
   position: sticky;
-  top: calc(var(--nav-height) + var(--space-5));
+  top: calc(var(--header-height) + var(--space-5));
   min-height: 480px;
   display: flex;
   border-radius: var(--radius-lg);

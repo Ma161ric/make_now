@@ -84,8 +84,9 @@ export const PrivacyPolicyScreen: React.FC = () => {
             verschlüsselt sowohl bei der Übertragung (TLS) als auch im Ruhezustand.
           </p>
           <p>
-            Wir speichern Ihre Daten, solange Ihr Account aktiv ist. Nach Löschung Ihres Accounts
-            werden alle persönlichen Daten innerhalb von 30 Tagen unwiderruflich gelöscht.
+            Wir speichern Ihre Daten, solange Ihr Account aktiv ist. Unter Einstellungen → Deine Daten
+            können Sie gelernte Zeiten jederzeit zurücksetzen oder Ihren Account mit allen Daten sofort
+            löschen.
           </p>
         </section>
 
@@ -100,7 +101,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
               <strong>Berichtigung:</strong> Korrektur falscher Daten
             </li>
             <li>
-              <strong>Löschung:</strong> Vollständige Löschung Ihrer Daten
+              <strong>Löschung:</strong> Vollständige Löschung Ihrer Daten, direkt in den Einstellungen
             </li>
             <li>
               <strong>Datenportabilität:</strong> Export Ihrer Daten in maschinenlesbarem Format

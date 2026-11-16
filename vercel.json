@@ -3,6 +3,10 @@
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
+      "source": "/api/feed/:token",
+      "destination": "/api/calendar?action=feed&t=:token"
+    },
+    {
       "source": "/api/calendar/:action",
       "destination": "/api/calendar?action=:action"
     },

@@ -26,12 +26,21 @@ interface Item {
   title: string;
   task_id?: string;
   location?: string;
+  /** moved by hand: DayFlow leaves it where it is */
+  pinned?: boolean;
+  /** overlaps this appointment */
+  conflict?: string;
+  /** free gap: a suggestion what to do */
+  idea?: string;
+  done?: boolean;
 }
 
 interface Timeline {
   connected: boolean;
   status?: 'ok' | 'needs_reauth';
   needs_upgrade?: boolean;
+  provider?: 'google' | 'local';
+  undo?: { label: string; at: string } | null;
   date?: string;
   window?: { start: string; end: string };
   all_day?: string[];
@@ -62,7 +71,7 @@ function countdown(ms: number): string {
   return h ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
 
-const KIND_LABEL: Record<Kind, string> = { task: 'Aufgabe', sport: 'Sport', free: 'Freizeit', event: 'Termin', busy: 'Termin' };
+const KIND_LABEL: Record<Kind, string> = { task: 'Aufgabe', sport: 'Sport', free: 'Frei', event: 'Termin', busy: 'Termin' };
 
 async function api<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}/calendar/${path}`, {
@@ -127,8 +136,33 @@ export const HeuteScreen: React.FC = () => {
     return running.find((i) => i.kind !== 'busy' && i.kind !== 'event') || running[0] || null;
   }, [items, t]);
   const next = useMemo(
-    () => items.find((i) => new Date(i.start).getTime() > t && i !== current) || null,
+    () => items.find((i) => i.kind !== 'free' && new Date(i.start).getTime() > t && i !== current) || null,
     [items, t, current]
+  );
+
+  // done = marked here or already done on the server
+  const isDone = useCallback((i: Item) => !!i.task_id && (!!i.done || done.has(i.task_id)), [done]);
+  const doneIds = useMemo(() => new Set(items.filter(isDone).map((i) => i.task_id!)), [items, isDone]);
+
+  // How the day is going: planned task blocks vs. done
+  const dayStatus = useMemo(() => {
+    const tasks = new Map<string, number>(); // task id -> end of its last block
+    for (const i of items) if (i.kind === 'task' && i.task_id) tasks.set(i.task_id, Math.max(tasks.get(i.task_id) || 0, new Date(i.end).getTime()));
+    if (!tasks.size) return null;
+    let doneCount = 0;
+    let missed = 0;
+    for (const [id, end] of tasks) {
+      if (doneIds.has(id)) doneCount++;
+      else if (end <= t) missed++;
+    }
+    const base = `${doneCount} von ${tasks.size} erledigt`;
+    if (doneCount === tasks.size) return { text: 'Alles erledigt für heute', ok: true };
+    return missed ? { text: `${base} · ${missed} offen geblieben`, ok: false } : { text: `${base} · im Zeitplan`, ok: true };
+  }, [items, doneIds, t]);
+
+  const conflicts = useMemo(
+    () => items.filter((i) => i.conflict && i.task_id && new Date(i.end).getTime() > t && !doneIds.has(i.task_id)),
+    [items, t, doneIds]
   );
 
   const reconnect = async () => {
@@ -159,6 +193,47 @@ export const HeuteScreen: React.FC = () => {
       await updateTaskStatus(user.id, item.task_id, 'done', firebaseUser);
     } catch (e: any) {
       setError(`Konnte nicht speichern: ${e.message}`);
+    }
+    // the real finishing time, so DayFlow can learn how long things take
+    api('done', { task_id: item.task_id }).catch(() => {});
+  };
+
+  const startLocal = async () => {
+    setBusy(true);
+    try {
+      await api('local', { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+      await load();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const undo = async () => {
+    setMoving(true);
+    try {
+      await api('undo', {});
+      setInfo('Rückgängig gemacht.');
+      await load();
+    } catch (e: any) {
+      setError(`Rückgängig hat nicht geklappt: ${e.message}`);
+    } finally {
+      setMoving(false);
+    }
+  };
+
+  const resolve = async (item: Item) => {
+    if (!item.task_id) return;
+    setMoving(true);
+    try {
+      const r = await api<{ placed: boolean; start?: string }>('resolve', { task_id: item.task_id });
+      setInfo(r.placed && r.start ? `„${item.title}“ ist jetzt um ${hhmm(r.start)}.` : `„${item.title}“ passt heute nicht mehr. Kommt morgen dran.`);
+      await load();
+    } catch (e: any) {
+      setError(`Verschieben hat nicht geklappt: ${e.message}`);
+    } finally {
+      setMoving(false);
     }
   };
 
@@ -215,10 +290,15 @@ export const HeuteScreen: React.FC = () => {
     return (
       <div className={styles.connectHint}>
         <span>
-          Verbinde deinen Google Kalender, dann plant DayFlow deine Aufgaben automatisch in die freien Lücken. Deine Aufgaben
-          findest du solange unter <Link to="/tasks">Aufgaben</Link>.
+          DayFlow plant deine Aufgaben in die freien Lücken deines Tages. Mit Google Kalender siehst du alles an einem Ort.
+          Ohne Google plant DayFlow hier in der App, und du kannst den Plan in jedem Kalender abonnieren, auch auf dem iPhone.
         </span>
-        <Link to="/settings" className="button">Kalender verbinden</Link>
+        <div className={styles.connectActions}>
+          <button className="button" onClick={reconnect} disabled={busy}>Mit Google verbinden</button>
+          <button className={`button ${styles.later}`} onClick={startLocal} disabled={busy}>
+            {busy ? 'Richte ein …' : 'Ohne Google nutzen'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -242,6 +322,18 @@ export const HeuteScreen: React.FC = () => {
       )}
       {error && <div className={styles.banner} role="alert">{error}</div>}
       {info && <div className={styles.banner} role="status">{info}</div>}
+      {conflicts.map((c) => (
+        <div key={`c-${c.start}-${c.task_id}`} className={styles.banner} role="alert">
+          <span>„{c.title}“ überschneidet sich mit „{c.conflict}“.</span>
+          <button className={styles.textButton} onClick={() => resolve(c)} disabled={moving}>Verschieben</button>
+        </div>
+      ))}
+      {timeline?.undo && !info && (
+        <div className={`${styles.banner} ${styles.undoBanner}`} role="status">
+          <span>{timeline.undo.label}</span>
+          <button className={styles.textButton} onClick={undo} disabled={moving}>Rückgängig</button>
+        </div>
+      )}
 
       <div className={styles.layout}>
         <section aria-label="Jetzt" className={styles.nowCard}>
@@ -260,9 +352,9 @@ export const HeuteScreen: React.FC = () => {
               </div>
             </div>
           ) : current ? (
-            <NowCard item={current} now={t} next={next} done={!!current.task_id && done.has(current.task_id)} onDone={() => markDone(current)} onExtend={(m) => extend(current, m)} moving={moving} />
+            <NowCard item={current} now={t} next={next} done={isDone(current)} onDone={() => markDone(current)} onExtend={(m) => extend(current, m)} moving={moving} onPlan={planToday} busy={busy} dayStatus={dayStatus} />
           ) : (
-            <FreeCard now={t} next={next} onPlan={planToday} busy={busy} />
+            <FreeCard now={t} next={next} onPlan={planToday} busy={busy} dayStatus={dayStatus} />
           )}
         </section>
 
@@ -281,7 +373,7 @@ export const HeuteScreen: React.FC = () => {
                 ))}
               </ul>
             )}
-            <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={done} />
+            <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={doneIds} />
           </section>
 
           <form className={styles.capture} onSubmit={saveNote}>
@@ -320,7 +412,12 @@ export const HeuteScreen: React.FC = () => {
   );
 };
 
-const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: boolean; onDone: () => void; onExtend: (minutes: number) => void; moving: boolean }> = ({ item, now, next, done, onDone, onExtend, moving }) => {
+type DayStatus = { text: string; ok: boolean } | null;
+
+const StatusLine: React.FC<{ status: DayStatus }> = ({ status }) =>
+  status ? <p className={`${styles.dayStatus} ${status.ok ? '' : styles.dayStatusLate}`}>{status.text}</p> : null;
+
+const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: boolean; onDone: () => void; onExtend: (minutes: number) => void; moving: boolean; onPlan: () => void; busy: boolean; dayStatus: DayStatus }> = ({ item, now, next, done, onDone, onExtend, moving, onPlan, busy, dayStatus }) => {
   const [askLonger, setAskLonger] = React.useState(false);
   const start = new Date(item.start).getTime();
   const end = new Date(item.end).getTime();
@@ -333,9 +430,10 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
         <p className={styles.eyebrow}>
           Jetzt · {hhmm(item.start)} – {hhmm(item.end)}
         </p>
-        <h1 className={styles.nowTitle}>{item.title}</h1>
+        <h1 className={styles.nowTitle}>{item.kind === 'free' ? 'Gerade frei' : item.title}</h1>
         <p className={styles.nowSub}>
-          {item.kind === 'free' && 'Keine Aufgabe eingeplant. Die Zeit gehört dir. '}
+          {item.kind === 'free' && (item.idea ? `Idee: ${item.idea}. ` : 'Die Zeit gehört dir. ')}
+          {item.pinned && 'Von dir verschoben, DayFlow lässt den Block hier. '}
           {item.kind === 'busy' && 'Termin aus deinem Kalender. '}
           {item.kind === 'event' && item.location && `Ort: ${item.location}. `}
           {next ? `Danach: ${next.title} um ${hhmm(next.start)}.` : 'Danach ist nichts mehr geplant.'}
@@ -375,12 +473,20 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
             )}
           </div>
         )}
+        {item.kind === 'free' && !next && (
+          <div className={styles.actions}>
+            <button className="button" onClick={onPlan} disabled={busy}>
+              {busy ? 'Plane …' : 'Rest von heute planen'}
+            </button>
+          </div>
+        )}
+        <StatusLine status={dayStatus} />
       </div>
     </div>
   );
 };
 
-const FreeCard: React.FC<{ now: number; next: Item | null; onPlan: () => void; busy: boolean }> = ({ now, next, onPlan, busy }) => (
+const FreeCard: React.FC<{ now: number; next: Item | null; onPlan: () => void; busy: boolean; dayStatus: DayStatus }> = ({ now, next, onPlan, busy, dayStatus }) => (
   <div className={styles.nowInner}>
     <div>
       <p className={styles.eyebrow}>Jetzt</p>
@@ -402,6 +508,7 @@ const FreeCard: React.FC<{ now: number; next: Item | null; onPlan: () => void; b
           </button>
         </div>
       )}
+      <StatusLine status={dayStatus} />
     </div>
   </div>
 );
@@ -446,10 +553,14 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
             className={`${styles.block} ${styles[`block_${i.kind}`]} ${h < 34 ? styles.blockSmall : ''} ${isDone ? styles.blockDone : ''} ${s <= now && now < e ? styles.blockNow : ''}`}
             style={{ top, height: h, ...(lanes > 1 ? { left: `calc(${(lane * 100) / lanes}% + ${lane ? 2 : 0}px)`, right: 'auto', width: `calc(${100 / lanes}% - 2px)` } : {}) }}
           >
-            <span className={styles.blockTitle}>{i.title}</span>
+            <span className={styles.blockTitle}>
+              {i.kind === 'free' && i.idea ? `Frei · ${i.idea}` : i.title}
+              {i.pinned && <span className={styles.pin} title="Von dir verschoben">fest</span>}
+            </span>
             {h >= 38 && (
               <span className={styles.blockMeta}>
                 {hhmm(i.start)} – {hhmm(i.end)} · {i.location ? i.location : duration(e - s)}
+                {i.conflict && ` · überschneidet „${i.conflict}“`}
               </span>
             )}
           </div>
