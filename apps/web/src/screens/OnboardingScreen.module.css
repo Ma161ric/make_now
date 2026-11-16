@@ -92,8 +92,8 @@
 
 .vUser {
   align-self: flex-end;
-  background: var(--accent-primary);
-  color: var(--on-accent);
+  background: var(--task-bg);
+  color: var(--task-text);
   border-bottom-right-radius: 5px;
 }
 
@@ -346,4 +346,23 @@
   .title {
     font-size: 1.5rem;
   }
+}
+
+/* phones: buttons stay at the bottom, in reach of the thumb, and don't jump between steps */
+@media (max-width: 600px) {
+  .page { align-items: stretch; padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); }
+  .shell { min-height: 100%; }
+  .footer { margin-top: auto; }
+  .next { flex-shrink: 0; }
+}
+
+.note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
 }

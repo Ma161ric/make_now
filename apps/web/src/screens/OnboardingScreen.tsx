@@ -41,7 +41,7 @@ const VisualDay = () => (
       { t: '10:00', title: 'Vorlesung', cls: styles.vEvent, h: 44 },
       { t: '11:45', title: 'Steuer machen', cls: styles.vTask, h: 52 },
       { t: '14:00', title: 'Wohnung anschauen', cls: styles.vEvent, h: 36 },
-      { t: '16:00', title: 'Sport / Gym', cls: styles.vTask, h: 40 },
+      { t: '16:00', title: 'Gym', cls: styles.vTask, h: 40 },
     ].map((b) => (
       <div key={b.t} className={styles.vRow}>
         <span>{b.t}</span>
@@ -66,22 +66,22 @@ const VisualNow = () => (
 const steps = [
   {
     title: 'Sag einfach, was ansteht',
-    text: 'Schreib oder sprich mit dem Assistenten. Er erkennt To-dos und Termine, normales Reden bleibt normales Reden.',
+    text: 'Schreib oder sprich mit dem Assistenten, oder notier es kurz auf Heute. DayFlow erkennt daraus To-dos und Termine. Willst du nur reden, schlägt er nichts vor.',
     visual: <VisualChat />,
   },
   {
     title: 'Du entscheidest',
-    text: 'Jeder Vorschlag zeigt Titel, Dauer und Frist. Haken übernimmt ihn, Antippen ändert ihn. Am Handy geht auch Wischen: rechts übernehmen, links verwerfen.',
+    text: 'Nichts landet ungefragt im Plan. Haken übernimmt einen Vorschlag, Antippen ändert ihn. Am Handy geht auch Wischen: nach rechts übernehmen, nach links verwerfen.',
     visual: <VisualProposals />,
   },
   {
     title: 'Dein Tag plant sich selbst',
-    text: 'Verbinde deinen Google Kalender oder nutze DayFlow ohne Google. DayFlow legt Aufgaben in die freien Lücken, mit Puffer vor deinen Terminen.',
+    text: 'DayFlow legt deine Aufgaben in die freien Lücken zwischen deinen Terminen, mit Puffer davor. Jeden Abend kommt der Plan für morgen.',
     visual: <VisualDay />,
   },
   {
     title: 'Läuft es anders, passt sich der Plan an',
-    text: 'Fertig? Erledigt. Dauert länger? Ein Tipp, und die nächsten Blöcke rutschen nach hinten. Deine Termine bleiben, wo sie sind.',
+    text: 'Dauert etwas länger, rutscht der Rest nach hinten. Einen Block antippen, um ihn zu verschieben. Abends fragt DayFlow kurz, was du geschafft hast.',
     visual: <VisualNow />,
   },
 ];
@@ -121,6 +121,7 @@ export const OnboardingScreen: React.FC = () => {
           </p>
           <h1 className={styles.title}>{step.title}</h1>
           <p className={styles.text}>{step.text}</p>
+          {last && <p className={styles.note}>Zum Schluss verbindest du deinen Kalender: Google Kalender oder ohne Google, zum Beispiel mit iCloud. Dauert eine Minute.</p>}
         </div>
 
         <footer className={styles.footer}>
@@ -130,7 +131,7 @@ export const OnboardingScreen: React.FC = () => {
             ))}
           </div>
           <div className={styles.actions}>
-            {i > 0 && (
+            {i > 0 && !last && (
               <button className={styles.back} onClick={() => setI(i - 1)}>
                 Zurück
               </button>
@@ -141,7 +142,7 @@ export const OnboardingScreen: React.FC = () => {
                   Später
                 </button>
                 <button className={styles.next} onClick={() => done('/settings')}>
-                  Kalender verbinden
+                  Kalender einrichten
                 </button>
               </>
             ) : (
