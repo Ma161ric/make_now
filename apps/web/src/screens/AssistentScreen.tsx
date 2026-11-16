@@ -250,6 +250,11 @@ export const AssistentScreen: React.FC = () => {
 
   /** Proposals that are not under a message in the chat (e.g. from the Heute note field) */
   const orphans = suggestions.filter((s) => !inChat(s));
+
+  // last open proposal taken or dropped: close the list instead of leaving an empty sheet
+  useEffect(() => {
+    if (sheet === 'list' && orphans.length === 0) setSheet(null);
+  }, [sheet, orphans.length]);
   const tasks = suggestions.filter((s) => s.kind !== 'event' || !s.start_at);
   const events = suggestions.filter((s) => s.kind === 'event' && s.start_at);
 
