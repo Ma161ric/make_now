@@ -5,6 +5,7 @@ import styles from './App.module.css';
 import './styles.css';
 import { IconToday, IconChat, IconWeek, IconTasks, IconSun, IconMoon, IconSettings } from './components/Icons';
 import { useVisualViewport } from './hooks/useVisualViewport';
+import { useEffect } from 'react';
 
 export default function App() {
   const location = useLocation();
@@ -12,6 +13,11 @@ export default function App() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   useVisualViewport();
+
+  // Every tab starts at the top (the week scrolls down to today and used to drag the others along)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Hide header on auth pages
   const isAuthPage = ['/login', '/signup', '/onboarding'].includes(location.pathname);

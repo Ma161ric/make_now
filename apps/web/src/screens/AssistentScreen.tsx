@@ -459,7 +459,6 @@ export const AssistentScreen: React.FC = () => {
             placeholder="Was steht an?"
             rows={1}
             maxLength={4000}
-            disabled={sending}
             aria-label="Nachricht"
           />
           <MicButton onText={(t) => setInput((cur) => (cur ? `${cur} ${t}` : t))} onError={setError} />

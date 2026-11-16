@@ -24,6 +24,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
+    // Browser/status bar follows the app's theme, not the phone's system setting
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#121413' : '#efece5');
   }, [theme]);
 
   const toggleTheme = () => {

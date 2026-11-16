@@ -96,7 +96,7 @@ export const WocheScreen: React.FC = () => {
   // Phones: jump to today in the list once the week has loaded
   useEffect(() => {
     if (!week?.days.length || !window.matchMedia('(max-width: 768px)').matches) return;
-    document.getElementById('agenda-today')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    document.getElementById('agenda-today')?.scrollIntoView({ block: 'start' });
   }, [week]);
 
   if (week && !week.connected) {

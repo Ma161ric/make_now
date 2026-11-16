@@ -135,7 +135,7 @@
   .agenda { display: flex; flex-direction: column; gap: 12px; }
 
   .aDay {
-    scroll-margin-top: calc(var(--nav-height) + 12px);
+    scroll-margin-top: calc(var(--header-height) + 12px);
     padding: 14px 16px;
     border-radius: 18px;
     background: var(--bg-secondary);
