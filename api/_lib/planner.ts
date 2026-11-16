@@ -595,7 +595,8 @@ export async function placeTaskToday(uid: string, task: { id: string; title: str
     const id = taskOf(e);
     if (id && id !== 'free_time') busy.push({ start: new Date(e.start.dateTime!), end: new Date(e.end.dateTime!) });
   }
-  const config: FreeSlotConfig = { ...DEFAULT_FREE_SLOT_CONFIG, timezone: tz, windowStartHour: settings.windowStartHour, windowEndHour: settings.windowEndHour };
+  // Asked for by hand ("Heute einplanen"): the evening counts too, not only the planning window
+  const config: FreeSlotConfig = { ...DEFAULT_FREE_SLOT_CONFIG, timezone: tz, windowStartHour: settings.windowStartHour, windowEndHour: 24 };
   const ms = task.minutes * 60_000;
   const slot = planIntoFreeSlots([], busy, date, now, config).free_slots.find((s) => s.end.getTime() - s.start.getTime() >= ms);
   if (!slot) return { placed: false };
