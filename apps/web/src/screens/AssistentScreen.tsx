@@ -40,15 +40,27 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   done?: Done[];
+  /** proposal ids in the order the assistant gave them: accepted ones stay in place */
+  order?: string[];
 }
 
 const HISTORY_LIMIT = 60;
+
+/** Open proposals and accepted ones of a message, in the order the assistant gave them */
+function inOrder(m: ChatMessage, open: Suggestion[]): (Suggestion | Done)[] {
+  const done = m.done || [];
+  if (!m.order) return [...open, ...done];
+  const byId = new Map<string, Suggestion | Done>([...open.map((s) => [s.id, s] as const), ...done.map((d) => [d.id, d] as const)]);
+  const list = m.order.map((id) => byId.get(id)).filter((x): x is Suggestion | Done => !!x);
+  const seen = new Set(m.order);
+  return [...list, ...open.filter((s) => !seen.has(s.id)), ...done.filter((d) => !seen.has(d.id))];
+}
 const chatKey = (uid: string) => `dayflow_chat_${uid}`;
 const DURATIONS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 240];
 
 function loadHistory(uid: string): ChatMessage[] {
   try {
-    return (JSON.parse(localStorage.getItem(chatKey(uid)) || '[]') as ChatMessage[]).map(({ id, role, content, done }) => ({ id, role, content, done }));
+    return (JSON.parse(localStorage.getItem(chatKey(uid)) || '[]') as ChatMessage[]).map(({ id, role, content, done, order }) => ({ id, role, content, done, order }));
   } catch {
     return [];
   }
@@ -158,8 +170,9 @@ export const AssistentScreen: React.FC = () => {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `Fehler ${res.status}`);
       const msgId = uuid();
-      setMessages((m) => [...m, { id: msgId, role: 'assistant', content: json.reply }]);
-      addSuggestions(uid, fromChatProposals(json.proposals || [], text, msgId));
+      const proposals = fromChatProposals(json.proposals || [], text, msgId);
+      setMessages((m) => [...m, { id: msgId, role: 'assistant', content: json.reply, ...(proposals.length ? { order: proposals.map((p) => p.id) } : {}) }]);
+      addSuggestions(uid, proposals);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -237,6 +250,11 @@ export const AssistentScreen: React.FC = () => {
 
   /** Proposals that are not under a message in the chat (e.g. from the Heute note field) */
   const orphans = suggestions.filter((s) => !inChat(s));
+
+  // last open proposal taken or dropped: close the list instead of leaving an empty sheet
+  useEffect(() => {
+    if (sheet === 'list' && orphans.length === 0) setSheet(null);
+  }, [sheet, orphans.length]);
   const tasks = suggestions.filter((s) => s.kind !== 'event' || !s.start_at);
   const events = suggestions.filter((s) => s.kind === 'event' && s.start_at);
 
@@ -392,17 +410,17 @@ export const AssistentScreen: React.FC = () => {
                 <div className={m.role === 'user' ? styles.userBubble : styles.botBubble}>{m.content}</div>
                 {(open.length > 0 || (m.done?.length ?? 0) > 0) && (
                   <div className={styles.inline}>
-                    {open.map((s) => (
+                    {inOrder(m, open).map((x) =>
+                      'source' in x ? (
                       <InlineCard
-                        key={s.id}
-                        s={s}
-                        busy={busyId === s.id}
-                        onAccept={() => accept(s)}
-                        onDrop={() => drop(s.id)}
-                        onEdit={() => setSheet({ edit: s.id })}
+                        key={x.id}
+                        s={x}
+                        busy={busyId === x.id}
+                        onAccept={() => accept(x)}
+                        onDrop={() => drop(x.id)}
+                        onEdit={() => setSheet({ edit: x.id })}
                       />
-                    ))}
-                    {m.done?.map((d) => (
+                    ) : (() => { const d = x; return (
                       <div key={d.id} className={styles.doneLine}>
                         <IconCheck size={14} />
                         <span className={styles.doneText}>
@@ -415,7 +433,7 @@ export const AssistentScreen: React.FC = () => {
                           </button>
                         )}
                       </div>
-                    ))}
+                    ); })())}
                   </div>
                 )}
               </div>

@@ -481,6 +481,7 @@ export async function getWeek(uid: string, start: string): Promise<{ connected: 
   const to = zonedTimeToUtc(addDays(start, 7), 0, 0, tz);
   const [blocks, external] = await Promise.all([ws.blocks.list(from, to), ws.external(from, to)]);
   const { items, allDay } = toItems(blocks, external);
+  items.sort((a, b) => a.start.localeCompare(b.start));
   const days: WeekDay[] = Array.from({ length: 7 }, (_, i) => ({ date: addDays(start, i), all_day: [], items: [] }));
   for (const it of items) days.find((d) => d.date === localDateString(new Date(it.start), tz))?.items.push(it);
   for (const a of allDay) for (const d of days) if (d.date >= a.startDate && d.date < a.endDate) d.all_day.push(a.title);

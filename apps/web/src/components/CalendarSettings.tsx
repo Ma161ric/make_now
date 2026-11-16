@@ -195,9 +195,9 @@ export const CalendarSettings: React.FC = () => {
   const lastPlan = status?.last_plan;
   const planRows = lastPlan
     ? [
-        ...lastPlan.blocks.map((b) => ({ key: b.task_id, start: b.start, end: b.end, label: b.title, kind: 'task' })),
+        ...(Array.isArray(lastPlan.blocks) ? lastPlan.blocks : []).map((b) => ({ key: b.task_id, start: b.start, end: b.end, label: b.title, kind: 'task' })),
         ...(lastPlan.sport ? [{ key: 'sport', start: lastPlan.sport.start, end: lastPlan.sport.end, label: s?.sportLabel || 'Sport', kind: 'sport' }] : []),
-        ...(lastPlan.free_time || []).map((f) => ({ key: `free-${f.start}`, start: f.start, end: f.end, label: f.idea ? `Freizeit · ${f.idea}` : 'Freizeit', kind: 'free' })),
+        ...(Array.isArray(lastPlan.free_time) ? lastPlan.free_time : []).map((f) => ({ key: `free-${f.start}`, start: f.start, end: f.end, label: f.idea ? `Freizeit · ${f.idea}` : 'Freizeit', kind: 'free' })),
       ].sort((a, b) => a.start.localeCompare(b.start))
     : [];
 
@@ -214,7 +214,7 @@ export const CalendarSettings: React.FC = () => {
             <Row label="Mit Google Kalender" hint="DayFlow liest deine Termine und trägt Aufgaben in einen eigenen Kalender „DayFlow“ ein.">
               <button className="button" onClick={connect} disabled={busy}>Mit Google verbinden</button>
             </Row>
-            <Row label="Ohne Google" hint="Für iCloud & Co: DayFlow plant hier in der App. Den Plan kannst du in jedem Kalender abonnieren, deine Termine kommen über einen Freigabe-Link dazu.">
+            <Row label="Ohne Google" hint="Für iCloud: DayFlow plant hier in der App. Danach zeigen wir dir hier in zwei kurzen Schritten, wie du es mit deinem iPhone-Kalender verbindest.">
               <button className={styles.ghost} onClick={startLocal} disabled={busy}>Ohne Google nutzen</button>
             </Row>
           </>
@@ -225,24 +225,37 @@ export const CalendarSettings: React.FC = () => {
                 <Row label={<><span className={styles.dot} aria-hidden="true" />DayFlow ohne Google</>} hint={`Zeitzone ${status.timezone}`}>
                   <button className={styles.ghost} onClick={disconnect} disabled={busy}>Zurücksetzen</button>
                 </Row>
-                {status.feed_url && (
-                  <div className={styles.stack}>
-                    <p className={styles.label}>Plan im Kalender abonnieren</p>
-                    <div className={styles.inline}>
-                      <input className={styles.input} type="text" readOnly value={status.feed_url} onFocus={(e) => e.target.select()} aria-label="Abo-Link" />
-                      <button className={styles.ghost} onClick={copyFeed}>{copied ? 'Kopiert' : 'Kopieren'}</button>
+                <div className={styles.step}>
+                  <p className={styles.stepHead}><span className={styles.stepNum}>1</span>Plan in deinen iPhone-Kalender holen</p>
+                  <p className={styles.hint}>Dann siehst du alles, was DayFlow einplant, direkt in der Kalender-App.</p>
+                  {status.feed_url && (
+                    <div className={styles.stepActions}>
+                      <a className="button" href={status.feed_url.replace(/^https:/, 'webcal:')}>Im Kalender abonnieren</a>
+                      <button className={styles.ghost} onClick={copyFeed}>{copied ? 'Kopiert' : 'Link kopieren'}</button>
                     </div>
-                    <p className={styles.hint}>
-                      iPhone: Einstellungen → Apps → Kalender → Kalender-Accounts → Account hinzufügen → Andere → Kalenderabo hinzufügen, Link einfügen.
-                      Der Kalender aktualisiert sich dann von selbst (iPhone prüft etwa alle 15 Minuten bis stündlich).
-                    </p>
-                  </div>
-                )}
-                <div className={styles.stack}>
-                  <p className={styles.label}>Deine Termine (iCloud oder andere)</p>
-                  {(status.ics_urls || []).map((u) => (
-                    <div key={u} className={styles.inline}>
-                      <input className={styles.input} type="text" readOnly value={u.replace(/^https:\/\//, '').slice(0, 60) + (u.length > 68 ? '…' : '')} aria-label="Verknüpfter Kalender" />
+                  )}
+                  <p className={styles.hint}>
+                    Tippen und „Abonnieren“ bestätigen, fertig. Falls nichts passiert: Link kopieren, dann auf dem iPhone
+                    Einstellungen → Apps → Kalender → Kalender-Accounts → Account hinzufügen → Andere → Kalenderabo hinzufügen.
+                  </p>
+                </div>
+
+                <div className={styles.step}>
+                  <p className={styles.stepHead}><span className={styles.stepNum}>2</span>Deine Termine verbinden</p>
+                  <p className={styles.hint}>Damit DayFlow nichts in deine Termine plant.</p>
+                  <ol className={styles.howto}>
+                    <li>Kalender-App öffnen, unten auf <b>Kalender</b> tippen.</li>
+                    <li>Neben deinem Kalender auf <b>ⓘ</b> tippen.</li>
+                    <li><b>Öffentlicher Kalender</b> einschalten, dann <b>Link teilen</b> → <b>Kopieren</b>.</li>
+                    <li>Hier einfügen und <b>Hinzufügen</b> tippen.</li>
+                  </ol>
+                  {(status.ics_urls || []).map((u, i, all) => (
+                    <div key={u} className={styles.linked}>
+                      <span className={styles.dot} aria-hidden="true" />
+                      <span className={styles.linkedText}>
+                        {/icloud\.com/i.test(u) ? 'iCloud-Kalender' : u.replace(/^https:\/\//, '').split('/')[0]}
+                        {all.length > 1 ? ` ${i + 1}` : ''} verbunden
+                      </span>
                       <button className={styles.ghost} onClick={() => saveLinks((status.ics_urls || []).filter((x) => x !== u))} disabled={busy}>Entfernen</button>
                     </div>
                   ))}
@@ -258,7 +271,7 @@ export const CalendarSettings: React.FC = () => {
                         className={styles.input}
                         type="url"
                         inputMode="url"
-                        placeholder="webcal://p…-caldav.icloud.com/…"
+                        placeholder="Link hier einfügen"
                         value={linkDraft}
                         onChange={(e) => setLinkDraft(e.target.value)}
                         aria-label="Kalender-Link"
@@ -268,8 +281,8 @@ export const CalendarSettings: React.FC = () => {
                     </form>
                   )}
                   <p className={styles.hint}>
-                    iPhone: Kalender-App → Kalender → bei deinem Kalender auf ⓘ → „Öffentlicher Kalender“ an → „Link teilen“ → kopieren und hier einfügen.
-                    DayFlow plant dann um deine Termine herum. Wer den Link hat, kann den Kalender lesen, gib ihn sonst niemandem.
+                    Mehrere Kalender, zum Beispiel Uni und Privat? Einfach für jeden wiederholen. Das geht mit iCloud-Kalendern,
+                    nicht mit Kalendern unter „Auf meinem iPhone“. Wer den Link hat, kann den Kalender lesen, gib ihn also nicht weiter.
                   </p>
                 </div>
               </>
@@ -316,6 +329,9 @@ export const CalendarSettings: React.FC = () => {
             <h2 id="plan-h">Planung</h2>
             <Row label="Jeden Abend automatisch planen" hint="Gegen 20 Uhr wird der nächste Tag geplant.">
               <Switch checked={s.enabled} onChange={(v) => save({ enabled: v })} disabled={busy} label="Jeden Abend automatisch planen" />
+            </Row>
+            <Row label="Abends nachfragen" hint="Ab 19 Uhr fragt Heute, welche Aufgaben du geschafft hast. Der Rest wird wieder eingeplant.">
+              <Switch checked={s.eveningReview !== false} onChange={(v) => save({ eveningReview: v })} disabled={busy} label="Abends nachfragen" />
             </Row>
             <Row label="Zeitfenster" hint="Nur in diesem Fenster werden Aufgaben eingeplant.">
               <div className={styles.inline}>
@@ -391,9 +407,6 @@ export const CalendarSettings: React.FC = () => {
                 </div>
               </Row>
             )}
-            <Row label="Abends nachfragen" hint="Ab 19 Uhr fragt Heute, welche Aufgaben du geschafft hast. Der Rest wird wieder eingeplant.">
-              <Switch checked={s.eveningReview !== false} onChange={(v) => save({ eveningReview: v })} disabled={busy} label="Abends nachfragen" />
-            </Row>
             <Row label="Freie Lücken anzeigen" hint="Zeigt freie Zeit in der App mit einem Vorschlag. In deinen Kalender kommt dafür nichts.">
               <Switch checked={s.freeTimeEnabled} onChange={(v) => save({ freeTimeEnabled: v })} disabled={busy} label="Freie Lücken anzeigen" />
             </Row>

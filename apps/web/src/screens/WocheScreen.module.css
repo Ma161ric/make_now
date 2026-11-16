@@ -188,3 +188,8 @@
 .loadingNote { font-size: 13px; color: var(--text-muted); }
 @keyframes weekPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 @media (prefers-reduced-motion: reduce) { .isLoading { animation: none; opacity: 0.7; } }
+
+/* keep the setup hint off the screen edges */
+@media (max-width: 1160px) {
+  .connectHint { margin-left: var(--space-4); margin-right: var(--space-4); }
+}
