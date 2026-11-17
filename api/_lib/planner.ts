@@ -403,8 +403,21 @@ function toItems(blocks: Block[], external: ExternalEvent[]): { items: TimelineI
   return { items, allDay };
 }
 
+const SPORT_WORDS = ['sport', 'gym', 'training', 'fitness', 'laufen', 'joggen', 'workout', 'schwimmen', 'radfahren', 'yoga', 'kraft'];
+const words = (t: string) => t.toLowerCase().split(/[^a-zäöüß0-9]+/).filter((w) => w.length >= 3);
+
+/** Ideas for free gaps, minus sport when the day already has a sport block (no "Gym" twice a day) */
+export function freeIdeasFor(items: { kind: string; title: string }[], ideas: string[]): string[] {
+  const sport = items.filter((i) => i.kind === 'sport');
+  if (!sport.length) return ideas;
+  const taken = new Set([...SPORT_WORDS, ...sport.flatMap((i) => words(i.title))]);
+  const rest = ideas.filter((idea) => !words(idea).some((w) => taken.has(w)));
+  return rest;
+}
+
 /** free gaps (>= 45 min) from now until the end of the window, each with an idea */
-function freeGaps(items: TimelineItem[], fromMs: number, toMs: number, ideas: string[], date: string): TimelineItem[] {
+function freeGaps(items: TimelineItem[], fromMs: number, toMs: number, allIdeas: string[], date: string): TimelineItem[] {
+  const ideas = freeIdeasFor(items, allIdeas);
   const busy = items
     .filter((i) => i.kind !== 'free')
     .map((i) => ({ s: Date.parse(i.start), e: Date.parse(i.end) }))
