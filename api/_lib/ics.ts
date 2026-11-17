@@ -65,14 +65,18 @@ function findValueColon(line: string): number {
   return -1;
 }
 
+const tzCheck = new Map<string, boolean>();
 function validTz(tz: string | undefined, fallback: string): string {
   if (!tz) return fallback;
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: tz });
-    return tz;
-  } catch {
-    return fallback;
+  if (!tzCheck.has(tz)) {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: tz });
+      tzCheck.set(tz, true);
+    } catch {
+      tzCheck.set(tz, false);
+    }
   }
+  return tzCheck.get(tz) ? tz : fallback;
 }
 
 function parseDT(p: Prop, defaultTz: string): LocalDT | null {
@@ -108,7 +112,9 @@ function addMonths(date: string, n: number): string | null {
 }
 
 /** local start dates of a recurring event's occurrences (until rangeEnd) */
-function expand(rule: string, start: LocalDT, rangeEndDate: string, defaultTz: string): string[] {
+const dayDiff = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
+
+function expand(rule: string, start: LocalDT, rangeStartDate: string, rangeEndDate: string, defaultTz: string): string[] {
   const parts = Object.fromEntries(rule.split(';').map((kv) => kv.split('=') as [string, string]));
   const freq = parts.FREQ;
   const interval = Math.max(1, Number(parts.INTERVAL || 1));
@@ -133,13 +139,18 @@ function expand(rule: string, start: LocalDT, rangeEndDate: string, defaultTz: s
     return true;
   };
 
+  // Without COUNT the occurrences before the range don't matter: start close to it
+  // (an endless daily series from years ago would otherwise cost thousands of steps)
+  const lead = count === Infinity ? Math.max(0, dayDiff(start.date, rangeStartDate) - 7) : 0;
+
   if (freq === 'DAILY') {
-    for (let i = 0, d = start.date; i < 3000; i++, d = addDays(d, interval)) if (!push(d)) break;
+    const first = addDays(start.date, Math.floor(lead / interval) * interval);
+    for (let i = 0, d = first; i < 3000; i++, d = addDays(d, interval)) if (!push(d)) break;
   } else if (freq === 'WEEKLY') {
     const days = byDay.length ? byDay : [weekday(start.date)];
     // week starts Monday (WKST default)
     const mondayOffset = (weekday(start.date) + 6) % 7;
-    let weekStart = addDays(start.date, -mondayOffset);
+    let weekStart = addDays(start.date, -mondayOffset + Math.floor(lead / (7 * interval)) * 7 * interval);
     for (let w = 0; w < 1500; w++, weekStart = addDays(weekStart, 7 * interval)) {
       let stop = false;
       for (const wd of [...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))) {
@@ -170,6 +181,9 @@ function expand(rule: string, start: LocalDT, rangeEndDate: string, defaultTz: s
   return out;
 }
 
+/** upper bound of entries read from one calendar file (keeps a huge file from blocking the server) */
+export const MAX_EVENTS = 5_000;
+
 export function parseIcs(text: string, from: Date, to: Date, defaultTz = 'Europe/Berlin'): IcsEvent[] {
   const lines = unfold(text);
   const raw: Prop[][] = [];
@@ -179,6 +193,8 @@ export function parseIcs(text: string, from: Date, to: Date, defaultTz = 'Europe
     else if (line === 'END:VEVENT') {
       if (current) raw.push(current);
       current = null;
+      // a normal calendar has a few thousand entries; more is a broken or hostile file
+      if (raw.length >= MAX_EVENTS) break;
     } else if (current) {
       const p = parseLine(line);
       if (p) current.push(p);
@@ -197,6 +213,7 @@ export function parseIcs(text: string, from: Date, to: Date, defaultTz = 'Europe
   }
 
   const rangeEndDate = addDays(new Date(to.getTime()).toISOString().slice(0, 10), 1);
+  const rangeStartDate = addDays(new Date(from.getTime()).toISOString().slice(0, 10), -1);
   const out: IcsEvent[] = [];
   for (const props of raw) {
     const get = (n: string) => props.find((p) => p.name === n);
@@ -232,7 +249,7 @@ export function parseIcs(text: string, from: Date, to: Date, defaultTz = 'Europe
 
     const rrule = get('RRULE')?.value;
     const isOverride = !!get('RECURRENCE-ID');
-    const dates = rrule && !isOverride ? expand(rrule, start, rangeEndDate, defaultTz) : [start.date];
+    const dates = rrule && !isOverride ? expand(rrule, start, rangeStartDate, rangeEndDate, defaultTz) : [start.date];
 
     for (const date of dates) {
       if (start.allDay) {

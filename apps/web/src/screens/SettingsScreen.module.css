@@ -427,3 +427,4 @@
 .linked { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px; border-radius: 12px; background: var(--bg-tertiary); }
 .linkedText { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
 .linked .dot { margin: 0; }
+.inlineLink { border: 0; background: none; padding: 0; font: inherit; color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

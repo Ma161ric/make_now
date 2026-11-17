@@ -69,7 +69,10 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = new URL(event.notification.data?.url || '/today', self.location.origin).href;
+  // only pages of DayFlow itself
+  let url = new URL(event.notification.data?.url || '/today', self.location.origin);
+  if (url.origin !== self.location.origin) url = new URL('/today', self.location.origin);
+  url = url.href;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const c of list) {

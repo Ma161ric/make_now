@@ -140,8 +140,16 @@ export async function sendPush(sub: PushSubscriptionJSON, msg: PushMessage): Pro
 const devices = (uid: string) => db().collection(`push_subscriptions/${uid}/devices`);
 const deviceId = (endpoint: string) => createHmac('sha256', 'dayflow').update(endpoint).digest('base64url').slice(0, 32);
 
+/** a person has a few devices; more is not a person */
+export const MAX_DEVICES = 10;
+
 export async function saveSubscription(uid: string, sub: PushSubscriptionJSON, userAgent: string): Promise<void> {
-  await devices(uid).doc(deviceId(sub.endpoint)).set({
+  const existing = await devices(uid).orderBy('created_at').get();
+  const id = deviceId(sub.endpoint);
+  const others = existing.docs.filter((d) => d.id !== id);
+  // over the limit: the oldest device gives way
+  for (const d of others.slice(0, Math.max(0, others.length - (MAX_DEVICES - 1)))) await d.ref.delete();
+  await devices(uid).doc(id).set({
     endpoint: sub.endpoint,
     keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
     ua: userAgent.slice(0, 200),

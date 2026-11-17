@@ -159,17 +159,35 @@ export function listTasks(userId: string, filter?: (task: Task) => boolean): Tas
 }
 
 export async function updateTaskStatus(userId: string, taskId: string, status: TaskStatus, user?: User | null) {
+  // recurring task: done → the next one appears; reopened → that next one goes away again
+  const before = loadState(userId).tasks[taskId] as any;
+  const recurring = before ?? (user && (status === 'done' || status === 'open') ? await firestoreService.getTask(user.uid, taskId).catch(() => null) : null);
+  let repeatPatch: Record<string, unknown> = {};
+  if (recurring?.repeat) {
+    if (status === 'done' && !recurring.next_id) {
+      const nextId = await createNextOccurrence(userId, recurring, user).catch((e) => {
+        console.warn('next occurrence failed', e);
+        return null;
+      });
+      if (nextId) repeatPatch = { next_id: nextId };
+    } else if (status === 'open' && recurring.next_id) {
+      await removeNextOccurrence(userId, recurring.next_id, user).catch(() => {});
+      repeatPatch = { next_id: null };
+    }
+  }
+
+  // read again: creating the next one changed the stored tasks
   const state = loadState(userId);
   const task = state.tasks[taskId];
-  if (status === 'done') await createNextOccurrence(userId, taskId, task, user).catch((e) => console.warn('next occurrence failed', e));
   if (task) {
     task.status = status;
     task.updated_at = new Date();
     if (status === 'done') {
       task.completed_at = new Date();
     }
+    Object.assign(task, repeatPatch);
     saveState(userId, state);
-    
+
     // Sync to Firestore if user is logged in
     if (user) {
       await firestoreService.saveTask(user.uid, task);
@@ -180,19 +198,17 @@ export async function updateTaskStatus(userId: string, taskId: string, status: T
       status,
       updated_at: new Date(),
       ...(status === 'done' ? { completed_at: new Date() } : {}),
+      ...repeatPatch,
     });
   }
 }
 
-/** Recurring task done: the next one appears (planned from its day on). Only once per task. */
-async function createNextOccurrence(userId: string, taskId: string, local: Task | undefined, user?: User | null) {
-  let task: any = local;
-  if (!task && user) task = await firestoreService.getTask(user.uid, taskId);
-  if (!task?.repeat || task.next_created) return;
+/** Creates the next one of a recurring task (planned from its day on) and returns its id. */
+async function createNextOccurrence(userId: string, task: any, user?: User | null): Promise<string> {
   const now = new Date();
   const next: Task = {
     ...task,
-    id: (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+    id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     status: 'open',
     created_at: now,
     updated_at: now,
@@ -200,16 +216,24 @@ async function createNextOccurrence(userId: string, taskId: string, local: Task 
     not_before: nextOccurrence(task.repeat, now),
     due_at: undefined,
   };
+  delete (next as any).next_id;
   delete (next as any).next_created;
   delete (next as any).user_id;
   await saveTask(userId, next, user);
-  // mark the done one, so ticking it off twice does not create two
+  return next.id;
+}
+
+/** Undo: the task was ticked off by mistake, the follow-up must not stay around. */
+async function removeNextOccurrence(userId: string, nextId: string, user?: User | null) {
   const state = loadState(userId);
-  if (state.tasks[taskId]) {
-    (state.tasks[taskId] as any).next_created = true;
+  const next = state.tasks[nextId];
+  if (next && next.status !== 'open') return; // already worked on: leave it
+  if (next) {
+    next.status = 'cancelled';
+    next.updated_at = new Date();
     saveState(userId, state);
   }
-  if (user) await firestoreService.updateTask(user.uid, taskId, { next_created: true }).catch(() => {});
+  if (user) await firestoreService.updateTask(user.uid, nextId, { status: 'cancelled', updated_at: new Date() });
 }
 
 export async function saveDayPlan(userId: string, dayPlanState: DayPlanState, user?: User | null) {

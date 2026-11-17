@@ -51,8 +51,6 @@ interface Timeline {
 }
 
 const MIN = 60_000;
-/** Rückgängig is offered right after a change, not all day */
-const UNDO_VISIBLE_MS = 15 * MIN;
 const PX_PER_MIN = 0.9;
 /** Phones: a bit more compact, the day should not need endless scrolling */
 const pxPerMin = () => (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 0.7 : PX_PER_MIN);
@@ -103,7 +101,9 @@ export const HeuteScreen: React.FC = () => {
   const [now, setNow] = useState(() => new Date());
   const [done, setDone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  const [info, setInfo] = useState<string | null>(null);
+  // short confirmation at the bottom; after a change it offers "Rückgängig" for 20 seconds
+  const [info, setInfoState] = useState<{ text: string; undo: boolean } | null>(null);
+  const setInfo = (text: string | null, undo = false) => setInfoState(text ? { text, undo } : null);
   const [moving, setMoving] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
   // one-time hint that blocks can be tapped
@@ -232,6 +232,7 @@ export const HeuteScreen: React.FC = () => {
     setBusy(true);
     try {
       await api('plan', { day: 'today' });
+      setInfo('Der Rest des Tages ist neu geplant.', true);
       await load();
     } catch (e: any) {
       setError(e.message);
@@ -283,7 +284,7 @@ export const HeuteScreen: React.FC = () => {
             title: task.title,
             minutes: task.duration_max_minutes || task.duration_min_minutes || 30,
           });
-          setInfo(r.placed && r.start ? `„${sg.title}“ ist heute um ${hhmm(r.start)} eingeplant.` : `Heute ist keine Lücke mehr frei. „${sg.title}“ kommt morgen dran.`);
+          setInfo(r.placed && r.start ? `„${sg.title}“ ist heute um ${hhmm(r.start)} eingeplant.` : `Heute ist keine Lücke mehr frei. „${sg.title}“ kommt morgen dran.`, !!r.placed);
         } else {
           setInfo(`„${sg.title}“ ist in Aufgaben.`);
         }
@@ -327,7 +328,7 @@ export const HeuteScreen: React.FC = () => {
     setMoving(true);
     try {
       const r = await api<{ placed: boolean; start?: string }>('resolve', { task_id: item.task_id });
-      setInfo(r.placed && r.start ? `„${item.title}“ ist jetzt um ${hhmm(r.start)}.` : `„${item.title}“ passt heute nicht mehr. Kommt morgen dran.`);
+      setInfo(r.placed && r.start ? `„${item.title}“ ist jetzt um ${hhmm(r.start)}.` : `„${item.title}“ passt heute nicht mehr. Kommt morgen dran.`, true);
       await load();
     } catch (e: any) {
       setError(`Verschieben hat nicht geklappt: ${e.message}`);
@@ -342,7 +343,7 @@ export const HeuteScreen: React.FC = () => {
     setMoving(true);
     try {
       const r = await api<{ start?: string }>('move', 'remove' in change ? { id: item.id, remove: true } : { id: item.id, start: change.start.toISOString() });
-      setInfo('remove' in change ? `„${item.title}“ ist für heute raus.` : `„${item.title}“ ist jetzt um ${hhmm(r.start || change.start)}. DayFlow lässt den Block dort.`);
+      setInfo('remove' in change ? `„${item.title}“ ist für heute raus.` : `„${item.title}“ ist jetzt um ${hhmm(r.start || change.start)}.`, true);
       setEditing(null);
       await load();
     } catch (e: any) {
@@ -366,7 +367,7 @@ export const HeuteScreen: React.FC = () => {
       if (r.added > 0 && r.added < minutes) parts.push(`Nur ${r.added} min, danach kommt ein Termin.`);
       if (r.moved > 0) parts.push(`${r.moved} ${r.moved === 1 ? 'Block ist' : 'Blöcke sind'} nach hinten gerutscht.`);
       if (r.dropped.length) parts.push(`Passt heute nicht mehr: ${r.dropped.join(', ')}. Kommt morgen dran.`);
-      setInfo(parts.join(' '));
+      setInfo(parts.join(' '), r.added > 0);
       await load();
     } catch (e: any) {
       setError(`Verlängern hat nicht geklappt: ${e.message}`);
@@ -377,7 +378,7 @@ export const HeuteScreen: React.FC = () => {
 
   useEffect(() => {
     if (!info) return;
-    const t = setTimeout(() => setInfo(null), 5000);
+    const t = setTimeout(() => setInfoState(null), info.undo ? 20_000 : 5000);
     return () => clearTimeout(t);
   }, [info]);
 
@@ -436,7 +437,16 @@ export const HeuteScreen: React.FC = () => {
         </div>
       )}
       {error && timeline && <div className={styles.banner} role="alert">{error}</div>}
-      {info && <div className={styles.toast} role="status" onClick={() => setInfo(null)}>{info}</div>}
+      {info && (
+        <div className={`${styles.toast} ${info.undo ? styles.toastUndo : ''}`} role="status">
+          <span onClick={() => setInfo(null)}>{info.text}</span>
+          {info.undo && (
+            <button className={styles.toastAction} onClick={undo} disabled={moving}>
+              Rückgängig
+            </button>
+          )}
+        </div>
+      )}
       {review.length > 0 && (
         <section className={styles.review} aria-labelledby="review-h">
           <div className={styles.reviewHead}>
@@ -464,12 +474,6 @@ export const HeuteScreen: React.FC = () => {
           <button className={styles.textButton} onClick={() => resolve(c)} disabled={moving}>Verschieben</button>
         </div>
       ))}
-      {timeline?.undo && !info && t - new Date(timeline.undo.at).getTime() < UNDO_VISIBLE_MS && (
-        <div className={`${styles.banner} ${styles.bannerSlim} ${styles.undoBanner}`} role="status">
-          <span>{timeline.undo.label}</span>
-          <button className={styles.textButton} onClick={undo} disabled={moving}>Rückgängig</button>
-        </div>
-      )}
 
       <div className={styles.layout}>
         <section aria-label="Jetzt" className={styles.nowCard}>
