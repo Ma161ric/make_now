@@ -54,7 +54,7 @@ export const SettingsScreen: React.FC = () => {
       </section>
 
       <DataSettings onDeleted={async () => {
-        try { localStorage.removeItem('make-now-state'); localStorage.removeItem('onboarding-completed'); } catch { /* ignore */ }
+        // logout clears this device (chat, cached plans, local state)
         await logout().catch(() => {});
         navigate('/login');
       }} />
@@ -115,6 +115,26 @@ const DataSettings: React.FC<{ onDeleted: () => void }> = ({ onDeleted }) => {
     }
   };
 
+  const download = async () => {
+    setBusy(true);
+    try {
+      const data = await account<unknown>({ action: 'export' });
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dayflow-daten-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setMessage('Deine Daten sind heruntergeladen.');
+    } catch (e: any) {
+      setMessage(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const deleteAll = async () => {
     const typed = window.prompt(
       'Dein Konto und alle Daten werden endgültig gelöscht: Aufgaben, Notizen, Pläne, gelernte Zeiten und die Kalender-Verbindung. ' +
@@ -140,6 +160,9 @@ const DataSettings: React.FC<{ onDeleted: () => void }> = ({ onDeleted }) => {
         hint={`Wann du Aufgaben wirklich fertig hast und wie oft du verlängerst. Daraus lernt DayFlow, wie lange Dinge dauern.${learned !== null ? ` Gespeichert: ${learned} ${learned === 1 ? 'Eintrag' : 'Einträge'}.` : ''} ${learningText(learning)}`}
       >
         <button className={styles.ghost} onClick={forget} disabled={busy || learned === 0}>Zurücksetzen</button>
+      </Row>
+      <Row label="Daten herunterladen" hint="Alles, was DayFlow über dich gespeichert hat, als Datei: Konto, Aufgaben, Notizen, Pläne, gelernte Zeiten und Einstellungen.">
+        <button className={styles.ghost} onClick={download} disabled={busy}>Herunterladen</button>
       </Row>
       <Row label="Konto löschen" hint="Löscht dein Konto und alles, was DayFlow über dich gespeichert hat. Das geht nicht rückgängig.">
         <button className={`${styles.ghost} ${styles.danger}`} onClick={deleteAll} disabled={busy}>Alles löschen</button>

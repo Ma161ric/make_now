@@ -160,9 +160,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const now = new Date();
     const nowText = now.toLocaleString('de-DE', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const today = now.toLocaleDateString('en-CA', { timeZone: tz });
 
-    await checkQuota(uid, today, verified);
+    // the counter runs on the server's day (UTC) like notes and voice: a made-up time zone can't reset it
+    await checkQuota(uid, now.toISOString().slice(0, 10), verified);
     const tasks = await openTasksSummary(uid);
 
     const llm = await complete(

@@ -25,7 +25,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
-import { createState, verifyState } from './_lib/oauthState.js';
+import { createState, verifyState, newBrowserNonce, STATE_COOKIE } from './_lib/oauthState.js';
 import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, placeTaskToday, resolveConflict, undoLast, logDone, moveBlock, UNDO_WINDOW_MS, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 import { providerOf, NotConnectedError, NeedsReauthError, newFeedToken, readCalendarLink, openWorkspace } from './_lib/workspace.js';
 import { buildIcs, normalizeCalendarUrl } from './_lib/ics.js';
@@ -79,12 +79,18 @@ function sanitizeSettings(input: any, current: CalendarSettings): CalendarSettin
   return s;
 }
 
+/** ids of tasks and blocks: no slashes or other path tricks in Firestore paths */
+const validId = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(v);
+
 async function handleCallback(req: VercelRequest, res: VercelResponse) {
   const { code, state, error } = req.query as Record<string, string | undefined>;
   const back = (status: string) => res.redirect(302, appUrl(`/settings?calendar=${status}`));
 
+  // the flow is single use: the cookie goes away either way
+  res.setHeader('Set-Cookie', `${STATE_COOKIE}=; Path=/api; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
   if (error) return back('denied');
-  const uid = state ? verifyState(state) : null;
+  const cookieNonce = (req.cookies || {})[STATE_COOKIE];
+  const uid = state ? verifyState(state, cookieNonce) : null;
   if (!uid || !code) return back('error');
 
   try {
@@ -173,7 +179,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Remember the browser's time zone for planning
         const tz = req.body?.timezone;
         if (isValidTimeZone(tz)) await ref.set({ timezone: tz }, { merge: true });
-        return res.status(200).json({ url: google.authUrl(createState(uid)) });
+        // ties the Google consent to this browser (see verifyState)
+        const nonce = newBrowserNonce();
+        res.setHeader('Set-Cookie', `${STATE_COOKIE}=${nonce}; Path=/api; Max-Age=600; HttpOnly; Secure; SameSite=Lax`);
+        return res.status(200).json({ url: google.authUrl(createState(uid, nonce)) });
       }
 
       case 'status': {
@@ -230,6 +239,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       case 'place': {
         const { task_id, title } = req.body || {};
+        if (!validId(task_id)) throw new HttpError(400, 'task_id fehlt');
         const minutes = Number(req.body?.minutes);
         if (typeof task_id !== 'string' || !task_id || typeof title !== 'string' || !title.trim()) throw new HttpError(400, 'task_id und title fehlen');
         if (!Number.isInteger(minutes) || minutes < 5 || minutes > 480) throw new HttpError(400, 'minutes: 5-480');
@@ -239,7 +249,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'extend': {
         const taskId = req.body?.task_id;
         const minutes = Number(req.body?.minutes);
-        if (typeof taskId !== 'string' || !taskId || taskId === 'free_time') throw new HttpError(400, 'task_id fehlt');
+        if (!validId(taskId) || taskId === 'free_time') throw new HttpError(400, 'task_id fehlt');
         if (![15, 30, 60].includes(minutes)) throw new HttpError(400, 'minutes: 15, 30 oder 60');
         return res.status(200).json(await extendTask(uid, taskId, minutes));
       }
@@ -266,13 +276,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       case 'resolve': {
         const taskId = req.body?.task_id;
-        if (typeof taskId !== 'string' || !taskId) throw new HttpError(400, 'task_id fehlt');
+        if (!validId(taskId)) throw new HttpError(400, 'task_id fehlt');
         return res.status(200).json(await resolveConflict(uid, taskId));
       }
 
       case 'move': {
         const { id, start, remove } = req.body || {};
-        if (typeof id !== 'string' || !id) throw new HttpError(400, 'id fehlt');
+        if (!validId(id)) throw new HttpError(400, 'id fehlt');
         if (remove === true) return res.status(200).json(await moveBlock(uid, id, { remove: true }));
         const d = new Date(start);
         if (typeof start !== 'string' || isNaN(d.getTime())) throw new HttpError(400, 'start fehlt');
@@ -282,7 +292,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'done':
       case 'missed': {
         const taskId = req.body?.task_id;
-        if (typeof taskId !== 'string' || !taskId) throw new HttpError(400, 'task_id fehlt');
+        if (!validId(taskId)) throw new HttpError(400, 'task_id fehlt');
         await logDone(uid, taskId, new Date(), action as 'done' | 'missed');
         return res.status(200).json({ ok: true });
       }
@@ -377,9 +387,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       case 'disconnect': {
         const snap = await ref.get();
-        const token = (snap.data() as any)?.refresh_token;
-        if (token) await google.revokeToken(token);
+        const old = snap.data() as any;
+        if (old?.refresh_token) await google.revokeToken(old.refresh_token);
         await ref.delete();
+        // your planning settings stay, only the connection (and its tokens) goes
+        if (old?.settings) await ref.set({ settings: old.settings, ...(old.timezone ? { timezone: old.timezone } : {}) });
         return res.status(200).json({ connected: false });
       }
 

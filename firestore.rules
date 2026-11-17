@@ -16,7 +16,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      // the app keeps nothing in the user document itself, only in the collections below
+      allow read: if isOwner(userId);
+      allow write: if false;
 
       match /items/{taskId} {
         allow read, delete: if isOwner(userId);
