@@ -18,6 +18,7 @@ import { PreferencesProvider } from './context/PreferencesContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { OnboardingGuard } from './components/OnboardingGuard';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { watchForUpdates } from './utils/appUpdate';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
@@ -61,4 +62,6 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
+  // back from the background after a deploy: switch to the new version at a calm moment
+  watchForUpdates();
 }
