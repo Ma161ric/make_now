@@ -666,3 +666,17 @@
   .timelineHeader { margin-bottom: 10px; }
   .allDay { margin-bottom: 10px; }
 }
+
+.toastUndo { display: flex; align-items: center; gap: 14px; width: min(520px, calc(100% - 32px)); justify-content: space-between; }
+.toastAction {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--hero-accent, var(--accent-primary));
+  color: var(--hero-bg);
+  cursor: pointer;
+}

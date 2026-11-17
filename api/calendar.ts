@@ -26,7 +26,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { requireUser, HttpError } from './_lib/firebaseAdmin.js';
 import * as google from './_lib/google.js';
 import { createState, verifyState } from './_lib/oauthState.js';
-import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, placeTaskToday, resolveConflict, undoLast, logDone, moveBlock, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
+import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, extendTask, placeTaskToday, resolveConflict, undoLast, logDone, moveBlock, UNDO_WINDOW_MS, DEFAULT_SETTINGS, type CalendarConnection, type CalendarSettings } from './_lib/planner.js';
 import { providerOf, NotConnectedError, NeedsReauthError, newFeedToken, readCalendarLink, openWorkspace } from './_lib/workspace.js';
 import { buildIcs, normalizeCalendarUrl } from './_lib/ics.js';
 import { db } from './_lib/firebaseAdmin.js';
@@ -195,6 +195,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           timezone: c.timezone,
           settings: { ...DEFAULT_SETTINGS, ...(c.settings || {}) },
           last_plan: c.last_plan ? { ...c.last_plan, at: c.last_plan.at?.toDate?.()?.toISOString() ?? null } : null,
+          // the last change, while it can still be undone
+          undo: c.undo && Date.now() - Date.parse(c.undo.at) <= UNDO_WINDOW_MS ? { label: c.undo.label, at: c.undo.at } : null,
         });
       }
 
@@ -310,6 +312,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ connected: true, provider: 'local' });
       }
 
+      case 'feed-rotate': {
+        // the old subscribe link stops working (e.g. it was shared by mistake)
+        const snap = await ref.get();
+        if (providerOf(snap.data() as CalendarConnection | undefined) !== 'local') throw new HttpError(409, 'Den Abo-Link gibt es nur ohne Google-Verbindung');
+        const token = newFeedToken();
+        await ref.set({ feed_token: token }, { merge: true });
+        return res.status(200).json({ feed_url: appUrl(`/api/feed/${token}`) });
+      }
+
       case 'links': {
         const snap = await ref.get();
         const c = snap.data() as CalendarConnection | undefined;
@@ -355,6 +366,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       case 'push-test': {
+        // no notification spam: one test every 30 seconds
+        const stateRef = db().doc(`push_state/${uid}`);
+        const last = Number((await stateRef.get()).data()?.last_test || 0);
+        if (Date.now() - last < 30_000) throw new HttpError(429, 'Kurz warten, dann nochmal testen');
+        await stateRef.set({ last_test: Date.now() }, { merge: true });
         const n = await pushToUser(uid, { title: 'DayFlow', body: 'So sehen deine Erinnerungen aus.', url: '/today', tag: 'test' });
         return res.status(200).json({ sent: n });
       }

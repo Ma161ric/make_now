@@ -171,10 +171,14 @@ async function saveUndo(ws: Workspace, label: string, date: string, blocks: Bloc
   await connectionRef(ws.uid).set({ undo: snapshot }, { merge: true });
 }
 
-export async function undoLast(uid: string): Promise<{ undone: string | null }> {
+/** how long the last change can be undone */
+export const UNDO_WINDOW_MS = 15 * 60_000;
+
+export async function undoLast(uid: string, now = new Date()): Promise<{ undone: string | null }> {
   const ws = await openWorkspace(uid);
   const snap = ws.conn.undo;
   if (!snap) return { undone: null };
+  if (now.getTime() - Date.parse(snap.at) > UNDO_WINDOW_MS) throw new HttpError(410, 'Die letzte Änderung ist schon länger als 15 Minuten her');
   const { from, to } = dayRange(snap.date, ws.tz);
   const current = (await ws.blocks.list(from, to)).filter(isPlanned);
   for (const b of current) await ws.blocks.remove(b);

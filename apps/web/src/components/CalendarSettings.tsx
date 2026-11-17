@@ -47,6 +47,7 @@ interface Status {
     sport?: { start: string; end: string } | null;
     skipped_task_ids: string[];
   } | null;
+  undo?: { label: string; at: string } | null;
 }
 
 const CALLBACK_MESSAGES: Record<string, string> = {
@@ -149,6 +150,14 @@ export const CalendarSettings: React.FC = () => {
       setMessage(urls.length > (status?.ics_urls?.length || 0) ? 'Kalender hinzugefügt. Deine Termine werden jetzt berücksichtigt.' : 'Gespeichert.');
     });
 
+  const rotateFeed = () =>
+    run(async () => {
+      if (!window.confirm('Neuen Abo-Link erzeugen? Der alte funktioniert dann nicht mehr.')) return;
+      const r = await call<{ feed_url: string }>('feed-rotate', {});
+      setStatus((st) => (st ? { ...st, feed_url: r.feed_url } : st));
+      setMessage('Neuer Link ist da. Abonniere ihn auf deinen Geräten neu.');
+    });
+
   const copyFeed = async () => {
     if (!status?.feed_url) return;
     try {
@@ -159,6 +168,13 @@ export const CalendarSettings: React.FC = () => {
       window.prompt('Link kopieren:', status.feed_url);
     }
   };
+
+  const undoLast = () =>
+    run(async () => {
+      const r = await call<{ undone: string | null }>('undo', {});
+      setMessage(r.undone ? `Rückgängig gemacht: ${r.undone}.` : 'Es gab nichts mehr zurückzunehmen.');
+      await load();
+    });
 
   const disconnect = () =>
     run(async () => {
@@ -244,6 +260,11 @@ export const CalendarSettings: React.FC = () => {
                     Tippen und „Abonnieren“ bestätigen, fertig. Falls nichts passiert: Link kopieren, dann auf dem iPhone
                     Einstellungen → Apps → Kalender → Kalender-Accounts → Account hinzufügen → Andere → Kalenderabo hinzufügen.
                   </p>
+                  <p className={styles.hint}>
+                    Link aus Versehen geteilt?{' '}
+                    <button className={styles.inlineLink} onClick={rotateFeed} disabled={busy}>Neuen Link erzeugen</button>. Der alte hört dann auf zu
+                    funktionieren, das Abo auf dem iPhone musst du neu anlegen.
+                  </p>
                 </div>
 
                 <div className={styles.step}>
@@ -299,6 +320,14 @@ export const CalendarSettings: React.FC = () => {
             ) : (
               <Row label={<><span className={styles.dot} aria-hidden="true" />Verbunden</>} hint={`Zeitzone ${status.timezone}`}>
                 <button className={styles.ghost} onClick={disconnect} disabled={busy}>Trennen</button>
+              </Row>
+            )}
+            {status.undo && Date.now() - Date.parse(status.undo.at) < 15 * 60_000 && (
+              <Row
+                label="Letzte Änderung zurücknehmen"
+                hint={`${status.undo.label} · ${Math.max(1, Math.round((Date.now() - Date.parse(status.undo.at)) / 60_000))} min her. Geht bis 15 Minuten danach.`}
+              >
+                <button className={styles.ghost} onClick={undoLast} disabled={busy}>Rückgängig</button>
               </Row>
             )}
             <Row label="Jetzt planen" hint="Ersetzt die geplanten Blöcke des Tages durch einen neuen Plan. Blöcke, die du selbst verschoben hast, bleiben, wo sie sind.">
