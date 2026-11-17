@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { complete, prompt, extractJson } from './_lib/llm.js';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db, requireUser, HttpError } from './_lib/firebaseAdmin.js';
+import { db, requireUserInfo, HttpError, UNVERIFIED_AI_LIMIT, unverifiedHint } from './_lib/firebaseAdmin.js';
 import { toSchemaResponse, type FlatItem } from './_lib/extractionFormat.js';
 import { validateExtraction } from '../packages/core/src/validation.js';
 
@@ -15,8 +15,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
   // Signed-in users only: this endpoint spends the AI key
   let uid: string;
+  let verified = false;
   try {
-    uid = await requireUser(req);
+    ({ uid, verified } = await requireUserInfo(req));
   } catch (e) {
     const status = e instanceof HttpError ? e.status : 401;
     return res.status(status).json({ error: 'Bitte anmelden' });
@@ -31,8 +32,12 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   const date = new Date().toISOString().slice(0, 10);
   const ref = db().doc(`ai_usage/${uid}_${date}`);
   await ref.set({ uid, date, extract: FieldValue.increment(1) }, { merge: true });
-  if (((await ref.get()).data()?.extract ?? 0) > DAILY_LIMIT()) {
+  const usage = (await ref.get()).data() || {};
+  if ((usage.extract ?? 0) > DAILY_LIMIT()) {
     return res.status(429).json({ error: 'Tageslimit erreicht, morgen geht es weiter.' });
+  }
+  if (!verified && (usage.chat ?? 0) + (usage.extract ?? 0) + (usage.transcribe ?? 0) > UNVERIFIED_AI_LIMIT) {
+    return res.status(429).json({ error: unverifiedHint });
   }
   const allowClaude = true;
 

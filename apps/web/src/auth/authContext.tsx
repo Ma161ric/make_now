@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   sendPasswordResetEmail,
+  sendEmailVerification,
   signOut,
   updateProfile,
   onAuthStateChanged,
@@ -141,6 +142,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await updateProfile(userCredential.user, {
         displayName,
       });
+      // confirmation mail: until it is confirmed, the AI can only be used a little
+      await sendEmailVerification(userCredential.user).catch(() => {});
 
       // Firebase auth state listener will handle setting user
     } catch (err) {
