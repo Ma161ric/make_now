@@ -841,11 +841,16 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
           <span>{hhmm(new Date(h))}</span>
         </div>
       ))}
-      {layoutLanes(upcoming).map(({ item: i, lane, lanes }) => {
+      {(() => { const bottoms = new Map<string, number>(); return layoutLanes(upcoming).map(({ item: i, lane, lanes }) => {
         const s = new Date(i.start).getTime();
         const e = new Date(i.end).getTime();
-        const top = y(s);
+        // a short block gets a minimum height so its name stays readable; the next block
+        // in the same column starts below it instead of covering it
+        const above = lanes > 1 ? (bottoms.get(String(lane)) ?? -Infinity) : Math.max(-Infinity, ...bottoms.values());
+        const top = Math.max(y(s), above + 3);
         const h = Math.max(22, y(e) - top - 3);
+        if (lanes === 1) bottoms.clear();
+        bottoms.set(String(lane), top + h);
         const isDone = !!i.task_id && done.has(i.task_id);
         const movable = !!i.id && !isDone && i.kind !== 'free' && i.kind !== 'busy';
         return (
@@ -877,7 +882,7 @@ const DayTimeline: React.FC<{ items: Item[]; now: number; windowEnd?: string; do
             )}
           </div>
         );
-      })}
+      }); })()}
       {now >= fromT && <div className={styles.nowLine} style={{ top: y(now) }} aria-hidden="true" />}
     </div>
   );

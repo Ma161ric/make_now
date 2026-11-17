@@ -14,6 +14,7 @@ html, body {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  overscroll-behavior-y: none; /* iOS bounces the root scroller, not body: header stays put */
 }
 body {
   -webkit-tap-highlight-color: transparent;
