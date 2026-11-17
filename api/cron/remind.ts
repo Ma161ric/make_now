@@ -1,7 +1,7 @@
 /**
- * Reminders as push notifications. Called every few minutes by a scheduler
- * (GitHub Actions, see .github/workflows/remind.yml) with
- * `Authorization: Bearer $CRON_SECRET`.
+ * Reminders as push notifications. Called every few minutes by the GitHub
+ * Actions workflow .github/workflows/remind.yml, which proves itself with a
+ * GitHub-signed token (no shared secret to set up).
  *
  *  - shortly before each DayFlow block (task, sport, appointment): "In 10 Min: …"
  *  - in the evening, once: "Wie lief dein Tag?" if planned tasks are still open
@@ -10,6 +10,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { db } from '../_lib/firebaseAdmin.js';
 import { openWorkspace } from '../_lib/workspace.js';
 import { pushToUser } from '../_lib/webpush.js';
+import { verifyGithubOidc } from '../_lib/githubOidc.js';
 import { localDateString, zonedTimeToUtc } from '../../packages/core/src/freeSlotScheduling.js';
 
 const MIN = 60_000;
@@ -19,8 +20,15 @@ const EVENING_HOUR = 19;
 const hhmm = (d: Date, tz: string) => d.toLocaleTimeString('de-DE', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // either Vercel's cron secret, or the signed token of this repo's GitHub workflow (no secret needed)
+  const auth = String(req.headers.authorization || '');
   const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.authorization !== `Bearer ${secret}`) return res.status(401).json({ error: 'Unauthorized' });
+  const bySecret = !!secret && auth === `Bearer ${secret}`;
+  if (!bySecret) {
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    const check = token ? await verifyGithubOidc(token) : { ok: false };
+    if (!check.ok) return res.status(401).json({ error: 'Unauthorized' });
+  }
 
   const now = new Date();
   const users = await db().collection('push_subscriptions').listDocuments();
