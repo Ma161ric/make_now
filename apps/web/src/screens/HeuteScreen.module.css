@@ -599,3 +599,70 @@
   .capActions > .capPrimary, .capActions > .capSecondary { flex: 1; }
   .capDrop { order: -1; }
 }
+
+/* ---------- calmer top of the page ---------- */
+.bannerSlim { padding: 8px 14px; font-size: 13.5px; border-radius: 12px; }
+.bannerSlim > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.moveHint {
+  margin: 0 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ---------- ticking off feels like something ---------- */
+.doneCheck { flex-shrink: 0; }
+.doneCheck circle { fill: none; stroke: currentColor; stroke-width: 2; opacity: 0.35; }
+.doneCheck path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  animation: drawCheck 0.45s 0.05s ease-out forwards;
+}
+.doneLabel { animation: popIn 0.3s ease-out; }
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+@keyframes popIn { from { transform: scale(0.92); opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) {
+  .doneCheck path { animation: none; stroke-dashoffset: 0; }
+  .doneLabel { animation: none; }
+}
+
+/* ---------- phones: smaller Jetzt card, so the day is visible without scrolling ---------- */
+@media (max-width: 900px) {
+  .nowCard { min-height: 0; }
+  .nowInner { padding: 22px 22px 20px; gap: 16px; }
+  .nowTitle { font-size: 30px; margin-top: 8px; -webkit-line-clamp: 2; }
+  .nowSub { font-size: 15px; }
+  .countdownValue { font-size: 40px; }
+  .nowBottom { gap: 12px; }
+  .actions :global(.button) { min-height: 46px; }
+}
+
+.pinNow {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+@media (max-width: 900px) {
+  .date { margin-bottom: 10px; }
+  .banner { margin-bottom: 10px; }
+  .layout { gap: 12px; }
+  .nowInner { padding: 20px 20px 18px; gap: 14px; }
+  .nowSub { margin-top: 8px; font-size: 14.5px; line-height: 1.45; }
+  .countdownValue { font-size: 36px; }
+  .timelineCard { padding: 16px; }
+  .timelineHeader { margin-bottom: 10px; }
+  .allDay { margin-bottom: 10px; }
+}

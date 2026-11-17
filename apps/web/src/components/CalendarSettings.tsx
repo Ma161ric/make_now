@@ -19,6 +19,8 @@ interface Settings {
   sportLabel: string;
   bufferBeforeEventsMinutes?: number;
   eveningReview?: boolean;
+  latestHour?: number;
+  remindBlocks?: boolean;
 }
 
 interface PlanBlock {
@@ -334,15 +336,19 @@ export const CalendarSettings: React.FC = () => {
             <Row label="Jeden Abend automatisch planen" hint="Gegen 20 Uhr wird der nächste Tag geplant.">
               <Switch checked={s.enabled} onChange={(v) => save({ enabled: v })} disabled={busy} label="Jeden Abend automatisch planen" />
             </Row>
-            <Row label="Abends nachfragen" hint="Ab 19 Uhr fragt Heute, welche Aufgaben du geschafft hast. Der Rest wird wieder eingeplant.">
-              <Switch checked={s.eveningReview !== false} onChange={(v) => save({ eveningReview: v })} disabled={busy} label="Abends nachfragen" />
-            </Row>
             <Row label="Zeitfenster" hint="Nur in diesem Fenster werden Aufgaben eingeplant.">
               <div className={styles.inline}>
                 <HourSelect value={s.windowStartHour} min={0} max={Math.max(0, s.windowEndHour - 1)} onChange={(v) => save({ windowStartHour: v })} disabled={busy} label="Beginn" />
                 <span className={styles.muted}>bis</span>
                 <HourSelect value={s.windowEndHour} min={Math.min(24, s.windowStartHour + 1)} max={24} onChange={(v) => save({ windowEndHour: v })} disabled={busy} label="Ende" />
               </div>
+            </Row>
+            <Row label="Kurze Aufgaben auch später" hint="Aufgaben bis 30 min dürfen nach dem Zeitfenster noch rein, aber nie nach dieser Uhrzeit. Lange Aufgaben bleiben im Zeitfenster.">
+              <select className={styles.select} value={Math.max(s.latestHour ?? 23, s.windowEndHour)} onChange={(e) => save({ latestHour: Number(e.target.value) })} disabled={busy} aria-label="Kurze Aufgaben bis spätestens">
+                {Array.from({ length: 24 - s.windowEndHour + 1 }, (_, i) => s.windowEndHour + i).map((h) => (
+                  <option key={h} value={h}>{h === s.windowEndHour ? 'nein, nur im Zeitfenster' : h === 24 ? 'bis Mitternacht' : `bis ${h}:00`}</option>
+                ))}
+              </select>
             </Row>
             <Row label="Stunden pro Tag" hint="So viel Zeit für Aufgaben plant DayFlow höchstens ein.">
               <div className={styles.inline}>
@@ -380,6 +386,8 @@ export const CalendarSettings: React.FC = () => {
               </select>
             </Row>
           </section>
+
+          <Reminders remindBlocks={s.remindBlocks !== false} eveningReview={s.eveningReview !== false} onChange={save} busy={busy} />
 
           <section className={styles.section} aria-labelledby="life-h">
             <h2 id="life-h">Sport & Freizeit</h2>
@@ -465,6 +473,126 @@ export const Switch: React.FC<{ checked: boolean; onChange: (v: boolean) => void
     <span />
   </button>
 );
+
+// ---------------------------------------------------------------- reminders
+
+const b64ToBytes = (b64: string) => {
+  const s = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (b64.length % 4)) % 4));
+  return Uint8Array.from(s, (c) => c.charCodeAt(0));
+};
+const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+
+type PushState = 'loading' | 'unsupported' | 'ios-install' | 'denied' | 'off' | 'on';
+
+const Reminders: React.FC<{ remindBlocks: boolean; eveningReview: boolean; onChange: (p: Partial<Settings>) => void; busy: boolean }> = ({ remindBlocks, eveningReview, onChange, busy }) => {
+  const [state, setState] = useState<PushState>('loading');
+  const [working, setWorking] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      setState(isIos() && !isStandalone() ? 'ios-install' : 'unsupported');
+      return;
+    }
+    if (Notification.permission === 'denied') return setState('denied');
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
+    setState(sub ? 'on' : 'off');
+  }, []);
+  useEffect(() => {
+    refresh().catch(() => setState('unsupported'));
+  }, [refresh]);
+
+  const enable = async () => {
+    setWorking(true);
+    setNote(null);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setState(permission === 'denied' ? 'denied' : 'off');
+        return;
+      }
+      const reg = (await navigator.serviceWorker.getRegistration()) || (await navigator.serviceWorker.register('/sw.js'));
+      await navigator.serviceWorker.ready;
+      const { public_key } = await call<{ public_key: string }>('push');
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(public_key) });
+      await call('push-subscribe', { subscription: sub.toJSON() });
+      setState('on');
+      setNote('Erinnerungen sind an. Probier es mit „Test senden“.');
+    } catch (e: any) {
+      setNote(`Hat nicht geklappt: ${e?.message || e}`);
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const disable = async () => {
+    setWorking(true);
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await call('push-unsubscribe', { endpoint: sub.endpoint }).catch(() => {});
+        await sub.unsubscribe();
+      }
+      setState('off');
+      setNote(null);
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const test = async () => {
+    setWorking(true);
+    try {
+      const r = await call<{ sent: number }>('push-test', {});
+      setNote(r.sent ? 'Gesendet. Die Mitteilung sollte gleich kommen.' : 'Kein Gerät erreicht. Schalte die Erinnerungen einmal aus und wieder an.');
+    } catch (e: any) {
+      setNote(e.message);
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  return (
+    <section className={styles.section} aria-labelledby="remind-h">
+      <h2 id="remind-h">Erinnerungen</h2>
+      {state === 'ios-install' ? (
+        <p className={styles.hint}>
+          Auf dem iPhone gehen Mitteilungen nur, wenn DayFlow auf dem Home-Bildschirm liegt: in Safari auf Teilen tippen, dann „Zum
+          Home-Bildschirm“. Danach DayFlow von dort öffnen und hier die Erinnerungen einschalten.
+        </p>
+      ) : state === 'unsupported' ? (
+        <p className={styles.hint}>Dieser Browser kann keine Mitteilungen anzeigen.</p>
+      ) : state === 'denied' ? (
+        <p className={styles.hint}>
+          Mitteilungen sind für DayFlow blockiert. Du kannst sie in den Einstellungen deines Geräts oder Browsers wieder erlauben.
+        </p>
+      ) : (
+        <Row label="Mitteilungen auf diesem Gerät" hint={state === 'on' ? 'An. Jedes Gerät schaltest du einzeln ein.' : 'DayFlow meldet sich kurz vor deinen Blöcken und abends.'}>
+          {state === 'on' ? (
+            <div className={styles.inline}>
+              <button className={styles.ghost} onClick={test} disabled={working}>Test senden</button>
+              <button className={styles.ghost} onClick={disable} disabled={working}>Ausschalten</button>
+            </div>
+          ) : (
+            <button className="button" onClick={enable} disabled={working || state === 'loading'}>
+              {working ? 'Einen Moment …' : 'Einschalten'}
+            </button>
+          )}
+        </Row>
+      )}
+      {note && <p className={styles.notice} role="status">{note}</p>}
+      <Row label="Kurz vor jedem Block" hint="Etwa 10 Minuten vorher, damit du rechtzeitig loslegst.">
+        <Switch checked={remindBlocks} onChange={(v) => onChange({ remindBlocks: v })} disabled={busy} label="Kurz vor jedem Block erinnern" />
+      </Row>
+      <Row label="Abends nachfragen" hint="Ab 19 Uhr fragt DayFlow, welche Aufgaben du geschafft hast. Der Rest wird wieder eingeplant.">
+        <Switch checked={eveningReview} onChange={(v) => onChange({ eveningReview: v })} disabled={busy} label="Abends nachfragen" />
+      </Row>
+    </section>
+  );
+};
 
 const HourSelect: React.FC<{ value: number; min: number; max: number; disabled: boolean; onChange: (v: number) => void; label: string }> = ({
   value,

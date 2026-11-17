@@ -10,7 +10,7 @@ import { useAuth } from '../auth/authContext';
 import { updateTaskStatus, saveTask } from '../storage';
 import { extractFromNoteCloud } from '../firebase/functionsService';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
-import { IconArrowRight, IconCheck, IconX } from '../components/Icons';
+import { IconArrowRight, IconX } from '../components/Icons';
 import { MicButton } from '../components/MicButton';
 import { loadSuggestions, saveSuggestions, fromExtraction, suggestionToTask, type Suggestion } from '../utils/suggestions';
 import { layoutLanes } from '../utils/lanes';
@@ -43,6 +43,7 @@ interface Timeline {
   provider?: 'google' | 'local';
   undo?: { label: string; at: string } | null;
   evening_review?: boolean;
+  tomorrow_first?: { title: string; start: string } | null;
   date?: string;
   window?: { start: string; end: string };
   all_day?: string[];
@@ -50,6 +51,8 @@ interface Timeline {
 }
 
 const MIN = 60_000;
+/** Rückgängig is offered right after a change, not all day */
+const UNDO_VISIBLE_MS = 15 * MIN;
 const PX_PER_MIN = 0.9;
 /** Phones: a bit more compact, the day should not need endless scrolling */
 const pxPerMin = () => (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 0.7 : PX_PER_MIN);
@@ -103,6 +106,14 @@ export const HeuteScreen: React.FC = () => {
   const [info, setInfo] = useState<string | null>(null);
   const [moving, setMoving] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
+  // one-time hint that blocks can be tapped
+  const [hintSeen, setHintSeen] = useState(() => {
+    try { return localStorage.getItem('dayflow-hint-move') === '1'; } catch { return true; }
+  });
+  const hideMoveHint = () => {
+    setHintSeen(true);
+    try { localStorage.setItem('dayflow-hint-move', '1'); } catch { /* ignore */ }
+  };
   const [note, setNote] = useState('');
   const [noteState, setNoteState] = useState<{ kind: 'saving' | 'saved' | 'error'; count?: number } | null>(null);
   // what the last note turned into: confirm it right here instead of in the Assistent
@@ -200,6 +211,8 @@ export const HeuteScreen: React.FC = () => {
     if (!evening) return [];
     return [...tasks.values()].filter((i) => new Date(i.start).getTime() <= t && !doneIds.has(i.task_id!) && !answered.includes(i.task_id!));
   }, [timeline?.evening_review, answered, items, t, doneIds]);
+
+  const showMoveHint = !hintSeen && items.some((i) => i.id && i.kind !== 'free' && new Date(i.end).getTime() > t);
 
   const conflicts = useMemo(
     () => items.filter((i) => i.conflict && i.task_id && new Date(i.end).getTime() > t && !doneIds.has(i.task_id)),
@@ -446,13 +459,13 @@ export const HeuteScreen: React.FC = () => {
       )}
       {editing && <MoveSheet item={editing} busy={moving} onClose={() => setEditing(null)} onMove={(c) => moveTo(editing, c)} />}
       {conflicts.map((c) => (
-        <div key={`c-${c.start}-${c.task_id}`} className={styles.banner} role="alert">
-          <span>„{c.title}“ überschneidet sich mit „{c.conflict}“.</span>
+        <div key={`c-${c.start}-${c.task_id}`} className={`${styles.banner} ${styles.bannerSlim}`} role="alert">
+          <span>„{short(c.title, 40)}“ überschneidet sich mit „{short(c.conflict || '', 30)}“</span>
           <button className={styles.textButton} onClick={() => resolve(c)} disabled={moving}>Verschieben</button>
         </div>
       ))}
-      {timeline?.undo && !info && (
-        <div className={`${styles.banner} ${styles.undoBanner}`} role="status">
+      {timeline?.undo && !info && t - new Date(timeline.undo.at).getTime() < UNDO_VISIBLE_MS && (
+        <div className={`${styles.banner} ${styles.bannerSlim} ${styles.undoBanner}`} role="status">
           <span>{timeline.undo.label}</span>
           <button className={styles.textButton} onClick={undo} disabled={moving}>Rückgängig</button>
         </div>
@@ -488,7 +501,7 @@ export const HeuteScreen: React.FC = () => {
           ) : current ? (
             <NowCard item={current} now={t} next={next} done={isDone(current)} onDone={() => markDone(current)} onExtend={(m) => extend(current, m)} moving={moving} onPlan={planToday} busy={busy} dayStatus={dayStatus} />
           ) : (
-            <FreeCard now={t} next={next} onPlan={planToday} busy={busy} dayStatus={dayStatus} />
+            <FreeCard now={t} next={next} onPlan={planToday} busy={busy} dayStatus={dayStatus} window={timeline?.window} tomorrow={timeline?.tomorrow_first || null} />
           )}
         </section>
 
@@ -507,7 +520,13 @@ export const HeuteScreen: React.FC = () => {
                 ))}
               </ul>
             )}
-            <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={doneIds} onPick={setEditing} />
+            {showMoveHint && (
+              <p className={styles.moveHint}>
+                Tipp: Tipp einen Block an, um ihn zu verschieben.
+                <button className={styles.textButton} onClick={hideMoveHint}>Verstanden</button>
+              </p>
+            )}
+            <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={doneIds} onPick={(i) => { hideMoveHint(); setEditing(i); }} />
           </section>
 
           <div className={styles.captureBox}>
@@ -604,11 +623,11 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
       <div>
         <p className={styles.eyebrow}>
           Jetzt · {hhmm(item.start)} – {hhmm(item.end)}
+          {item.pinned && <span className={styles.pinNow} title="Von dir verschoben, DayFlow plant ihn nicht um">fest</span>}
         </p>
         <h1 className={styles.nowTitle}>{item.kind === 'free' ? 'Gerade frei' : item.title}</h1>
         <p className={styles.nowSub}>
           {item.kind === 'free' && (item.idea ? `Idee: ${item.idea}. ` : 'Die Zeit gehört dir. ')}
-          {item.pinned && 'Von dir verschoben, DayFlow lässt den Block hier. '}
           {item.kind === 'busy' && 'Termin aus deinem Kalender. '}
           {item.kind === 'event' && item.location && `Ort: ${item.location}. `}
           {next ? `Danach: ${short(next.title)} um ${hhmm(next.start)}.` : 'Danach ist nichts mehr geplant.'}
@@ -626,7 +645,11 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
           <div className={styles.actions}>
             {done ? (
               <span className={styles.doneLabel}>
-                <IconCheck size={18} /> Erledigt
+                <svg className={styles.doneCheck} viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M7 12.5l3.2 3.2L17 9" />
+                </svg>
+                Erledigt
               </span>
             ) : (
               <>
@@ -661,7 +684,51 @@ const NowCard: React.FC<{ item: Item; now: number; next: Item | null; done: bool
   );
 };
 
-const FreeCard: React.FC<{ now: number; next: Item | null; onPlan: () => void; busy: boolean; dayStatus: DayStatus }> = ({ now, next, onPlan, busy, dayStatus }) => (
+const FreeCard: React.FC<{
+  now: number;
+  next: Item | null;
+  onPlan: () => void;
+  busy: boolean;
+  dayStatus: DayStatus;
+  window?: { start: string; end: string };
+  tomorrow: { title: string; start: string } | null;
+}> = ({ now, next, onPlan, busy, dayStatus, window: win, tomorrow }) => {
+  const winStart = win ? new Date(win.start).getTime() : 0;
+  const winEnd = win ? new Date(win.end).getTime() : Infinity;
+  // Outside the planning window there is no point in counting down hours
+  if (win && now >= winEnd) {
+    return (
+      <div className={styles.nowInner}>
+        <div>
+          <p className={styles.eyebrow}>Heute</p>
+          <h1 className={styles.nowTitle}>Feierabend</h1>
+          <p className={styles.nowSub}>
+            {next ? `Später steht noch ${short(next.title)} um ${hhmm(next.start)} an. ` : 'Für heute ist alles erledigt oder verplant. '}
+            {tomorrow && `Morgen geht es um ${hhmm(tomorrow.start)} los mit ${short(tomorrow.title)}.`}
+          </p>
+        </div>
+        <div className={styles.nowBottom}>
+          <StatusLine status={dayStatus} />
+        </div>
+      </div>
+    );
+  }
+  if (win && now < winStart && next && new Date(next.start).getTime() - now > 2 * 60 * MIN) {
+    const hour = new Date(now).getHours();
+    return (
+      <div className={styles.nowInner}>
+        <div>
+          <p className={styles.eyebrow}>Heute</p>
+          <h1 className={styles.nowTitle}>{hour < 5 ? 'Gute Nacht' : 'Guten Morgen'}</h1>
+          <p className={styles.nowSub}>Dein Tag startet um {hhmm(next.start)} mit {short(next.title)}.</p>
+        </div>
+        <div className={styles.nowBottom}>
+          <StatusLine status={dayStatus} />
+        </div>
+      </div>
+    );
+  }
+  return (
   <div className={styles.nowInner}>
     <div>
       <p className={styles.eyebrow}>Jetzt</p>
@@ -686,7 +753,8 @@ const FreeCard: React.FC<{ now: number; next: Item | null; onPlan: () => void; b
       <StatusLine status={dayStatus} />
     </div>
   </div>
-);
+  );
+};
 
 const toTimeValue = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 

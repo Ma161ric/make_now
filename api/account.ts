@@ -41,6 +41,8 @@ async function deleteEverything(uid: string): Promise<void> {
   await connRef.delete();
   await firestore.recursiveDelete(firestore.doc(`users/${uid}`));
   await firestore.recursiveDelete(firestore.doc(`dayflow_blocks/${uid}`));
+  await firestore.recursiveDelete(firestore.doc(`push_subscriptions/${uid}`));
+  await firestore.doc(`push_state/${uid}`).delete().catch(() => {});
   // AI usage counters: ids are `${uid}_${date}`
   const usage = await firestore.collection('ai_usage').where(FieldPath.documentId(), '>=', `${uid}_`).where(FieldPath.documentId(), '<', `${uid}_~`).get();
   await Promise.all(usage.docs.map((d) => d.ref.delete()));

@@ -30,6 +30,7 @@ import { connectionRef, planForUser, getTimeline, getWeek, addAppointment, exten
 import { providerOf, NotConnectedError, NeedsReauthError, newFeedToken, readCalendarLink, openWorkspace } from './_lib/workspace.js';
 import { buildIcs, normalizeCalendarUrl } from './_lib/ics.js';
 import { db } from './_lib/firebaseAdmin.js';
+import { vapid, saveSubscription, removeSubscription, pushToUser, countDevices, isPushEndpoint } from './_lib/webpush.js';
 import { addDays, localDateString, zonedTimeToUtc } from '../packages/core/src/freeSlotScheduling.js';
 
 function appUrl(path: string): string {
@@ -70,6 +71,8 @@ function sanitizeSettings(input: any, current: CalendarSettings): CalendarSettin
     sportLabel:
       typeof input?.sportLabel === 'string' && input.sportLabel.trim() ? input.sportLabel.trim().slice(0, 40) : current.sportLabel,
     eveningReview: typeof input?.eveningReview === 'boolean' ? input.eveningReview : current.eveningReview ?? true,
+    latestHour: int(input?.latestHour, 18, 24, current.latestHour ?? 23),
+    remindBlocks: typeof input?.remindBlocks === 'boolean' ? input.remindBlocks : current.remindBlocks ?? true,
     bufferBeforeEventsMinutes: int(input?.bufferBeforeEventsMinutes, 0, 120, current.bufferBeforeEventsMinutes ?? 30),
   };
   if (s.windowEndHour <= s.windowStartHour) throw new HttpError(400, 'Ende muss nach dem Start liegen');
@@ -159,7 +162,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (action === 'callback' && req.method === 'GET') return await handleCallback(req, res);
     if (action === 'feed' && req.method === 'GET') return await handleFeed(req, res);
 
-    if (req.method !== 'POST' && !((action === 'status' || action === 'today' || action === 'week') && req.method === 'GET')) {
+    if (req.method !== 'POST' && !((action === 'status' || action === 'today' || action === 'week' || action === 'push') && req.method === 'GET')) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
     const uid = await requireUser(req);
@@ -328,6 +331,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         await ref.update({ ics_urls: urls });
         return res.status(200).json({ ics_urls: urls });
+      }
+
+      // ---- push notifications
+      case 'push': {
+        // public key for the browser + how many devices get reminders
+        return res.status(200).json({ public_key: (await vapid()).publicKey, devices: await countDevices(uid) });
+      }
+
+      case 'push-subscribe': {
+        const sub = req.body?.subscription;
+        if (!isPushEndpoint(sub?.endpoint) || typeof sub?.keys?.p256dh !== 'string' || typeof sub?.keys?.auth !== 'string' || sub.keys.p256dh.length > 200 || sub.keys.auth.length > 100) {
+          throw new HttpError(400, 'Ungültiges Push-Abo');
+        }
+        await saveSubscription(uid, sub, String(req.headers['user-agent'] || ''));
+        return res.status(200).json({ ok: true, devices: await countDevices(uid) });
+      }
+
+      case 'push-unsubscribe': {
+        const endpoint = req.body?.endpoint;
+        if (typeof endpoint === 'string' && endpoint.length < 1000) await removeSubscription(uid, endpoint);
+        return res.status(200).json({ ok: true, devices: await countDevices(uid) });
+      }
+
+      case 'push-test': {
+        const n = await pushToUser(uid, { title: 'DayFlow', body: 'So sehen deine Erinnerungen aus.', url: '/today', tag: 'test' });
+        return res.status(200).json({ sent: n });
       }
 
       case 'disconnect': {

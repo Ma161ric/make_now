@@ -1,0 +1,21 @@
+# Push reminders: asks the DayFlow server every 5 minutes whether a block is
+# about to start (Vercel's free plan only allows a daily cron).
+# Needs the repository secret CRON_SECRET (same value as in Vercel).
+name: Erinnerungen
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: DayFlow anstoßen
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "CRON_SECRET fehlt in den Repo-Secrets"; exit 0; fi
+          curl -fsS --max-time 60 -H "Authorization: Bearer $CRON_SECRET" https://make-now.vercel.app/api/cron/remind

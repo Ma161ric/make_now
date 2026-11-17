@@ -155,6 +155,26 @@ export const WocheScreen: React.FC = () => {
         </div>
       ) : (
       <>
+      {/* Phone: jump straight to a day */}
+      <nav className={styles.dayStrip} aria-label="Tag wählen">
+        {days.map((d) => {
+          const date = new Date(`${d.date}T12:00:00`);
+          const count = d.items.length;
+          return (
+            <button
+              key={d.date}
+              className={`${styles.dayChip} ${d.date === todayYmd ? styles.dayChipToday : ''} ${d.date < todayYmd ? styles.dayChipPast : ''}`}
+              onClick={() => document.getElementById(d.date === todayYmd ? 'agenda-today' : `agenda-${d.date}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}
+              aria-label={`${date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}, ${count} ${count === 1 ? 'Eintrag' : 'Einträge'}`}
+            >
+              <span>{date.toLocaleDateString('de-DE', { weekday: 'short' }).replace('.', '')}</span>
+              <strong>{date.getDate()}</strong>
+              <i aria-hidden="true">{count > 0 ? '•'.repeat(Math.min(count, 3)) : ''}</i>
+            </button>
+          );
+        })}
+      </nav>
+
       {/* Phone: the week as a list, one day after another */}
       <div className={`${styles.agenda} ${loading && !week?.days.length ? styles.isLoading : ''}`} aria-busy={loading}>
         {days.map((d) => {
@@ -162,7 +182,7 @@ export const WocheScreen: React.FC = () => {
           const isToday = d.date === todayYmd;
           const isPast = d.date < todayYmd;
           return (
-            <section key={d.date} id={isToday ? 'agenda-today' : undefined} className={`${styles.aDay} ${isPast ? styles.aPast : ''}`} aria-label={date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}>
+            <section key={d.date} id={isToday ? 'agenda-today' : `agenda-${d.date}`} className={`${styles.aDay} ${isPast ? styles.aPast : ''}`} aria-label={date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}>
               <h2 className={`${styles.aHead} ${isToday ? styles.aToday : ''}`}>
                 <span>{date.toLocaleDateString('de-DE', { weekday: 'long' })}</span>
                 <span className={styles.aDate}>{isToday ? 'heute' : date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}</span>

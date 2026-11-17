@@ -3,7 +3,8 @@
  * done/undone with one tap, tap a task to edit / plan / delete.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Task, Importance } from '@make-now/core';
+import type { Task, Importance, Repeat } from '@make-now/core';
+import { REPEAT_LABEL } from '../utils/repeat';
 import { useAuth } from '../auth/authContext';
 import { useTasksSync } from '../hooks/useSyncEffect';
 import { saveTask, updateTaskStatus } from '../storage';
@@ -16,6 +17,44 @@ import styles from './AufgabenScreen.module.css';
 
 const OPEN = new Set(['open', 'scheduled', 'in_progress']);
 const DURATIONS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 240];
+/** the usual durations as quick chips */
+const QUICK = [15, 30, 60, 120];
+
+const DurationChips: React.FC<{ value: number; onChange: (m: number) => void; idPrefix: string }> = ({ value, onChange, idPrefix }) => (
+  <div className={styles.chips} role="radiogroup" aria-label="Dauer">
+    {QUICK.map((m) => (
+      <button
+        key={m}
+        type="button"
+        role="radio"
+        id={`${idPrefix}-${m}`}
+        aria-checked={value === m}
+        className={value === m ? styles.chipOn : styles.chip}
+        onClick={() => onChange(m)}
+      >
+        {durationLabel(m, m)}
+      </button>
+    ))}
+  </div>
+);
+
+const RepeatSelect: React.FC<{ id: string; value: Repeat | ''; onChange: (r: Repeat | '') => void }> = ({ id, value, onChange }) => (
+  <select id={id} value={value} onChange={(e) => onChange(e.target.value as Repeat | '')}>
+    <option value="">nein</option>
+    {(Object.keys(REPEAT_LABEL) as Repeat[]).map((r) => (
+      <option key={r} value={r}>{REPEAT_LABEL[r]}</option>
+    ))}
+  </select>
+);
+
+const dayLabel = (ymd: string) => {
+  const d = new Date(`${ymd}T12:00:00`);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (d.toDateString() === tomorrow.toDateString()) return 'ab morgen';
+  return `ab ${d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}`;
+};
+const todayYmd = () => new Date().toLocaleDateString('en-CA');
 
 const toDate = (v: any): Date | undefined => {
   if (!v) return undefined;
@@ -53,6 +92,8 @@ export const AufgabenScreen: React.FC = () => {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [newTitle, setNewTitle] = useState('');
+  const [newMinutes, setNewMinutes] = useState(30);
+  const [newRepeat, setNewRepeat] = useState<Repeat | ''>('');
   const [adding, setAdding] = useState(false);
 
   // Tasks live from Firestore
@@ -138,18 +179,34 @@ export const AufgabenScreen: React.FC = () => {
     if (!title) return;
     const now = new Date();
     try {
-      await saveTask(uid, { id: uuid(), title, status: 'open', created_at: now, updated_at: now, duration_min_minutes: 30, duration_max_minutes: 30, estimation_source: 'default', importance: 'medium' }, firebaseUser);
+      await saveTask(
+        uid,
+        {
+          id: uuid(), title, status: 'open', created_at: now, updated_at: now,
+          duration_min_minutes: newMinutes, duration_max_minutes: newMinutes,
+          estimation_source: 'user_override', importance: 'medium',
+          ...(newRepeat ? { repeat: newRepeat } : {}),
+        },
+        firebaseUser
+      );
       setNewTitle('');
+      setNewMinutes(30);
+      setNewRepeat('');
       setAdding(false);
     } catch (err: any) {
       flash(`Konnte nicht speichern: ${err.message}`);
     }
   };
 
-  const open = useMemo(() => matching.filter((t) => OPEN.has(t.status)), [matching]);
+  // recurring tasks whose next day has not come yet: listed separately, not as open
+  const upcoming = useMemo(
+    () => matching.filter((t) => OPEN.has(t.status) && t.not_before && t.not_before > todayYmd()).sort((a, b) => a.not_before!.localeCompare(b.not_before!)),
+    [matching]
+  );
+  const open = useMemo(() => matching.filter((t) => OPEN.has(t.status) && !(t.not_before && t.not_before > todayYmd())), [matching]);
   const done = useMemo(
     () => matching.filter((t) => t.status === 'done').sort((a, b) => (b.completed_at?.getTime() || 0) - (a.completed_at?.getTime() || 0)),
-    [tasks]
+    [matching]
   );
   const today = useMemo(
     () => open.filter((t) => todayTimes[t.id]).sort((a, b) => todayTimes[a.id].localeCompare(todayTimes[b.id])),
@@ -175,7 +232,7 @@ export const AufgabenScreen: React.FC = () => {
         </button>
         <button className={styles.taskMain} onClick={() => setExpanded(expanded === t.id ? null : t.id)} aria-expanded={expanded === t.id}>
           <span className={`${styles.taskTitle} ${t.status === 'done' ? styles.doneTitle : ''}`}>{t.title}</span>
-          <span className={styles.taskMeta}>{meta}</span>
+          <span className={styles.taskMeta}>{[meta, t.repeat ? REPEAT_LABEL[t.repeat] : ''].filter(Boolean).join(' · ')}</span>
         </button>
         {t.importance === 'high' && t.status !== 'done' && <span className={styles.tag}>wichtig</span>}
       </div>
@@ -195,8 +252,17 @@ export const AufgabenScreen: React.FC = () => {
       {adding && (
         <form className={styles.addForm} onSubmit={addTask}>
           <label htmlFor="new-task" className="visually-hidden">Titel der neuen Aufgabe</label>
-          <input id="new-task" className="input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titel, z. B. Zahnarzt anrufen" maxLength={200} autoFocus />
-          <button className="button" type="submit" disabled={!newTitle.trim()}>Anlegen</button>
+          <div className={styles.addRow}>
+            <input id="new-task" className="input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titel, z. B. Zahnarzt anrufen" maxLength={200} autoFocus />
+            <button className="button" type="submit" disabled={!newTitle.trim()}>Anlegen</button>
+          </div>
+          <div className={styles.addOptions}>
+            <DurationChips value={newMinutes} onChange={setNewMinutes} idPrefix="new-d" />
+            <label className={styles.repeatLabel}>
+              Wiederholen
+              <RepeatSelect id="new-repeat" value={newRepeat} onChange={setNewRepeat} />
+            </label>
+          </div>
         </form>
       )}
 
@@ -219,7 +285,7 @@ export const AufgabenScreen: React.FC = () => {
         {!loaded ? (
           <p className={styles.empty}>Lade …</p>
         ) : tab === 'open' ? (
-          open.length === 0 ? (
+          open.length === 0 && upcoming.length === 0 ? (
             <p className={styles.empty}>{query.trim() ? `Keine offene Aufgabe mit „${query.trim()}“.` : 'Nichts offen. Schreib oben, was ansteht.'}</p>
           ) : (
             <>
@@ -234,6 +300,14 @@ export const AufgabenScreen: React.FC = () => {
                   <h2 className={styles.groupTitle}>{today.length ? 'Später' : 'Offen'}</h2>
                   <ul className={styles.list}>
                     {later.map((t) => renderTask(t, [durationLabel(t.duration_min_minutes, t.duration_max_minutes), dueLabel(t.due_at)].filter(Boolean).join(' · ')))}
+                  </ul>
+                </>
+              )}
+              {upcoming.length > 0 && (
+                <>
+                  <h2 className={styles.groupTitle}>Kommt wieder</h2>
+                  <ul className={styles.list}>
+                    {upcoming.map((t) => renderTask(t, [dayLabel(t.not_before!), durationLabel(t.duration_min_minutes, t.duration_max_minutes)].join(' · ')))}
                   </ul>
                 </>
               )}
@@ -263,6 +337,7 @@ const TaskEditor: React.FC<{
   const [minutes, setMinutes] = useState(task.duration_max_minutes || task.duration_min_minutes || 30);
   const [due, setDue] = useState(task.due_at ? task.due_at.toISOString().slice(0, 10) : '');
   const [importance, setImportance] = useState<Importance>(task.importance || 'medium');
+  const [repeat, setRepeat] = useState<Repeat | ''>(task.repeat || '');
   const id = task.id.slice(0, 8);
 
   return (
@@ -271,11 +346,14 @@ const TaskEditor: React.FC<{
         <label htmlFor={`t-${id}`}>Titel</label>
         <input id={`t-${id}`} className="input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
         <label htmlFor={`d-${id}`}>Dauer</label>
-        <select id={`d-${id}`} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>
-          {[...new Set([...DURATIONS, minutes])].sort((a, b) => a - b).map((m) => (
-            <option key={m} value={m}>{durationLabel(m, m)}</option>
-          ))}
-        </select>
+        <div className={styles.durationField}>
+          <DurationChips value={minutes} onChange={setMinutes} idPrefix={`dc-${id}`} />
+          <select id={`d-${id}`} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} aria-label="Andere Dauer">
+            {[...new Set([...DURATIONS, minutes])].sort((a, b) => a - b).map((m) => (
+              <option key={m} value={m}>{durationLabel(m, m)}</option>
+            ))}
+          </select>
+        </div>
         <label htmlFor={`f-${id}`}>Frist</label>
         <input id={`f-${id}`} type="date" value={due} onChange={(e) => setDue(e.target.value)} />
         <label htmlFor={`i-${id}`}>Wichtigkeit</label>
@@ -284,6 +362,8 @@ const TaskEditor: React.FC<{
             <option key={k} value={k}>{IMPORTANCE[k]}</option>
           ))}
         </select>
+        <label htmlFor={`r-${id}`}>Wiederholen</label>
+        <RepeatSelect id={`r-${id}`} value={repeat} onChange={setRepeat} />
       </div>
       <div className={styles.editorActions}>
         <button
@@ -296,6 +376,7 @@ const TaskEditor: React.FC<{
               duration_max_minutes: minutes,
               due_at: due ? new Date(`${due}T17:00:00`) : undefined,
               importance,
+              repeat: repeat || undefined,
             })
           }
         >
