@@ -273,10 +273,10 @@ export const AufgabenScreen: React.FC = () => {
         <input id="task-search" className={`input ${styles.search}`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Suchen …" />
         <div className={styles.tabs} role="tablist" aria-label="Filter">
         <button role="tab" aria-selected={tab === 'open'} className={tab === 'open' ? styles.tabActive : styles.tab} onClick={() => setTab('open')}>
-          Offen {open.length}
+          Offen{loaded ? ` ${open.length}` : ''}
         </button>
         <button role="tab" aria-selected={tab === 'done'} className={tab === 'done' ? styles.tabActive : styles.tab} onClick={() => setTab('done')}>
-          Erledigt {done.length}
+          Erledigt{loaded ? ` ${done.length}` : ''}
         </button>
         </div>
       </div>

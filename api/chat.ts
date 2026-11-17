@@ -105,9 +105,31 @@ async function checkQuota(uid: string, date: string, verified: boolean) {
   if (!verified && (data.chat ?? 0) + (data.extract ?? 0) + (data.transcribe ?? 0) > UNVERIFIED_AI_LIMIT) throw new HttpError(429, unverifiedHint);
 }
 
-function systemPrompt(now: string, tz: string, tasks: string): string {
+/** "Jetzt" as ISO with offset plus the next days with their dates, so the model never has to count weekdays */
+export function dateContext(now: Date, tz: string): { nowIso: string; days: string; exampleDay: string } {
+  const part = (d: Date, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, ...o }).format(d);
+  const ymd = (d: Date) => part(d, { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const hm = part(now, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const [y, m, dd] = ymd(now).split('-').map(Number);
+  const [hh, mi] = hm.split(':').map(Number);
+  const offMin = Math.round((Date.UTC(y, m - 1, dd, hh, mi) - Math.floor(now.getTime() / 60000) * 60000) / 60000);
+  const sign = offMin >= 0 ? '+' : '-';
+  const off = `${sign}${String(Math.floor(Math.abs(offMin) / 60)).padStart(2, '0')}:${String(Math.abs(offMin) % 60).padStart(2, '0')}`;
+  const names = ['heute', 'morgen', 'übermorgen'];
+  const days = Array.from({ length: 8 }, (_, i) => {
+    const d = new Date(now.getTime() + i * 86_400_000);
+    const wd = new Intl.DateTimeFormat('de-DE', { timeZone: tz, weekday: 'long' }).format(d);
+    return `${ymd(d)} = ${wd}${names[i] ? ` (${names[i]})` : ''}`;
+  }).join('\n');
+  return { nowIso: `${ymd(now)}T${hm}${off}`, days, exampleDay: ymd(new Date(now.getTime() + 2 * 86_400_000)) };
+}
+
+function systemPrompt(now: string, tz: string, tasks: string, dates: { nowIso: string; days: string; exampleDay: string }): string {
   return `Du bist der Assistent in DayFlow. Der Nutzer erzählt dir, was ansteht, oder redet einfach mit dir.
-Jetzt ist ${now} (Zeitzone ${tz}).
+Jetzt ist ${now} (Zeitzone ${tz}), als ISO: ${dates.nowIso}.
+Kalender der nächsten Tage (nimm Datumsangaben NUR von hier, rechne nicht selbst):
+${dates.days}
+Nach Mitternacht beginnt der nächste Tag: ein Termin, der um 23:30 startet und 1 Stunde dauert, endet am Folgetag um 00:30.
 
 Deine Aufgabe:
 - Antworte auf Deutsch, knapp und locker, wie ein gut organisierter Kumpel. Keine Belehrungen.
@@ -126,6 +148,8 @@ Deine Aufgabe:
   "bin heute voll müde" -> keine Vorschläge
 - Will der Nutzer etwas als To-do oder Termin haben ("mach ein todo draus", "warum ist das kein todo"), leg es sofort an, ohne Diskussion.
 - Relative Angaben ("morgen", "Donnerstag", "später") beziehen sich auf jetzt. Nichts doppelt vorschlagen, was schon offen ist. Höchstens 5 Vorschläge.
+- "danach" / "dann" / "im Anschluss" = direkt nach dem zuletzt genannten oder vorgeschlagenen Termin: Start = dessen Ende (auf 5 min gerundet), am richtigen Tag.
+- Deine früheren Vorschläge stehen im Verlauf in eckigen Klammern [Vorgeschlagen: ...]. Schlag sie NICHT erneut vor, auch nicht mit anderer Zeit. Nur wenn der Nutzer einen davon ändern will ("lieber um 20 Uhr"), schlag ihn einmal mit den neuen Angaben vor. Sonst schlag nur das Neue vor.
 - Sag in der Antwort kurz, was du VORGESCHLAGEN hast ("Hab dir Kaffee mit Gaugel als Termin vorgeschlagen"). Nie "eingetragen" oder "angelegt": Erst wenn der Nutzer den Vorschlag bestätigt, landet er in Aufgaben oder im Kalender.
 - Steht etwas schon in den offenen Aufgaben, schlag es nicht nochmal vor und sag "steht schon in deinen Aufgaben".
 - Du kannst nichts im Internet nachschauen und keine Aktionen ausführen. Sag das ehrlich, statt es zu versprechen ("schau ich mir an" ist falsch). Allgemeines Wissen darfst du nennen, mit dem Hinweis, dass es abweichen kann.
@@ -137,7 +161,7 @@ Antworte IMMER als JSON, ohne Text davor oder danach:
 {"reply": "deine Antwort",
  "proposals": [
   {"kind": "task", "title": "...", "duration_min_minutes": 15, "duration_max_minutes": 30, "importance": "high|medium|low", "due_date": "YYYY-MM-DD (optional)"},
-  {"kind": "event", "title": "...", "start_at": "2026-11-19T14:00:00+01:00", "end_at": "2026-11-19T15:00:00+01:00", "location": "optional"}
+  {"kind": "event", "title": "...", "start_at": "${dates.exampleDay}T14:00:00${dates.nowIso.slice(-6)}", "end_at": "${dates.exampleDay}T15:00:00${dates.nowIso.slice(-6)}", "location": "optional"}
  ]}`;
 }
 
@@ -166,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const tasks = await openTasksSummary(uid);
 
     const llm = await complete(
-      { system: systemPrompt(nowText, tz, tasks), messages, maxTokens: 1500, temperature: 0.4 },
+      { system: systemPrompt(nowText, tz, tasks, dateContext(now, tz)), messages, maxTokens: 1500, temperature: 0.4 },
       { allowClaude: true }
     );
 

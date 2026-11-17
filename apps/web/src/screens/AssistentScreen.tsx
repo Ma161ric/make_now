@@ -96,6 +96,21 @@ function summary(s: Suggestion): string[] {
   return parts.filter(Boolean);
 }
 
+const sameTitle = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/** What the assistant proposed under a message, so it knows next time ("danach", no repeats) */
+function proposalNote(m: ChatMessage, open: Suggestion[]): string {
+  const when = (s: Suggestion) =>
+    s.kind === 'event' && s.start_at
+      ? ` ${new Date(s.start_at).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${s.end_at ? `–${timeLabel(s.end_at)}` : ''}`
+      : '';
+  const items = [
+    ...open.filter((s) => s.msg_id === m.id).map((s) => `${s.kind === 'event' ? 'Termin' : 'Aufgabe'} "${s.title}"${when(s)}, noch offen`),
+    ...(m.done || []).map((d) => `${d.kind === 'event' ? 'Termin' : 'Aufgabe'} "${d.title}"${d.placed ? ` ${d.placed}` : ''}, angenommen`),
+  ];
+  return items.length ? `\n[Vorgeschlagen: ${items.join('; ')}]` : '';
+}
+
 export const AssistentScreen: React.FC = () => {
   const { firebaseUser } = useAuth();
   const uid = firebaseUser?.uid || '';
@@ -113,9 +128,13 @@ export const AssistentScreen: React.FC = () => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   // Scroll only the message list (scrollIntoView would also move the whole page on iPhones)
+  // while the list glides down on its own, its scroll events must not count as "the user scrolled up"
+  const autoUntil = useRef(0);
   const toBottom = (smooth = true) => {
     const el = listRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    if (!el) return;
+    autoUntil.current = Date.now() + (smooth ? 700 : 100);
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   };
   // Is the list scrolled to the end? Then it stays there when things resize
   // (keyboard opening, input growing, a new answer coming in).
@@ -126,17 +145,31 @@ export const AssistentScreen: React.FC = () => {
     const el = listRef.current;
     if (!el) return;
     const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (!near && Date.now() < autoUntil.current) return;
     stick.current = near;
     setAtBottom(near);
   };
   useEffect(() => {
     const el = listRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => {
-      if (stick.current) el.scrollTop = el.scrollHeight;
-    });
+    const pin = () => {
+      if (!stick.current) return;
+      autoUntil.current = Date.now() + 100;
+      el.scrollTop = el.scrollHeight;
+    };
+    const ro = new ResizeObserver(pin);
     ro.observe(el);
-    return () => ro.disconnect();
+    // new cards and answers grow the content, not the list box
+    const mo = new MutationObserver(pin);
+    mo.observe(el, { childList: true, subtree: true });
+    // keyboard opens or closes (iPhone): the page settles in a few steps
+    const kb = new MutationObserver(() => [0, 120, 350].forEach((ms) => setTimeout(pin, ms)));
+    kb.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+      kb.disconnect();
+    };
   }, []);
   // The input grows with the text (iPhones don't support field-sizing yet)
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -216,7 +249,7 @@ export const AssistentScreen: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({
-          messages: next.map(({ role, content }) => ({ role, content })),
+          messages: next.map((m) => ({ role: m.role, content: m.role === 'assistant' ? m.content + proposalNote(m, suggestions) : m.content })),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
@@ -225,6 +258,10 @@ export const AssistentScreen: React.FC = () => {
       const msgId = uuid();
       const proposals = fromChatProposals(json.proposals || [], text, msgId);
       setMessages((m) => [...m, { id: msgId, role: 'assistant', content: json.reply, ...(proposals.length ? { order: proposals.map((p) => p.id) } : {}) }]);
+      // a changed proposal ("lieber um 20 Uhr") replaces its still open card instead of standing next to it
+      const before = loadSuggestions(uid);
+      const keep = before.filter((o) => !(o.msg_id && proposals.some((p) => p.kind === o.kind && sameTitle(p.title, o.title))));
+      if (keep.length !== before.length) saveSuggestions(uid, keep);
       addSuggestions(uid, proposals);
     } catch (e: any) {
       setError(e.message);
