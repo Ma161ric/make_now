@@ -363,6 +363,13 @@
     align-items: center;
   }
 
+  /* a select with long option names: text above, select full width below */
+  .row.rowStack:has(> .control > .select) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rowStack .select { width: 100%; }
+
   .section {
     padding: 6px 16px;
   }

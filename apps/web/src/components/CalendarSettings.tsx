@@ -372,7 +372,7 @@ export const CalendarSettings: React.FC = () => {
                 <HourSelect value={s.windowEndHour} min={Math.min(24, s.windowStartHour + 1)} max={24} onChange={(v) => save({ windowEndHour: v })} disabled={busy} label="Ende" />
               </div>
             </Row>
-            <Row label="Kurze Aufgaben auch später" hint="Aufgaben bis 30 min dürfen nach dem Zeitfenster noch rein, aber nie nach dieser Uhrzeit. Lange Aufgaben bleiben im Zeitfenster.">
+            <Row stack label="Kurze Aufgaben auch später" hint="Aufgaben bis 30 min dürfen nach dem Zeitfenster noch rein, aber nie nach dieser Uhrzeit. Lange Aufgaben bleiben im Zeitfenster.">
               <select className={styles.select} value={Math.max(s.latestHour ?? 23, s.windowEndHour)} onChange={(e) => save({ latestHour: Number(e.target.value) })} disabled={busy} aria-label="Kurze Aufgaben bis spätestens">
                 {Array.from({ length: 24 - s.windowEndHour + 1 }, (_, i) => s.windowEndHour + i).map((h) => (
                   <option key={h} value={h}>{h === s.windowEndHour ? 'nein, nur im Zeitfenster' : h === 24 ? 'bis Mitternacht' : `bis ${h}:00`}</option>
@@ -479,8 +479,8 @@ export const CalendarSettings: React.FC = () => {
   );
 };
 
-export const Row: React.FC<{ label: React.ReactNode; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
-  <div className={styles.row}>
+export const Row: React.FC<{ label: React.ReactNode; hint?: string; children: React.ReactNode; stack?: boolean }> = ({ label, hint, children, stack }) => (
+  <div className={`${styles.row} ${stack ? styles.rowStack : ''}`}>
     <div className={styles.rowText}>
       <p className={styles.label}>{label}</p>
       {hint && <p className={styles.hint}>{hint}</p>}
