@@ -23,7 +23,11 @@ export function useVisualViewport() {
         const el = document.activeElement as HTMLElement | null;
         const typing = !!el?.matches('textarea, select, [contenteditable="true"], input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"])');
         const phone = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches;
-        root.classList.toggle('kb-open', typing && phone);
+        const open = typing && phone;
+        // keyboard just closed (the ✓ on the iPhone keyboard): iOS leaves the page scrolled up.
+        // Put it back in the same frame the layout switches, so the chat doesn't jump a moment later
+        if (!open && root.classList.contains('kb-open') && root.classList.contains('no-overscroll') && window.scrollY !== 0) window.scrollTo(0, 0);
+        root.classList.toggle('kb-open', open);
       });
     };
     update();

@@ -230,7 +230,11 @@ export const AssistentScreen: React.FC = () => {
     saveSuggestions(uid, list);
   };
   const patch = (id: string, p: Partial<Suggestion>) => setSugg(suggestions.map((x) => (x.id === id ? { ...x, ...p } : x)));
-  const drop = (id: string) => setSugg(suggestions.filter((x) => x.id !== id));
+  const drop = (id: string) => {
+    const s = suggestions.find((x) => x.id === id);
+    setSugg(suggestions.filter((x) => x.id !== id));
+    if (s) keepEnd(s);
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -270,6 +274,16 @@ export const AssistentScreen: React.FC = () => {
     }
   };
 
+  /** After ✓ or ×: a card near the end shrinks to a line, and the chat should still end at the bottom */
+  const keepEnd = (s: Suggestion) => {
+    const el = listRef.current;
+    const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+    const near = !!el && el.scrollHeight - el.scrollTop - el.clientHeight < 320;
+    if (!near && s.msg_id !== lastAssistant?.id) return;
+    stick.current = true;
+    [0, 60, 250].forEach((ms) => setTimeout(() => stick.current && toBottom(false), ms));
+  };
+
   const accept = async (s: Suggestion) => {
     setBusyId(s.id);
     setError(null);
@@ -293,6 +307,7 @@ export const AssistentScreen: React.FC = () => {
         else setToast({ text: `„${s.title}“ ist in Aufgaben`, plan });
       }
       setSugg(loadSuggestions(uid).filter((x) => x.id !== s.id));
+      keepEnd(s);
       if (editing === s.id) setEditing(null);
       setSheet((cur) => (cur && cur !== 'list' && cur.edit === s.id ? null : cur));
     } catch (e: any) {
