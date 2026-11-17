@@ -36,6 +36,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -149,6 +151,7 @@
   line-height: 1.5;
   padding: 7px 0;
   max-height: 160px;
+  overflow-y: auto;
   field-sizing: content;
 }
 
@@ -736,4 +739,25 @@
   :global(.kb-open) .composer {
     margin-bottom: 8px;
   }
+}
+
+/* back to the newest message after scrolling up through a long history */
+.jumpWrap { position: relative; height: 0; }
+.jump {
+  position: absolute;
+  bottom: 10px;
+  right: 6px;
+  transform: rotate(180deg);
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 0;
+  background: var(--accent-primary);
+  color: var(--on-accent);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  z-index: 2;
 }

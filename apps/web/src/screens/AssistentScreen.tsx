@@ -117,6 +117,40 @@ export const AssistentScreen: React.FC = () => {
     const el = listRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   };
+  // Is the list scrolled to the end? Then it stays there when things resize
+  // (keyboard opening, input growing, a new answer coming in).
+  const stick = useRef(true);
+  const [atBottom, setAtBottom] = useState(true);
+  const firstScroll = useRef(true);
+  const onListScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    stick.current = near;
+    setAtBottom(near);
+  };
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      if (stick.current) el.scrollTop = el.scrollHeight;
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // The input grows with the text (iPhones don't support field-sizing yet)
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const ta = inputRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
+  }, [input]);
+  // No rubber-banding of the whole page while the chat is open (iPhone)
+  useEffect(() => {
+    document.documentElement.classList.add('no-overscroll');
+    return () => document.documentElement.classList.remove('no-overscroll');
+  }, []);
 
   useEffect(() => {
     if (!uid) return;
@@ -127,7 +161,20 @@ export const AssistentScreen: React.FC = () => {
 
   useEffect(() => {
     if (uid) localStorage.setItem(chatKey(uid), JSON.stringify(messages.slice(-HISTORY_LIMIT)));
-    toBottom();
+    if (!messages.length) return;
+    // opening the chat: jump straight to the end instead of animating through the whole history
+    if (firstScroll.current) {
+      firstScroll.current = false;
+      requestAnimationFrame(() => toBottom(false));
+      stick.current = true;
+      return;
+    }
+    // new message: follow it, unless you scrolled up to read something (your own message always)
+    const last = messages[messages.length - 1];
+    if (stick.current || last.role === 'user') {
+      stick.current = true;
+      toBottom();
+    }
   }, [messages, uid]);
 
   useEffect(() => {
@@ -396,7 +443,7 @@ export const AssistentScreen: React.FC = () => {
           )}
         </div>
 
-        <div className={styles.messages} ref={listRef}>
+        <div className={styles.messages} ref={listRef} onScroll={onListScroll}>
           {messages.length === 0 && (
             <div className={styles.empty}>
               <p>Erzähl einfach, was ansteht.</p>
@@ -448,6 +495,13 @@ export const AssistentScreen: React.FC = () => {
           )}
           <div ref={bottomRef} />
         </div>
+        <div className={styles.jumpWrap}>
+          {!atBottom && messages.length > 0 && (
+            <button className={styles.jump} onClick={() => { stick.current = true; toBottom(); }} aria-label="Zum Ende des Verlaufs">
+              <IconArrowUp size={16} />
+            </button>
+          )}
+        </div>
 
         {error && <p className={styles.error} role="alert">{error}</p>}
 
@@ -473,7 +527,7 @@ export const AssistentScreen: React.FC = () => {
                 send();
               }
             }}
-            onFocus={() => setTimeout(() => toBottom(false), 300)}
+            ref={inputRef}
             placeholder="Was steht an?"
             rows={1}
             maxLength={4000}
