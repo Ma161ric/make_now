@@ -200,6 +200,10 @@ export const AssistentScreen: React.FC = () => {
   const send = async () => {
     const text = input.trim();
     if (!text || sending) return;
+    // the keyboard was open: keep it open for the next message
+    if (document.activeElement === inputRef.current || document.activeElement?.closest('form') === inputRef.current?.form) {
+      inputRef.current?.focus({ preventScroll: true });
+    }
     const next: ChatMessage[] = [...messages, { id: uuid(), role: 'user', content: text }];
     setMessages(next);
     setInput('');
@@ -534,7 +538,14 @@ export const AssistentScreen: React.FC = () => {
             aria-label="Nachricht"
           />
           <MicButton onText={(t) => setInput((cur) => (cur ? `${cur} ${t}` : t))} onError={setError} />
-          <button className={styles.send} type="submit" disabled={sending || !input.trim()} aria-label="Senden">
+          <button
+            className={styles.send}
+            type="submit"
+            disabled={sending || !input.trim()}
+            aria-label="Senden"
+            // keep the keyboard open: tapping the button must not take the focus away from the input
+            onMouseDown={(e) => e.preventDefault()}
+          >
             <IconArrowUp size={18} />
           </button>
         </form>

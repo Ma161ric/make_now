@@ -30,12 +30,14 @@ export function useVisualViewport() {
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
     window.addEventListener('focusin', update);
-    window.addEventListener('focusout', () => setTimeout(update, 50));
+    const onOut = () => setTimeout(update, 50);
+    window.addEventListener('focusout', onOut);
     return () => {
       cancelAnimationFrame(frame);
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
       window.removeEventListener('focusin', update);
+      window.removeEventListener('focusout', onOut);
     };
   }, []);
 }
