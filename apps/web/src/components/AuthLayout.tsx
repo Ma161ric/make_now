@@ -10,8 +10,8 @@ const PREVIEW = [
   { time: '09:00', title: 'Vorlesung', meta: 'Hauptgebäude', kind: 'event', h: 64 },
   { time: '10:45', title: 'Bewerbung schreiben', meta: '45 min', kind: 'task', h: 46 },
   { time: '12:00', title: 'Mama anrufen', meta: '10 min', kind: 'task', h: 30 },
-  { time: '16:00', title: 'Sport / Gym', meta: '2 h', kind: 'task', h: 58 },
-  { time: '18:15', title: 'Freizeit', meta: 'Spaziergang', kind: 'free', h: 40 },
+  { time: '16:00', title: 'Gym', meta: '2 h', kind: 'task', h: 58 },
+  { time: '18:15', title: 'Frei', meta: 'Idee: Spaziergang', kind: 'free', h: 40 },
 ] as const;
 
 export const AuthLayout: React.FC<{ title: string; subtitle: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (

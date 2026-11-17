@@ -339,9 +339,9 @@ export const CalendarSettings: React.FC = () => {
             </Row>
             <Row label="Zeitfenster" hint="Nur in diesem Fenster werden Aufgaben eingeplant.">
               <div className={styles.inline}>
-                <HourSelect value={s.windowStartHour} min={0} max={23} onChange={(v) => save({ windowStartHour: v })} disabled={busy} label="Beginn" />
+                <HourSelect value={s.windowStartHour} min={0} max={Math.max(0, s.windowEndHour - 1)} onChange={(v) => save({ windowStartHour: v })} disabled={busy} label="Beginn" />
                 <span className={styles.muted}>bis</span>
-                <HourSelect value={s.windowEndHour} min={1} max={24} onChange={(v) => save({ windowEndHour: v })} disabled={busy} label="Ende" />
+                <HourSelect value={s.windowEndHour} min={Math.min(24, s.windowStartHour + 1)} max={24} onChange={(v) => save({ windowEndHour: v })} disabled={busy} label="Ende" />
               </div>
             </Row>
             <Row label="Stunden pro Tag" hint="So viel Zeit für Aufgaben plant DayFlow höchstens ein.">
