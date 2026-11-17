@@ -197,7 +197,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       case 'week': {
         const start = String(req.query.start || '');
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) throw new HttpError(400, 'start=YYYY-MM-DD fehlt');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || new Date(`${start}T12:00:00Z`).toISOString().slice(0, 10) !== start) {
+          throw new HttpError(400, 'start=YYYY-MM-DD fehlt');
+        }
         return res.status(200).json(await getWeek(uid, start));
       }
 
@@ -244,6 +246,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (typeof title !== 'string' || !title.trim() || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
           throw new HttpError(400, 'Titel, Start und Ende werden gebraucht');
         }
+        // sane limits: no week-long or decades-away appointments by accident
+        const DAY = 86_400_000;
+        if (end.getTime() - start.getTime() > DAY) throw new HttpError(400, 'Ein Termin darf höchstens 24 Stunden lang sein');
+        if (start.getTime() < Date.now() - 2 * DAY || start.getTime() > Date.now() + 400 * DAY) throw new HttpError(400, 'Termin liegt zu weit in der Vergangenheit oder Zukunft');
         const ev = await addAppointment(uid, {
           title: title.trim().slice(0, 200),
           start,
@@ -341,7 +347,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (e instanceof google.GoogleAuthRevokedError || e instanceof NeedsReauthError) {
       return res.status(409).json({ error: 'Google-Zugriff abgelaufen, bitte Kalender neu verbinden', code: 'needs_reauth' });
     }
+    // body that is not JSON (Vercel throws while reading req.body)
+    if (e?.message === 'Invalid JSON') return res.status(400).json({ error: 'Ungültige Anfrage' });
     console.error(`[calendar] ${action} failed`, e);
-    return res.status(500).json({ error: e?.message || 'Interner Fehler' });
+    // internal details stay in the logs
+    return res.status(500).json({ error: 'Da ist etwas schiefgelaufen. Bitte nochmal versuchen.' });
   }
 }

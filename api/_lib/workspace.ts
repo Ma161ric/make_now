@@ -18,7 +18,7 @@ import { randomBytes } from 'node:crypto';
 import { Timestamp } from 'firebase-admin/firestore';
 import { db } from './firebaseAdmin.js';
 import * as google from './google.js';
-import { parseIcs } from './ics.js';
+import { parseIcs, normalizeCalendarUrl } from './ics.js';
 import { DEFAULT_FREE_SLOT_CONFIG } from '../../packages/core/src/freeSlotScheduling.js';
 import type { CalendarConnection, CalendarSettings } from './planner.js';
 
@@ -233,9 +233,22 @@ const icsCache = new Map<string, { at: number; text: string }>();
 async function fetchIcs(url: string): Promise<string> {
   const hit = icsCache.get(url);
   if (hit && Date.now() - hit.at < 5 * 60_000) return hit.text;
-  const res = await fetch(url, { headers: { 'User-Agent': 'DayFlow/1.0 (+https://make-now.vercel.app)' }, signal: AbortSignal.timeout(8000) });
+  let current = url;
+  let res: Response | null = null;
+  for (let hop = 0; hop < 4; hop++) {
+    res = await fetch(current, { headers: { 'User-Agent': 'DayFlow/1.0 (+https://make-now.vercel.app)' }, signal: AbortSignal.timeout(8000), redirect: 'manual' });
+    if (res.status < 300 || res.status >= 400) break;
+    const next = res.headers.get('location');
+    const safe = next ? normalizeCalendarUrl(new URL(next, current).toString()) : null;
+    if (!safe) throw new Error('Kalender-Link leitet an eine unerlaubte Adresse weiter');
+    current = safe;
+    res = null;
+  }
+  if (!res) throw new Error('Zu viele Weiterleitungen');
   if (!res.ok) throw new Error(`Kalender-Link antwortet mit ${res.status}`);
+  if (Number(res.headers.get('content-length') || 0) > 5_000_000) throw new Error('Kalender ist zu groß');
   const text = await res.text();
+  if (text.length > 5_000_000) throw new Error('Kalender ist zu groß');
   if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Unter dem Link liegt kein Kalender');
   icsCache.set(url, { at: Date.now(), text });
   return text;

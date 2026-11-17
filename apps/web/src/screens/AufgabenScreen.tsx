@@ -220,7 +220,7 @@ export const AufgabenScreen: React.FC = () => {
           <p className={styles.empty}>Lade …</p>
         ) : tab === 'open' ? (
           open.length === 0 ? (
-            <p className={styles.empty}>Nichts offen. Schreib oben, was ansteht.</p>
+            <p className={styles.empty}>{query.trim() ? `Keine offene Aufgabe mit „${query.trim()}“.` : 'Nichts offen. Schreib oben, was ansteht.'}</p>
           ) : (
             <>
               {today.length > 0 && (
@@ -240,7 +240,7 @@ export const AufgabenScreen: React.FC = () => {
             </>
           )
         ) : done.length === 0 ? (
-          <p className={styles.empty}>Noch nichts erledigt.</p>
+          <p className={styles.empty}>{query.trim() ? `Nichts Erledigtes mit „${query.trim()}“.` : 'Noch nichts erledigt.'}</p>
         ) : (
           <ul className={styles.list}>
             {done.slice(0, 50).map((t) => renderTask(t, t.completed_at ? `erledigt am ${t.completed_at.toLocaleDateString('de-DE')}` : 'erledigt'))}

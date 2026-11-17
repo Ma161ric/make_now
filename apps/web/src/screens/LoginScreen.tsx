@@ -8,7 +8,8 @@ export const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, loginWithGoogle, error } = useAuth();
+  const { login, loginWithGoogle, resetPassword, error } = useAuth();
+  const [resetInfo, setResetInfo] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const run = async (fn: () => Promise<unknown>) => {
@@ -52,6 +53,24 @@ export const LoginScreen: React.FC = () => {
           {isLoading ? 'Melde an …' : 'Anmelden'}
         </button>
       </form>
+
+      <button
+        type="button"
+        className={styles.forgot}
+        disabled={isLoading}
+        onClick={async () => {
+          setResetInfo(null);
+          try {
+            await resetPassword(email);
+            setResetInfo(`Falls es zu ${email.trim()} ein Konto gibt, ist jetzt eine Mail mit einem Link unterwegs. Schau auch im Spam-Ordner nach.`);
+          } catch (e: any) {
+            setResetInfo(e.message);
+          }
+        }}
+      >
+        Passwort vergessen?
+      </button>
+      {resetInfo && <p className={styles.resetInfo} role="status">{resetInfo}</p>}
 
 
       <p className={styles.footer}>

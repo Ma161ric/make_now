@@ -6,6 +6,7 @@
  * a Firestore read), so opening this page costs nothing.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { timingSafeEqual } from 'node:crypto';
 import { db } from './_lib/firebaseAdmin.js';
 
 type Check = 'ok' | 'missing' | string;
@@ -26,8 +27,17 @@ async function fetchOk(url: string, headers: Record<string, string>) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 }
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Cache-Control', 'public, max-age=60');
+/** Details only for the owner: /api/health?key=<CRON_SECRET>. Everyone else just sees whether it works. */
+function isOwner(req: VercelRequest): boolean {
+  const secret = process.env.CRON_SECRET || '';
+  const given = String(req.query.key || '');
+  if (!secret || given.length !== secret.length) return false;
+  return timingSafeEqual(Buffer.from(given), Buffer.from(secret));
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const owner = isOwner(req);
+  res.setHeader('Cache-Control', owner ? 'no-store' : 'public, max-age=60');
 
   const env = Object.fromEntries(
     [
@@ -65,6 +75,11 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
   if (redirect && !redirect.endsWith('/api/calendar/callback')) hints.push('GOOGLE_REDIRECT_URI muss auf /api/calendar/callback enden');
   if (appUrl.endsWith('/')) hints.push('APP_URL ohne Schrägstrich am Ende angeben');
   if (redirect && appUrl && !redirect.startsWith(appUrl)) hints.push('GOOGLE_REDIRECT_URI und APP_URL zeigen auf verschiedene Domains');
+
+  if (!owner) {
+    const ok = firebase === 'ok' && (groq === 'ok' || claude === 'ok');
+    return res.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'gestört' });
+  }
 
   return res.status(200).json({
     services: { groq, claude, firebase },

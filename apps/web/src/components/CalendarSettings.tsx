@@ -208,7 +208,11 @@ export const CalendarSettings: React.FC = () => {
         {message && <p className={styles.notice} role="status">{message}</p>}
 
         {!status ? (
-          <p className={styles.muted}>Lade …</p>
+          message ? (
+            <button className={styles.ghost} onClick={() => load()}>Nochmal versuchen</button>
+          ) : (
+            <p className={styles.muted}>Lade …</p>
+          )
         ) : !status.connected ? (
           <>
             <Row label="Mit Google Kalender" hint="DayFlow liest deine Termine und trägt Aufgaben in einen eigenen Kalender „DayFlow“ ein.">
