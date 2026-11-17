@@ -16,6 +16,19 @@ html {
   text-size-adjust: 100%;
   overscroll-behavior-y: none; /* iOS bounces the root scroller, not body: header stays put */
 }
+
+/* Scroll bars: thin and quiet with a mouse, gone on touch screens (you swipe anyway) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle, rgba(127, 127, 127, 0.35)) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(127, 127, 127, 0.35); border-radius: 3px; }
+@media (pointer: coarse) {
+  * { scrollbar-width: none; }
+  *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+}
 body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none; /* no rubber-band bounce of the whole app */
