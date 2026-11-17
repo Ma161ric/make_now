@@ -77,9 +77,20 @@
 
 /* ---------- Now card ---------- */
 
+/* left column: Jetzt card with the note field right below it, stays in view while the timeline scrolls */
+.mainCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* sticky only where the column (card + note field + up to 3 notes) fits on the screen */
+@media (min-width: 901px) and (min-height: 860px) {
+  .mainCol { position: sticky; top: calc(var(--header-height) + var(--space-5)); }
+}
+
 .nowCard {
-  position: sticky;
-  top: calc(var(--header-height) + var(--space-5));
   min-height: 480px;
   display: flex;
   border-radius: var(--radius-lg);
@@ -359,10 +370,8 @@
 @media (max-width: 900px) {
   .page { padding: var(--space-4); }
   .layout { grid-template-columns: 1fr; }
-  .nowCard { position: static; min-height: 0; }
+  .nowCard { min-height: 0; }
   .nowInner { padding: var(--space-5); gap: var(--space-5); }
-  /* phones: the note field right under the Jetzt card, not after the long timeline */
-  .side .captureBox { order: -1; }
 }
 
 .allDay {

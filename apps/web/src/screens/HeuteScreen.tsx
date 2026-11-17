@@ -476,6 +476,7 @@ export const HeuteScreen: React.FC = () => {
       ))}
 
       <div className={styles.layout}>
+        <div className={styles.mainCol}>
         <section aria-label="Jetzt" className={styles.nowCard}>
           {!timeline && error ? (
             <div className={styles.nowInner}>
@@ -508,30 +509,6 @@ export const HeuteScreen: React.FC = () => {
             <FreeCard now={t} next={next} onPlan={planToday} busy={busy} dayStatus={dayStatus} window={timeline?.window} tomorrow={timeline?.tomorrow_first || null} />
           )}
         </section>
-
-        <div className={styles.side}>
-          <section aria-label="Rest des Tages" className={styles.timelineCard}>
-            <div className={styles.timelineHeader}>
-              <h2>Rest des Tages</h2>
-              <button className={styles.textButton} onClick={planToday} disabled={busy}>
-                {busy ? 'Plane …' : 'Neu planen'}
-              </button>
-            </div>
-            {!!timeline?.all_day?.length && (
-              <ul className={styles.allDay} aria-label="Ganztägig">
-                {timeline.all_day.map((title, i) => (
-                  <li key={`${title}-${i}`}>{title}</li>
-                ))}
-              </ul>
-            )}
-            {showMoveHint && (
-              <p className={styles.moveHint}>
-                Tipp: Tipp einen Block an, um ihn zu verschieben.
-                <button className={styles.textButton} onClick={hideMoveHint}>Verstanden</button>
-              </p>
-            )}
-            <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={doneIds} onPick={(i) => { hideMoveHint(); setEditing(i); }} />
-          </section>
 
           <div className={styles.captureBox}>
           <form className={styles.capture} onSubmit={saveNote}>
@@ -604,6 +581,32 @@ export const HeuteScreen: React.FC = () => {
             </ul>
           )}
           </div>
+        </div>
+
+        <div className={styles.side}>
+          <section aria-label="Rest des Tages" className={styles.timelineCard}>
+            <div className={styles.timelineHeader}>
+              <h2>Rest des Tages</h2>
+              <button className={styles.textButton} onClick={planToday} disabled={busy}>
+                {busy ? 'Plane …' : 'Neu planen'}
+              </button>
+            </div>
+            {!!timeline?.all_day?.length && (
+              <ul className={styles.allDay} aria-label="Ganztägig">
+                {timeline.all_day.map((title, i) => (
+                  <li key={`${title}-${i}`}>{title}</li>
+                ))}
+              </ul>
+            )}
+            {showMoveHint && (
+              <p className={styles.moveHint}>
+                Tipp: Tipp einen Block an, um ihn zu verschieben.
+                <button className={styles.textButton} onClick={hideMoveHint}>Verstanden</button>
+              </p>
+            )}
+            <DayTimeline items={items} now={t} windowEnd={timeline?.window?.end} done={doneIds} onPick={(i) => { hideMoveHint(); setEditing(i); }} />
+          </section>
+
         </div>
       </div>
     </div>
