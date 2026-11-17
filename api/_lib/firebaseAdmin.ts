@@ -45,13 +45,22 @@ export async function optionalUser(req: VercelRequest): Promise<string | null> {
  * and returns the user's uid.
  */
 export async function requireUser(req: VercelRequest): Promise<string> {
+  return (await requireUserInfo(req)).uid;
+}
+
+/** Signed-in user plus whether the e-mail is confirmed (Google sign-in always is). */
+export async function requireUserInfo(req: VercelRequest): Promise<{ uid: string; verified: boolean }> {
   const header = req.headers.authorization || '';
   const match = header.match(/^Bearer (.+)$/);
   if (!match) throw new HttpError(401, 'Not signed in');
   try {
     const decoded = await getAuth(app()).verifyIdToken(match[1]);
-    return decoded.uid;
+    return { uid: decoded.uid, verified: decoded.email_verified === true };
   } catch {
     throw new HttpError(401, 'Invalid session');
   }
 }
+
+/** AI requests per day before the e-mail is confirmed: enough to try DayFlow, too few to abuse it */
+export const UNVERIFIED_AI_LIMIT = 15;
+export const unverifiedHint = 'Bestätige deine E-Mail-Adresse (Einstellungen), dann geht es weiter.';

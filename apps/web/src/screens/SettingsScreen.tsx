@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { sendEmailVerification, type User as FirebaseUser } from 'firebase/auth';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/authContext';
@@ -7,7 +8,7 @@ import { CalendarSettings, Row } from '../components/CalendarSettings';
 import styles from './SettingsScreen.module.css';
 
 export const SettingsScreen: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, firebaseUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -37,6 +38,8 @@ export const SettingsScreen: React.FC = () => {
         </div>
         <button className={styles.ghost} onClick={handleLogout}>Abmelden</button>
       </section>
+
+      {firebaseUser && <EmailCheck fbUser={firebaseUser} />}
 
       <CalendarSettings />
 
@@ -141,6 +144,54 @@ const DataSettings: React.FC<{ onDeleted: () => void }> = ({ onDeleted }) => {
       <Row label="Konto löschen" hint="Löscht dein Konto und alles, was DayFlow über dich gespeichert hat. Das geht nicht rückgängig.">
         <button className={`${styles.ghost} ${styles.danger}`} onClick={deleteAll} disabled={busy}>Alles löschen</button>
       </Row>
+    </section>
+  );
+};
+
+/** E-mail accounts: confirm the address once (Google accounts are already confirmed) */
+const EmailCheck: React.FC<{ fbUser: FirebaseUser }> = ({ fbUser }) => {
+  const [verified, setVerified] = useState(fbUser.emailVerified);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const isPassword = fbUser.providerData.some((p) => p.providerId === 'password');
+  if (verified || !isPassword) return null;
+
+  const send = async () => {
+    setBusy(true);
+    try {
+      await sendEmailVerification(fbUser);
+      setMsg(`Mail an ${fbUser.email} ist unterwegs. Klick auf den Link darin und komm dann hierher zurück.`);
+    } catch (e: any) {
+      setMsg(e?.code === 'auth/too-many-requests' ? 'Gerade schon gesendet. Schau in dein Postfach (auch Spam).' : 'Senden hat nicht geklappt. Versuch es gleich nochmal.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const check = async () => {
+    setBusy(true);
+    try {
+      await fbUser.reload();
+      if (fbUser.emailVerified) {
+        await fbUser.getIdToken(true); // the server sees the confirmation from now on
+        setVerified(true);
+      } else {
+        setMsg('Noch nicht bestätigt. Klick zuerst auf den Link in der Mail.');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className={styles.section} aria-labelledby="mail-h">
+      <h2 id="mail-h">E-Mail bestätigen</h2>
+      <Row label="Deine E-Mail ist noch nicht bestätigt" hint="Bis dahin geht der Assistent nur ein paar Mal am Tag. Einmal bestätigen reicht.">
+        <div className={styles.inline}>
+          <button className={styles.ghost} onClick={send} disabled={busy}>Mail senden</button>
+          <button className={styles.ghost} onClick={check} disabled={busy}>Erledigt</button>
+        </div>
+      </Row>
+      {msg && <p className={styles.notice} role="status">{msg}</p>}
     </section>
   );
 };

@@ -10,7 +10,7 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db, requireUser, HttpError } from './_lib/firebaseAdmin.js';
+import { db, requireUserInfo, HttpError, UNVERIFIED_AI_LIMIT, unverifiedHint } from './_lib/firebaseAdmin.js';
 
 const DAILY_LIMIT = () => Number(process.env.TRANSCRIBE_DAILY_LIMIT || 60);
 const MAX_BYTES = 3_500_000; // stays under Vercel's 4.5 MB body limit after base64
@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const uid = await requireUser(req);
+    const { uid, verified } = await requireUserInfo(req);
     const key = process.env.GROQ_API_KEY;
     if (!key) throw new HttpError(500, 'Spracheingabe ist nicht eingerichtet');
 
@@ -29,9 +29,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const date = new Date().toISOString().slice(0, 10);
     const usage = db().doc(`ai_usage/${uid}_${date}`);
     await usage.set({ uid, date, transcribe: FieldValue.increment(1) }, { merge: true });
-    if (((await usage.get()).data()?.transcribe ?? 0) > DAILY_LIMIT()) {
+    const used = (await usage.get()).data() || {};
+    if ((used.transcribe ?? 0) > DAILY_LIMIT()) {
       throw new HttpError(429, 'Tageslimit für Spracheingabe erreicht, morgen geht es weiter.');
     }
+    if (!verified && (used.chat ?? 0) + (used.extract ?? 0) + (used.transcribe ?? 0) > UNVERIFIED_AI_LIMIT) throw new HttpError(429, unverifiedHint);
 
     const { audio, mime } = req.body || {};
     if (typeof audio !== 'string' || !audio) throw new HttpError(400, 'Keine Aufnahme erhalten');

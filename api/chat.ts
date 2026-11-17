@@ -9,7 +9,7 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { FieldValue } from 'firebase-admin/firestore';
-import { db, requireUser, HttpError } from './_lib/firebaseAdmin.js';
+import { db, requireUserInfo, HttpError, UNVERIFIED_AI_LIMIT, unverifiedHint } from './_lib/firebaseAdmin.js';
 import { complete, extractJson, type LlmMessage } from './_lib/llm.js';
 import { zonedTimeToUtc } from '../packages/core/src/freeSlotScheduling.js';
 
@@ -96,11 +96,13 @@ async function openTasksSummary(uid: string): Promise<string> {
 }
 
 /** Counts requests per user and day; throws 429 above the limit. */
-async function checkQuota(uid: string, date: string) {
+async function checkQuota(uid: string, date: string, verified: boolean) {
   const ref = db().doc(`ai_usage/${uid}_${date}`);
   await ref.set({ uid, date, chat: FieldValue.increment(1) }, { merge: true });
-  const count = (await ref.get()).data()?.chat ?? 0;
+  const data = (await ref.get()).data() || {};
+  const count = data.chat ?? 0;
   if (count > DAILY_LIMIT()) throw new HttpError(429, 'Tageslimit für den Chat erreicht, morgen geht es weiter.');
+  if (!verified && (data.chat ?? 0) + (data.extract ?? 0) + (data.transcribe ?? 0) > UNVERIFIED_AI_LIMIT) throw new HttpError(429, unverifiedHint);
 }
 
 function systemPrompt(now: string, tz: string, tasks: string): string {
@@ -144,7 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const uid = await requireUser(req);
+    const { uid, verified } = await requireUserInfo(req);
     const messages = sanitizeMessages(req.body?.messages);
 
     let tz = 'Europe/Berlin';
@@ -160,7 +162,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const nowText = now.toLocaleString('de-DE', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     const today = now.toLocaleDateString('en-CA', { timeZone: tz });
 
-    await checkQuota(uid, today);
+    await checkQuota(uid, today, verified);
     const tasks = await openTasksSummary(uid);
 
     const llm = await complete(
