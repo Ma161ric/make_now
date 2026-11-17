@@ -31,6 +31,7 @@ export type {
 export type { ExtractionResponse as ExtractionOutput, PlanningResponse as PlanningOutput } from './models';
 
 export { StateTransitionError } from './models';
+export type { Repeat } from './models';
 
 // Groq AI Service (Production)
 export { 

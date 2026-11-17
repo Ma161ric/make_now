@@ -128,11 +128,44 @@
 
 /* ---------- agenda (phones) ---------- */
 .agenda { display: none; }
+.dayStrip { display: none; }
 
 @media (max-width: 768px) {
   .scroller { display: none; }
   .legend { display: none; }
   .agenda { display: flex; flex-direction: column; gap: 12px; }
+
+  .dayStrip {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    position: sticky;
+    top: var(--header-height);
+    z-index: 5;
+    margin: 0 calc(-1 * var(--space-4));
+    padding: 8px var(--space-4);
+    background: var(--bg-primary);
+  }
+  .dayChip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 6px 0 4px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+  }
+  .dayChip span { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .dayChip strong { font-size: 16px; font-weight: 700; }
+  .dayChip i { font-style: normal; font-size: 9px; line-height: 1; height: 9px; color: var(--text-muted); letter-spacing: 1px; }
+  .dayChipToday { background: var(--accent-primary); color: var(--on-accent); }
+  .dayChipToday span, .dayChipToday i { color: var(--on-accent); opacity: 0.85; }
+  .dayChipPast { opacity: 0.5; }
+  .aDay { scroll-margin-top: calc(var(--header-height) + 80px) !important; }
 
   .aDay {
     scroll-margin-top: calc(var(--header-height) + 12px);

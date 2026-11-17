@@ -1,4 +1,5 @@
 import { ExtractionResponse, PlanningResponse, ExtractedItem, Task, TaskStatus } from '@make-now/core';
+import { nextOccurrence } from './utils/repeat';
 import { User } from 'firebase/auth';
 import { FirestoreService } from './firebase/firestoreService';
 
@@ -160,6 +161,7 @@ export function listTasks(userId: string, filter?: (task: Task) => boolean): Tas
 export async function updateTaskStatus(userId: string, taskId: string, status: TaskStatus, user?: User | null) {
   const state = loadState(userId);
   const task = state.tasks[taskId];
+  if (status === 'done') await createNextOccurrence(userId, taskId, task, user).catch((e) => console.warn('next occurrence failed', e));
   if (task) {
     task.status = status;
     task.updated_at = new Date();
@@ -180,6 +182,34 @@ export async function updateTaskStatus(userId: string, taskId: string, status: T
       ...(status === 'done' ? { completed_at: new Date() } : {}),
     });
   }
+}
+
+/** Recurring task done: the next one appears (planned from its day on). Only once per task. */
+async function createNextOccurrence(userId: string, taskId: string, local: Task | undefined, user?: User | null) {
+  let task: any = local;
+  if (!task && user) task = await firestoreService.getTask(user.uid, taskId);
+  if (!task?.repeat || task.next_created) return;
+  const now = new Date();
+  const next: Task = {
+    ...task,
+    id: (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+    status: 'open',
+    created_at: now,
+    updated_at: now,
+    completed_at: undefined,
+    not_before: nextOccurrence(task.repeat, now),
+    due_at: undefined,
+  };
+  delete (next as any).next_created;
+  delete (next as any).user_id;
+  await saveTask(userId, next, user);
+  // mark the done one, so ticking it off twice does not create two
+  const state = loadState(userId);
+  if (state.tasks[taskId]) {
+    (state.tasks[taskId] as any).next_created = true;
+    saveState(userId, state);
+  }
+  if (user) await firestoreService.updateTask(user.uid, taskId, { next_created: true }).catch(() => {});
 }
 
 export async function saveDayPlan(userId: string, dayPlanState: DayPlanState, user?: User | null) {

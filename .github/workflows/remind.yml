@@ -1,0 +1,24 @@
+# Push reminders: asks the DayFlow server every 5 minutes whether a block is
+# about to start (Vercel's free plan only allows a daily cron).
+# No secret needed: the workflow gets a token signed by GitHub, and the server
+# only accepts tokens from this repository's workflow on main.
+name: Erinnerungen
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: DayFlow anstoßen
+        run: |
+          TOKEN=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=dayflow-remind" | jq -r .value)
+          curl -fsS --max-time 60 -H "Authorization: Bearer $TOKEN" https://make-now.vercel.app/api/cron/remind

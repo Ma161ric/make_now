@@ -45,7 +45,13 @@ export interface Task {
   inbox_note_id?: string;
   day_plan_id?: string;
   notes?: string;
+  /** recurring task: when it is done, the next one is created */
+  repeat?: Repeat;
+  /** YYYY-MM-DD: not planned before this day (next one of a recurring task) */
+  not_before?: string;
 }
+
+export type Repeat = 'daily' | 'weekdays' | 'weekly' | 'biweekly' | 'monthly';
 
 /**
  * Event Model

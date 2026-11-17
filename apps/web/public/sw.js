@@ -1,7 +1,7 @@
 /* DayFlow service worker: makes the app installable and opens it fast.
  * Pages: network first, last copy when offline. Built assets: cache first
  * (their file names change with every build). API and Firebase: never cached. */
-const CACHE = 'dayflow-v2';
+const CACHE = 'dayflow-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -46,4 +46,39 @@ self.addEventListener('fetch', (event) => {
       )
     );
   }
+});
+
+// ---- reminders (push) ----
+self.addEventListener('push', (event) => {
+  let msg = { title: 'DayFlow', body: '', url: '/today', tag: undefined };
+  try {
+    msg = { ...msg, ...event.data.json() };
+  } catch {
+    /* empty push: show the default */
+  }
+  event.waitUntil(
+    self.registration.showNotification(msg.title, {
+      body: msg.body,
+      tag: msg.tag,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: msg.url || '/today' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || '/today', self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if (c.url.startsWith(self.location.origin) && 'focus' in c) {
+          c.navigate?.(url);
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });

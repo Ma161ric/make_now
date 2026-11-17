@@ -23,6 +23,8 @@ import { db, HttpError } from './firebaseAdmin.js';
 import {
   planIntoFreeSlots,
   pickLongBlockSlot,
+  taskDuration,
+  SHORT_TASK_MINUTES,
   daysBetween,
   zonedTimeToUtc,
   localDateString,
@@ -53,6 +55,10 @@ export interface CalendarSettings {
   bufferBeforeEventsMinutes: number;
   /** Ask in the evening what got done */
   eveningReview: boolean;
+  /** Quick tasks (up to 30 min) may also go after the window, but never after this hour (24 = no limit) */
+  latestHour: number;
+  /** Push: remind a few minutes before each block */
+  remindBlocks: boolean;
 }
 
 export const DEFAULT_FREE_TIME_IDEAS = ['Sport / Gym', 'Spaziergang', 'Freunde treffen', 'Lesen', 'Kochen', 'Musik / Hobby'];
@@ -71,6 +77,8 @@ export const DEFAULT_SETTINGS: CalendarSettings = {
   sportLabel: 'Sport / Gym',
   bufferBeforeEventsMinutes: 30,
   eveningReview: true,
+  latestHour: 23,
+  remindBlocks: true,
 };
 
 export interface CalendarConnection {
@@ -223,6 +231,8 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
   const alreadyThere = new Set(pinned.map((b) => b.taskId));
   const tasks = allTasks
     .filter((t) => !alreadyThere.has(t.id))
+    // recurring tasks: the next one only shows up on its day
+    .filter((t) => !(t as any).not_before || String((t as any).not_before) <= date)
     .map((t) =>
       learning.factor === 1
         ? t
@@ -248,6 +258,26 @@ export async function planForUser(uid: string, day: PlanDay, now = new Date()): 
   if (!sport && settings.sportEnabled && !alreadyThere.has('sport') && plan.blocks.length === 0) {
     sport = pickLongBlockSlot(plan.remaining_slots, settings.sportMinutes);
     if (sport) plan = planIntoFreeSlots(tasks, [...busy, sport], date, now, config);
+  }
+
+  // Quick tasks (up to 30 min) that did not fit: they may also go after the
+  // window, until the latest hour. Long tasks stay inside the window.
+  const latest = Math.max(settings.windowEndHour, settings.latestHour ?? 23);
+  if (latest > settings.windowEndHour) {
+    const planned = new Set(plan.blocks.map((b) => b.task_id));
+    const quick = tasks.filter((t) => !planned.has(t.id) && taskDuration(t, config.defaultDurationMinutes) <= SHORT_TASK_MINUTES);
+    const used = plan.blocks.reduce((sum, b) => sum + b.duration_minutes, 0);
+    if (quick.length && used < settings.maxPlannedMinutes) {
+      const taken = [...busy, ...(sport ? [sport] : []), ...plan.blocks.map((b) => ({ start: b.start, end: b.end }))];
+      const late = planIntoFreeSlots(quick, taken, date, now, {
+        ...config,
+        windowStartHour: settings.windowEndHour,
+        windowEndHour: latest,
+        maxBlocks: 0,
+        maxPlannedMinutes: settings.maxPlannedMinutes - used,
+      });
+      plan = { ...plan, blocks: [...plan.blocks, ...late.blocks], skipped_task_ids: plan.skipped_task_ids.filter((id) => !late.blocks.some((b) => b.task_id === id)) };
+    }
   }
 
   if (sport) {
@@ -329,6 +359,7 @@ export interface Timeline {
   items: TimelineItem[];
   undo?: { label: string; at: string } | null;
   evening_review?: boolean;
+  tomorrow_first?: { title: string; start: string } | null;
 }
 
 function toItems(blocks: Block[], external: ExternalEvent[]): { items: TimelineItem[]; allDay: { title: string; startDate: string; endDate: string }[] } {
@@ -446,7 +477,23 @@ export async function getTimeline(uid: string, now = new Date()): Promise<Timeli
   if (settings.freeTimeEnabled) items.push(...freeGaps(items, Math.max(now.getTime(), windowStart.getTime()), windowEnd.getTime(), settings.freeTimeIdeas, date));
   items.sort((a, b) => a.start.localeCompare(b.start));
   const undo = ws.conn.undo && ws.conn.undo.date === date ? { label: ws.conn.undo.label, at: ws.conn.undo.at } : null;
+
+  // Evening: what tomorrow starts with (for the "Feierabend" card)
+  let tomorrow_first: { title: string; start: string } | null = null;
+  if (now.getTime() >= windowEnd.getTime() - 60 * MIN) {
+    try {
+      const next = addDays(date, 1);
+      const r = dayRange(next, tz);
+      const [tb, te] = await Promise.all([ws.blocks.list(r.from, r.to), ws.external(r.from, r.to)]);
+      const first = toItems(tb, te).items.filter((i) => i.kind !== 'free').sort((a, b) => a.start.localeCompare(b.start))[0];
+      if (first) tomorrow_first = { title: first.title, start: first.start };
+    } catch {
+      /* only a nice-to-have */
+    }
+  }
+
   return {
+    tomorrow_first,
     connected: true,
     provider: ws.provider,
     status: 'ok',
@@ -602,7 +649,7 @@ export async function placeTaskToday(uid: string, task: { id: string; title: str
   const external = await ws.external(now, to);
   const busy = fixedBusy(ws, external, blocks);
   for (const b of blocks) if (b.kind === 'task' || b.kind === 'sport') busy.push({ start: b.start, end: b.end });
-  const config: FreeSlotConfig = { ...DEFAULT_FREE_SLOT_CONFIG, timezone: tz, windowStartHour: settings.windowStartHour, windowEndHour: 24 };
+  const config: FreeSlotConfig = { ...DEFAULT_FREE_SLOT_CONFIG, timezone: tz, windowStartHour: settings.windowStartHour, windowEndHour: Math.max(settings.windowEndHour, settings.latestHour ?? 23) };
   const ms = task.minutes * MIN;
   const slot = planIntoFreeSlots([], busy, date, now, config).free_slots.find((s) => s.end.getTime() - s.start.getTime() >= ms);
   if (!slot) return { placed: false };
@@ -669,7 +716,7 @@ export async function resolveConflict(uid: string, taskId: string, now = new Dat
   if (block.kind === 'sport') {
     const external = await ws.external(now, to);
     const busy = [...fixedBusy(ws, external, rest), ...rest.filter((b) => b.kind === 'task').map((b) => ({ start: b.start, end: b.end }))];
-    const config: FreeSlotConfig = { ...DEFAULT_FREE_SLOT_CONFIG, timezone: ws.tz, windowStartHour: ws.settings.windowStartHour, windowEndHour: 24 };
+    const config: FreeSlotConfig = { ...DEFAULT_FREE_SLOT_CONFIG, timezone: ws.tz, windowStartHour: ws.settings.windowStartHour, windowEndHour: Math.max(ws.settings.windowEndHour, ws.settings.latestHour ?? 23) };
     const slot = planIntoFreeSlots([], busy, date, now, config).free_slots.find((s) => s.end.getTime() - s.start.getTime() >= minutes * MIN);
     if (!slot) return { placed: false };
     const end = new Date(slot.start.getTime() + minutes * MIN);

@@ -130,6 +130,13 @@ export class FirestoreService {
     }
   }
 
+  async getTask(userId: string, taskId: string): Promise<any | null> {
+    const db = await getDb();
+    const { doc, getDoc } = await import('firebase/firestore');
+    const snap = await getDoc(doc(db, `users/${userId}/items/${taskId}`));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  }
+
   async getTasks(userId: string): Promise<FirestoreTask[]> {
     try {
       const db = await getDb();

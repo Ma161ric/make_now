@@ -153,7 +153,7 @@ export function computeFreeSlots(
   return free.filter((s) => s.end.getTime() - s.start.getTime() >= minSlotMinutes * MINUTE);
 }
 
-function taskDuration(task: Task, fallback: number): number {
+export function taskDuration(task: Task, fallback: number): number {
   const min = task.duration_min_minutes;
   const max = task.duration_max_minutes;
   if (min && max) return Math.round((min + max) / 2);
