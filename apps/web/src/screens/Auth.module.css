@@ -164,8 +164,9 @@
 
 .forgot {
   align-self: flex-start;
-  margin-top: -4px;
-  padding: 4px 0;
+  margin-top: -12px;
+  margin-bottom: -8px;
+  padding: 12px 0; /* finger-sized tap area, same look */
   border: 0;
   background: none;
   font: inherit;

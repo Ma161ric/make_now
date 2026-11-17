@@ -14,6 +14,7 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
+import { dropPushSubscription, clearDeviceData } from '../utils/deviceData';
 
 export interface User {
   id: string;
@@ -46,7 +47,7 @@ const getErrorMessage = (error: unknown): string => {
       case 'auth/email-already-in-use':
         return 'Diese E-Mail wird bereits verwendet';
       case 'auth/weak-password':
-        return 'Passwort ist zu schwach (mind. 6 Zeichen)';
+        return 'Passwort ist zu schwach (mind. 8 Zeichen)';
       case 'auth/invalid-email':
         return 'Ungültige E-Mail-Adresse';
       // same message for all three: nobody can find out which e-mails have an account
@@ -128,8 +129,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!email || !password || !displayName) {
         throw new Error('Alle Felder sind erforderlich');
       }
-      if (password.length < 6) {
-        throw new Error('Passwort muss mindestens 6 Zeichen lang sein');
+      if (password.length < 8) {
+        throw new Error('Passwort muss mindestens 8 Zeichen lang sein');
       }
       if (!email.includes('@')) {
         throw new Error('Ungültige E-Mail-Adresse');
@@ -215,7 +216,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     setLoading(true);
     try {
+      const uid = auth.currentUser?.uid;
+      // nothing of this account stays on the device: no reminders, no chat, no cached plans
+      await dropPushSubscription();
       await signOut(auth);
+      clearDeviceData(uid);
       setUser(null);
     } catch (err) {
       const message = getErrorMessage(err);
