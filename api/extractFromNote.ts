@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { complete, prompt, extractJson } from './_lib/llm.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db, requireUserInfo, HttpError, UNVERIFIED_AI_LIMIT, unverifiedHint } from './_lib/firebaseAdmin.js';
