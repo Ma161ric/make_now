@@ -521,7 +521,12 @@ const Reminders: React.FC<{ remindBlocks: boolean; eveningReview: boolean; onCha
       setState('on');
       setNote('Erinnerungen sind an. Probier es mit „Test senden“.');
     } catch (e: any) {
-      setNote(`Hat nicht geklappt: ${e?.message || e}`);
+      console.warn('push subscribe failed', e);
+      setNote(
+        e?.name === 'NotAllowedError'
+          ? 'Mitteilungen wurden nicht erlaubt.'
+          : 'Einschalten hat nicht geklappt. Prüf deine Verbindung und versuch es nochmal. Auf dem iPhone muss DayFlow vom Home-Bildschirm aus geöffnet sein.'
+      );
     } finally {
       setWorking(false);
     }
