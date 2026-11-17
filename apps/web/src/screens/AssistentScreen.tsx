@@ -165,8 +165,10 @@ export const AssistentScreen: React.FC = () => {
     // opening the chat: jump straight to the end instead of animating through the whole history
     if (firstScroll.current) {
       firstScroll.current = false;
-      requestAnimationFrame(() => toBottom(false));
       stick.current = true;
+      // cards and the composer settle a moment later: land on the real end
+      requestAnimationFrame(() => toBottom(false));
+      [80, 250, 600].forEach((ms) => setTimeout(() => stick.current && toBottom(false), ms));
       return;
     }
     // new message: follow it, unless you scrolled up to read something (your own message always)

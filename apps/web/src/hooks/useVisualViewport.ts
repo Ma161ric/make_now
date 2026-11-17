@@ -30,7 +30,15 @@ export function useVisualViewport() {
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
     window.addEventListener('focusin', update);
-    const onOut = () => setTimeout(update, 50);
+    const onOut = () =>
+      setTimeout(() => {
+        update();
+        // iOS leaves the page scrolled up after the keyboard closes; on the fixed-height
+        // chat that hides its title and leaves a gap above the tab bar
+        const el = document.activeElement as HTMLElement | null;
+        const typing = !!el?.matches('textarea, input, select, [contenteditable="true"]');
+        if (!typing && root.classList.contains('no-overscroll') && window.scrollY !== 0) window.scrollTo(0, 0);
+      }, 50);
     window.addEventListener('focusout', onOut);
     return () => {
       cancelAnimationFrame(frame);
