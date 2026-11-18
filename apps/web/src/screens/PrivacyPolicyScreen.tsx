@@ -68,7 +68,8 @@ export const PrivacyPolicyScreen: React.FC = () => {
           <h3>Erinnerungen</h3>
           <p>
             Erlaubst du Benachrichtigungen, speichert DayFlow die Push-Adresse deines Geräts und die Browser-Kennung, um dich
-            an anstehende Blöcke zu erinnern. Die Nachrichten enthalten den Titel des Blocks.
+            an anstehende Blöcke zu erinnern. Die Nachrichten enthalten Titel, Uhrzeit und gegebenenfalls den Ort des Blocks und
+            sind auf deinem Sperrbildschirm sichtbar, wenn du das in den Geräte-Einstellungen so eingestellt hast.
           </p>
           <h3>Technische Daten</h3>
           <p>
@@ -135,6 +136,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
             <li>Konto, Aufgaben, Pläne, Einstellungen und gelernte Zeiten: bis du sie oder dein Konto löschst.</li>
             <li>Zugang zu Google Kalender: bis du ihn in den Einstellungen trennst oder das Konto löschst.</li>
             <li>Push-Adressen: bis du Erinnerungen ausschaltest, dich abmeldest oder das Konto löschst.</li>
+            <li>Tageszähler für die KI-Nutzung (nur Anzahl und Datum): bis du das Konto löschst.</li>
             <li>Chat-Verlauf und Zwischenspeicher: nur auf deinem Gerät, bis du dich abmeldest oder den Verlauf löschst.</li>
             <li>Die Inhalte, die an die KI gehen: DayFlow speichert sie nicht; für die Anbieter gelten deren Fristen.</li>
             <li>Server-Protokolle: nach den Fristen des Hosters, in der Regel wenige Tage.</li>
