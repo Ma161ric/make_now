@@ -28,7 +28,9 @@
 
 .content h1 {
   margin: 0 0 8px 0;
-  font-size: 32px;
+  font-size: clamp(24px, 7vw, 32px);
+  overflow-wrap: anywhere;
+  hyphens: auto;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -86,4 +88,10 @@
 .content strong {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.footer {
+  margin-top: 40px;
+  font-size: 14px;
+  color: var(--text-secondary);
 }

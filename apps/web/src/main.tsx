@@ -19,6 +19,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { OnboardingGuard } from './components/OnboardingGuard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { watchForUpdates } from './utils/appUpdate';
+import { ImpressumScreen } from './screens/ImpressumScreen';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
@@ -40,6 +41,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="onboarding" element={<ProtectedRoute><OnboardingScreen /></ProtectedRoute>} />
                 <Route path="privacy" element={<PrivacyPolicyScreen />} />
                 <Route path="terms" element={<TermsOfServiceScreen />} />
+                <Route path="impressum" element={<ImpressumScreen />} />
                 <Route index element={<ProtectedRoute><OnboardingGuard><AssistentScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="week" element={<ProtectedRoute><OnboardingGuard><WocheScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="today" element={<ProtectedRoute><OnboardingGuard><HeuteScreen /></OnboardingGuard></ProtectedRoute>} />
