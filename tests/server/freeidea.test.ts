@@ -1,0 +1,12 @@
+import { freeIdeasFor } from '../../api/_lib/planner.ts';
+let pass = 0, fail = 0;
+const eq = (name: string, a: unknown, b: unknown) => { const ok = JSON.stringify(a) === JSON.stringify(b); ok ? pass++ : fail++; if (!ok) console.log('FAIL', name, JSON.stringify(a), '!=', JSON.stringify(b)); };
+const ideas = ['Sport / Gym', 'Spaziergang', 'Freunde treffen'];
+eq('no sport block: unchanged', freeIdeasFor([{ kind: 'task', title: 'x' }], ideas), ideas);
+eq('sport block: sport idea dropped', freeIdeasFor([{ kind: 'sport', title: 'Sport / Gym' }], ideas), ['Spaziergang', 'Freunde treffen']);
+eq('label Gym only: "Sport / Gym" dropped', freeIdeasFor([{ kind: 'sport', title: 'Gym' }], ideas), ['Spaziergang', 'Freunde treffen']);
+eq('custom label Bouldern', freeIdeasFor([{ kind: 'sport', title: 'Bouldern' }], ['Bouldern gehen', 'Lesen']), ['Lesen']);
+eq('generic sport words', freeIdeasFor([{ kind: 'sport', title: 'Bouldern' }], ['Joggen', 'Yoga', 'Lesen']), ['Lesen']);
+eq('only sport ideas: no idea left', freeIdeasFor([{ kind: 'sport', title: 'Gym' }], ['Gym']), []);
+eq('Spaziergang survives', freeIdeasFor([{ kind: 'sport', title: 'Laufen' }], ['Spaziergang']), ['Spaziergang']);
+console.log(`${pass} passed ${fail} failed`);

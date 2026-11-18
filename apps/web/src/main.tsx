@@ -31,13 +31,8 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <ThemeProvider>
         <AuthProvider>
           <PreferencesProvider>
-            <BrowserRouter 
-            basename="/"
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
+            {/* react-router 7: startTransition and relative splat paths are the default now */}
+            <BrowserRouter basename="/">
             <Routes>
               <Route path="/" element={<App />}>
                 <Route path="login" element={<LoginScreen />} />

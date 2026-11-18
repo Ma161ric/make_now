@@ -19,7 +19,8 @@
     "build:prod": "NODE_ENV=production npm run build",
     "preview": "npm run preview -w @make-now/web",
     "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix"
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "test:server": "node tests/server/run.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",

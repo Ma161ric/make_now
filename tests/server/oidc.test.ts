@@ -1,0 +1,15 @@
+import { checkClaims } from '../../api/_lib/githubOidc.ts';
+let pass = 0, fail = 0;
+const ok = (n: string, c: boolean) => { c ? pass++ : (fail++, console.log('FAIL', n)); };
+const now = Date.now();
+const good = { iss: 'https://token.actions.githubusercontent.com', aud: 'dayflow-remind', exp: Math.floor(now / 1000) + 300, repository: 'Ma161ric/make_now', ref: 'refs/heads/main', workflow_ref: 'Ma161ric/make_now/.github/workflows/remind.yml@refs/heads/main', event_name: 'schedule' };
+ok('valid', checkClaims(good, now).ok);
+ok('fork', !checkClaims({ ...good, repository: 'evil/make_now' }, now).ok);
+ok('other branch', !checkClaims({ ...good, ref: 'refs/heads/hack' }, now).ok);
+ok('other workflow', !checkClaims({ ...good, workflow_ref: 'Ma161ric/make_now/.github/workflows/other.yml@refs/heads/main' }, now).ok);
+ok('pull request', !checkClaims({ ...good, event_name: 'pull_request' }, now).ok);
+ok('expired', !checkClaims({ ...good, exp: Math.floor(now / 1000) - 600 }, now).ok);
+ok('audience', !checkClaims({ ...good, aud: 'other' }, now).ok);
+ok('issuer', !checkClaims({ ...good, iss: 'https://evil.com' }, now).ok);
+ok('manual run ok', checkClaims({ ...good, event_name: 'workflow_dispatch' }, now).ok);
+console.log(`${pass} passed ${fail} failed`);

@@ -11,7 +11,7 @@ geplant; in den Einstellungen kannst du auch „Heute“ oder „Morgen“ von H
 2. Offene Tasks aus `users/{uid}/items` (Status `open`)
 3. `planIntoFreeSlots` (packages/core/src/freeSlotScheduling.ts): sortiert nach
    überfällig → Wichtigkeit → Fälligkeit → Alter, legt jede Aufgabe in die erste
-   freie Lücke, in die sie passt (mit 10 min Puffer um Termine)
+   freie Lücke, in die sie passt (Puffer um Termine und Zeitfenster stellst du in den Einstellungen ein)
 4. Alte DayFlow-Blöcke des Tages werden gelöscht, neue eingetragen (Erinnerung 5 min vorher).
    Mehrfaches Planen erzeugt also keine Duplikate.
 
@@ -53,18 +53,30 @@ Die JSON-Datei kommt (einzeilig) in `FIREBASE_SERVICE_ACCOUNT`.
 | `FIREBASE_SERVICE_ACCOUNT` | JSON aus Schritt 2 |
 | `OAUTH_STATE_SECRET`, `CRON_SECRET` | je `openssl rand -hex 32` |
 
-Dann `npm install` (neue Abhängigkeit `firebase-admin`), testen
-(`npm test`), deployen. In der App: **Einstellungen → Google Kalender → Mit Google verbinden**.
+Danach neu deployen. In der App: **Einstellungen → Kalender → Mit Google verbinden**.
 
 ### Lokal testen
 `vercel dev` statt `npm run dev`, damit die `/api`-Funktionen laufen; dafür eine
 zweite Redirect-URI `http://localhost:3000/api/calendar/callback` im OAuth-Client
 eintragen und `APP_URL`/`GOOGLE_REDIRECT_URI` in `.env.local` auf localhost setzen.
 
+Der Firebase-Browserschlüssel ist auf die echten Domains beschränkt (Google Cloud Console →
+APIs & Services → Credentials → „Browser key“). Für lokale Entwicklung dort zusätzlich
+`http://localhost:3000/*` und `http://localhost:5173/*` eintragen, sonst schlägt der Login lokal fehl.
+Für Vorschau-Deployments von Pull Requests gilt dasselbe: Login dort geht nur, wenn die Vorschau-Domain eingetragen ist.
+
+## Ohne Google: Kalender-Link (z. B. iCloud)
+
+In den Einstellungen kann man statt Google einen öffentlichen Kalender-Link (ICS/webcal) hinterlegen.
+Der Server liest ihn bei jeder Planung (nur öffentliche Adressen, höchstens 5 MB). DayFlow speichert
+die geplanten Blöcke dann selbst (`dayflow_blocks`) und stellt einen eigenen Abo-Link bereit, den man
+in der Kalender-App des iPhones abonniert. Der Link enthält ein zufälliges Token und lässt sich in den
+Einstellungen jederzeit neu erzeugen; der alte hört dann sofort auf zu funktionieren.
+
 ## Vor einem öffentlichen Launch
 - **Google-Verifizierung** für die Kalender-Scopes beantragen (Datenschutzerklärung,
   eigene Domain, Demo-Video). Ohne sie: Warnbildschirm und max. 100 Nutzer.
 - **Vercel Hobby** ist nur für nicht-kommerzielle Nutzung und erlaubt Cron nur 1×/Tag
-  → bei einer echten App Pro-Plan oder anderes Hosting.
+  (deshalb laufen die Erinnerungen über GitHub Actions) → bei einer echten App Pro-Plan oder anderes Hosting.
 - Cron plant alle Nutzer nacheinander in einer Funktion; bei vielen Nutzern auf
   eine Queue/Fan-out umbauen und Zeitzonen je Nutzer berücksichtigen.
