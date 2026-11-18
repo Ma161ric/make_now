@@ -1,0 +1,15 @@
+process.env.OAUTH_STATE_SECRET = 'x'.repeat(32);
+const { createState, verifyState, newBrowserNonce } = await import('../../api/_lib/oauthState.ts');
+let pass = 0, fail = 0;
+const ok = (name: string, c: boolean) => { c ? pass++ : fail++; if (!c) console.log('FAIL', name); };
+const n = newBrowserNonce();
+const st = createState('user1', n);
+ok('same browser -> uid', verifyState(st, n) === 'user1');
+ok('no cookie -> rejected', verifyState(st, undefined) === null);
+ok('other browser -> rejected', verifyState(st, newBrowserNonce()) === null);
+ok('old state without nonce -> rejected', verifyState(createState('user1'), n) === null);
+const [p, sig] = st.split('.');
+const forged = Buffer.from(JSON.stringify({ uid: 'attacker', exp: Date.now() + 1e5, b: n })).toString('base64url');
+ok('forged payload -> rejected', verifyState(`${forged}.${sig}`, n) === null);
+ok('garbage -> rejected', verifyState('abc', n) === null);
+console.log(`${pass} passed ${fail} failed`);

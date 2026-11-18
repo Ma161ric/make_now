@@ -1,0 +1,17 @@
+import { nextOccurrence } from '../../apps/web/src/utils/repeat.ts';
+let pass = 0, fail = 0;
+const ok = (n: string, got: string, want: string) => { got === want ? pass++ : (fail++, console.log('FAIL', n, got, '!=', want)); };
+const d = (s: string) => new Date(`${s}T15:00:00`);
+ok('daily', nextOccurrence('daily', d('2026-11-17')), '2026-11-18');
+ok('daily over month', nextOccurrence('daily', d('2026-11-30')), '2026-12-01');
+ok('weekdays fri→mon', nextOccurrence('weekdays', d('2026-11-20')), '2026-11-23');
+ok('weekdays sat→mon', nextOccurrence('weekdays', d('2026-11-21')), '2026-11-23');
+ok('weekly', nextOccurrence('weekly', d('2026-11-17')), '2026-11-24');
+ok('weekly over year', nextOccurrence('weekly', d('2026-12-29')), '2027-01-05');
+ok('biweekly', nextOccurrence('biweekly', d('2026-11-17')), '2026-12-01');
+ok('monthly', nextOccurrence('monthly', d('2026-11-17')), '2026-12-17');
+ok('monthly 31st → 28th', nextOccurrence('monthly', d('2027-01-31')), '2027-02-28');
+ok('monthly 31st leap', nextOccurrence('monthly', d('2028-01-31')), '2028-02-29');
+ok('monthly dec→jan', nextOccurrence('monthly', d('2026-12-15')), '2027-01-15');
+ok('dst change week', nextOccurrence('weekly', d('2027-03-25')), '2027-04-01');
+console.log(`${pass} passed ${fail} failed`);
