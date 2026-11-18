@@ -57,7 +57,8 @@ export const SignupScreen: React.FC = () => {
         </div>
         <div className={styles.field}>
           <label htmlFor="password">Passwort</label>
-          <input id="password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} required />
+          <input id="password" type="password" autoComplete="new-password" minLength={12} aria-describedby="password-hint" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} required />
+          <p id="password-hint" className={styles.fieldHint}>Mindestens 12 Zeichen</p>
         </div>
         <div className={styles.field}>
           <label htmlFor="confirmPassword">Passwort wiederholen</label>
