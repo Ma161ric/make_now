@@ -178,3 +178,9 @@
 }
 .forgot:hover { color: var(--text-primary); }
 .resetInfo { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text-secondary); }
+
+.fieldHint {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
