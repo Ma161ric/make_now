@@ -1,3 +1,5 @@
+> **Hinweis:** Diese Spezifikation ist der ursprüngliche Plan vom Projektstart (Anfang 2026) und beschreibt nicht den aktuellen Stand der App. Aktuell: [README](../README.md) und [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
+
 # Produktübersicht: DayFlow
 
 ## Vision

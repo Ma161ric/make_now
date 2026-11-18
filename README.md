@@ -1,58 +1,90 @@
 # DayFlow
 
-KI-Tagesplaner: Notizen und Chat werden zu Aufgaben, Aufgaben landen automatisch
-in den freien Lücken deines Google Kalenders.
+Ein Tagesplaner, der deine Aufgaben selbst in die freien Lücken deines Kalenders legt.
+Du schreibst oder sagst, was ansteht; der Assistent macht daraus Aufgaben und Termine,
+und DayFlow plant sie um deine Termine herum.
 
-**Status:** in Entwicklung, privat im Einsatz. Noch nicht für fremde Nutzer
-freigegeben (siehe [Vor einem Launch](#vor-einem-launch)).
+Live: https://make-now.vercel.app · privat betriebenes Projekt, kostenlos
 
 ## Was die App kann
 
-| Bereich | Wo im Code |
+| Bildschirm | Was er macht |
 |---|---|
-| **Inbox:** freie Notizen, KI extrahiert Aufgaben/Ideen/Termine, du bestätigst | `InboxScreen`, `ReviewScreen`, `api/extractFromNote.ts` |
-| **Chat:** mit der KI über Aufgaben reden, To-dos mit Dauer-Schätzung per Klick übernehmen | `ChatScreen`, `api/chat.ts` |
-| **Kalender:** abends automatisch den nächsten Tag in freie Lücken planen (eigener Kalender „DayFlow“) | `CalendarSettings`, `api/calendar.ts`, `api/cron/plan-tomorrow.ts`, `packages/core/src/freeSlotScheduling.ts` |
-| **Heute / Woche / Tasks / Tagesrückblick** | `TodayScreen`, `WeekCalendarScreen`, `TasksOverviewScreen`, `DailyReviewScreen` |
+| **Heute** | Was jetzt dran ist, Zeitleiste des Tages mit freien Lücken, Notiz-Feld mit Vorschlägen, Blöcke verschieben, abhaken, Rückgängig, Abendrückblick |
+| **Assistent** | Chat mit der KI; Vorschläge für Aufgaben und Termine mit einem Tipp übernehmen; Spracheingabe |
+| **Woche** | Die sieben Tage mit Terminen und geplanten Blöcken |
+| **Aufgaben** | Alle Aufgaben mit Dauer, Wichtigkeit, Wiederholung (täglich bis monatlich), Suche |
+| **Einstellungen** | Kalender verbinden (Google oder Kalender-Link, z. B. iCloud), Planungsfenster und Grenzen, Sport, Erinnerungen, Design, Daten herunterladen und löschen |
 
-KI: Claude zuerst (nur für eingeloggte Nutzer), Groq als kostenloser Fallback.
-Alles läuft über `api/_lib/llm.ts`.
+Dazu im Hintergrund:
+
+- **Planung:** abends automatisch der nächste Tag, jederzeit von Hand. Kurze Aufgaben (bis 30 min) dürfen nach dem Zeitfenster bis zu einer letzten Uhrzeit liegen.
+- **Lernen:** nach frühestens drei Wochen schätzt DayFlow Dauern anhand deiner echten Zeiten.
+- **Erinnerungen:** Push-Nachricht kurz vor jedem Block und abends, wenn noch etwas offen ist.
+- **Offline und Updates:** installierbar als App (PWA); eine neue Version wird beim Zurückholen aus dem Hintergrund automatisch geladen.
 
 ## Aufbau
 
 ```
-apps/web/          React + Vite Frontend (Firebase Auth, Firestore)
-packages/core/     Reine Logik ohne I/O: Modelle, Planung, Validierung (mit Vitest-Tests)
-api/               Vercel Functions (Backend)
-  _lib/            gemeinsamer Server-Code (nicht als Endpunkt deployt)
-  health.ts        GET /api/health: zeigt, welche Einrichtung fehlt
-firestore.rules    Zugriffsregeln (jeder Nutzer nur seine Daten; Server-Collections gesperrt)
-spec/, adr/        Spezifikation und Architekturentscheidungen
+apps/web/            React + Vite, die App (Firebase Auth, Firestore direkt für Aufgaben)
+packages/core/       Logik ohne I/O: Modelle, Planung in freie Lücken, Validierung
+api/                 Vercel Functions (Server)
+  calendar.ts        Kalender, Planung, Blöcke, Erinnerungen (eine Funktion, viele Aktionen)
+  chat.ts            Assistent
+  extractFromNote.ts Notiz → Vorschläge
+  transcribe.ts      Spracheingabe
+  account.ts         Daten herunterladen, Gelerntes zurücksetzen, Konto löschen
+  health.ts          Erreichbarkeit
+  cron/              plan-tomorrow (abends), remind (alle 5 min, von GitHub Actions)
+  _lib/              gemeinsamer Server-Code
+tests/server/        Server-Tests, laufen ohne Installation
+firestore.rules      Zugriffsregeln
+docs/                Doku (Architektur, Sicherheit, Tests, Einrichtung)
 ```
 
-Hosting: Vercel (Frontend + `api/`). Firebase nur für Auth und Firestore.
+Mehr dazu: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## Entwickeln
 
+Voraussetzung: Node 22.
+
 ```bash
 npm install
-cp .env.example .env.local   # Werte eintragen, siehe Kommentare
-npm run dev                  # nur Frontend
-npx vercel dev               # Frontend + /api lokal
-npm run validate             # Lint + Typecheck + Tests
+cp .env.example .env.local     # Werte eintragen, siehe Kommentare
+npm run dev                    # nur die App
+npx vercel dev                 # App + /api lokal
 ```
 
-## Einrichtung (Produktion)
+Prüfen:
 
-1. Vercel → Settings → Environment Variables: alle Variablen aus `.env.example`
-2. Google Kalender: [docs/CALENDAR_SETUP.md](docs/CALENDAR_SETUP.md)
-3. Firestore-Regeln deployen: `npx firebase deploy --only firestore:rules`
-4. Prüfen: `https://<deine-app>/api/health`. Jeder Eintrag sollte `ok` sein.
+```bash
+npm run test:server            # Server-Tests (Planer, Kalender, Sicherheit, Push …)
+npm run test:once              # Unit-Tests in packages/core und apps/web
+npm run typecheck
+npm run build
+```
 
-## Vor einem Launch
+Jeder Pull Request läuft automatisch durch dieselben Prüfungen (GitHub Actions, `ci.yml`).
+Details: [docs/TESTING.md](docs/TESTING.md)
 
-- Google-Verifizierung der Kalender-Scopes (sonst Warnbildschirm, max. 100 Nutzer)
-- Vercel Pro (Hobby ist nur nicht-kommerziell, Cron nur 1×/Tag)
-- Aufgaben nur noch in Firestore speichern (aktuell zusätzlich localStorage mit eigener Sync-Logik)
-- Eine Planungslogik statt drei (`scheduleDay`, `planDayWithAI`, `freeSlotScheduling`)
-- Restliche KI-Endpunkte nur mit Login erlauben und Rate-Limits setzen
+## Ändern und veröffentlichen
+
+`main` ist geschützt: Änderungen kommen nur über Pull Requests. Vercel baut für jeden PR
+eine Vorschau und veröffentlicht `main` automatisch. Gemergte Zweige werden automatisch gelöscht.
+
+## Einrichtung
+
+1. Vercel → Settings → Environment Variables: alle Werte aus `.env.example`.
+2. Google Kalender und Firebase-Dienstkonto: [docs/CALENDAR_SETUP.md](docs/CALENDAR_SETUP.md).
+3. Firestore-Regeln veröffentlichen: Inhalt von `firestore.rules` in der Firebase Console einfügen
+   (oder `npx firebase deploy --only firestore:rules`).
+4. Erinnerungen: läuft über `.github/workflows/remind.yml`, keine Einstellung nötig.
+5. Prüfen: `https://<app>/api/health` antwortet mit `{"status":"ok"}`.
+
+## Sicherheit und Datenschutz
+
+Jedes Konto sieht nur seine eigenen Daten; Schlüssel liegen nur auf dem Server.
+Wie das umgesetzt ist und wie man eine Lücke meldet: [docs/SECURITY.md](docs/SECURITY.md).
+Datenschutzerklärung, Impressum und Nutzungsbedingungen stehen in der App unter
+`/privacy`, `/impressum` und `/terms`; die Angaben zum Betreiber an einer Stelle in
+`apps/web/src/legal/operator.ts`.
