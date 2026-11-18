@@ -45,6 +45,9 @@ export const AuthLayout: React.FC<{ title: string; subtitle: string; children: R
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.subtitle}>{subtitle}</p>
         {children}
+        <p className={styles.legalLinks}>
+          <a href="/impressum">Impressum</a> · <a href="/privacy">Datenschutz</a>
+        </p>
       </div>
     </main>
   </div>

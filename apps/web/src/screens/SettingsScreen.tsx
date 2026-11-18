@@ -60,7 +60,7 @@ export const SettingsScreen: React.FC = () => {
       }} />
 
       <p className={styles.footer}>
-        DayFlow · <a href="/privacy">Datenschutz</a> · <a href="/terms">Nutzungsbedingungen</a>
+        DayFlow · <a href="/privacy">Datenschutz</a> · <a href="/terms">Nutzungsbedingungen</a> · <a href="/impressum">Impressum</a>
       </p>
     </div>
   );
