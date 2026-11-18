@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './LegalPage.module.css';
+import { OPERATOR, LEGAL_UPDATED } from '../legal/operator';
 
+/** Terms of use. Keep in step with what the app does and with the privacy policy. */
 export const TermsOfServiceScreen: React.FC = () => {
+  const mail = <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>;
   return (
     <div className={styles.container}>
       <div className={styles.content}>
@@ -11,165 +14,125 @@ export const TermsOfServiceScreen: React.FC = () => {
         </Link>
 
         <h1>Nutzungsbedingungen</h1>
-        <p className={styles.lastUpdated}>Zuletzt aktualisiert: Januar 2026</p>
+        <p className={styles.lastUpdated}>Stand: {LEGAL_UPDATED}</p>
 
         <section>
-          <h2>1. Akzeptanz der Bedingungen</h2>
+          <h2>1. Worum es geht</h2>
           <p>
-            Durch die Nutzung von DayFlow ("Dienst", "App", "wir", "uns") stimmen Sie diesen
-            Nutzungsbedingungen zu. Wenn Sie nicht einverstanden sind, nutzen Sie den Dienst bitte
-            nicht.
+            Diese Bedingungen gelten für die Nutzung von DayFlow. Anbieter ist {OPERATOR.name}, {OPERATOR.street},{' '}
+            {OPERATOR.city} (siehe <Link to="/impressum">Impressum</Link>). DayFlow ist ein privat betriebenes Projekt und
+            kostenlos. Mit dem Anlegen eines Kontos stimmst du diesen Bedingungen zu.
           </p>
         </section>
 
         <section>
-          <h2>2. Beschreibung des Dienstes</h2>
-          <p>
-            DayFlow ist eine KI-gestützte Aufgabenplanungs-App, die Ihnen hilft, aus
-            Freitext-Notizen strukturierte Aufgaben zu erstellen und Ihren Tag zu planen.
-          </p>
-          <p>Der Dienst umfasst:</p>
+          <h2>2. Was DayFlow macht</h2>
           <ul>
-            <li>Freitext-Notiz-Erfassung</li>
-            <li>KI-gestützte Aufgabenextraktion</li>
-            <li>Tagesplanung und Zeitmanagement</li>
-            <li>Cloud-Synchronisation</li>
+            <li>Aufgaben und Notizen festhalten, auch per Spracheingabe.</li>
+            <li>Einen Assistenten, der aus deinen Nachrichten Aufgaben und Termine vorschlägt.</li>
+            <li>Aufgaben automatisch in freie Lücken deines Kalenders planen (Google Kalender oder ein Kalender-Link).</li>
+            <li>Erinnerungen an anstehende Blöcke, wenn du sie erlaubst.</li>
+          </ul>
+          <p>
+            Funktionen können sich ändern, dazukommen oder wegfallen. Für die KI-Funktionen gilt ein Tageslimit pro Konto,
+            damit der kostenlose Betrieb möglich bleibt; solange deine E-Mail nicht bestätigt ist, ist es niedriger.
+          </p>
+        </section>
+
+        <section>
+          <h2>3. Dein Konto</h2>
+          <ul>
+            <li>Du musst mindestens 16 Jahre alt sein.</li>
+            <li>Halte dein Passwort geheim. Merkst du, dass jemand anderes dein Konto nutzt, schreib an {mail}.</li>
+            <li>Ein Konto ist für eine Person gedacht.</li>
           </ul>
         </section>
 
         <section>
-          <h2>3. Account-Registrierung</h2>
-          <h3>3.1 Berechtigung</h3>
-          <p>
-            Sie müssen mindestens 16 Jahre alt sein, um einen Account zu erstellen. Durch die
-            Registrierung bestätigen Sie, dass alle Angaben korrekt und vollständig sind.
-          </p>
-
-          <h3>3.2 Account-Sicherheit</h3>
-          <p>Sie sind verantwortlich für:</p>
+          <h2>4. Was nicht erlaubt ist</h2>
           <ul>
-            <li>Die Geheimhaltung Ihres Passworts</li>
-            <li>Alle Aktivitäten unter Ihrem Account</li>
-            <li>Die unverzügliche Meldung unbefugter Nutzung</li>
+            <li>DayFlow für rechtswidrige Zwecke nutzen.</li>
+            <li>Versuchen, in fremde Konten, die Server oder die Datenbank einzudringen oder Schutzmaßnahmen zu umgehen.</li>
+            <li>Die App oder die KI-Funktionen automatisiert oder massenhaft abfragen, etwa um die Tageslimits zu umgehen.</li>
+            <li>Inhalte speichern, die Rechte anderer verletzen.</li>
           </ul>
-        </section>
-
-        <section>
-          <h2>4. Nutzungsrechte und -beschränkungen</h2>
-          <h3>4.1 Lizenz</h3>
           <p>
-            Wir gewähren Ihnen eine beschränkte, nicht-exklusive, nicht-übertragbare Lizenz zur
-            Nutzung des Dienstes für persönliche Zwecke.
-          </p>
-
-          <h3>4.2 Verbotene Nutzung</h3>
-          <p>Sie dürfen NICHT:</p>
-          <ul>
-            <li>Den Dienst für illegale Zwecke nutzen</li>
-            <li>Versuchen, unsere Systeme zu hacken oder zu manipulieren</li>
-            <li>Automatisierte Tools ohne unsere Zustimmung verwenden</li>
-            <li>Inhalte hochladen, die Rechte Dritter verletzen</li>
-            <li>Spam, Malware oder schädliche Inhalte verbreiten</li>
-            <li>Den Dienst reverse-engineeren oder kopieren</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2>5. Ihre Inhalte</h2>
-          <h3>5.1 Eigentum</h3>
-          <p>
-            Sie behalten alle Rechte an Ihren Notizen, Aufgaben und Daten. Wir beanspruchen kein
-            Eigentum an Ihren Inhalten.
-          </p>
-
-          <h3>5.2 Lizenz an uns</h3>
-          <p>
-            Sie gewähren uns eine beschränkte Lizenz, Ihre Inhalte zu verarbeiten, um den Dienst
-            bereitzustellen (z.B. KI-Extraktion, Speicherung, Synchronisation).
-          </p>
-
-          <h3>5.3 Verantwortung</h3>
-          <p>
-            Sie sind allein verantwortlich für Ihre Inhalte. Wir übernehmen keine Haftung für
-            Verlust oder Beschädigung Ihrer Daten. Wir empfehlen regelmäßige Backups.
+            Wer dagegen verstößt, dessen Konto kann gesperrt oder gelöscht werden. Wenn möglich, bekommst du vorher eine
+            Nachricht.
           </p>
         </section>
 
         <section>
-          <h2>6. KI-Dienste</h2>
+          <h2>5. Deine Inhalte</h2>
           <p>
-            Unsere KI-gestützten Features (Aufgabenextraktion, Zeitschätzung) sind Vorschläge und
-            nicht garantiert fehlerfrei. Sie sind verantwortlich für die Überprüfung und Bestätigung
-            aller KI-Vorschläge.
+            Deine Aufgaben, Notizen und Pläne gehören dir. DayFlow verarbeitet sie nur, um die App für dich zu betreiben,
+            zum Beispiel um sie zu speichern, zu planen oder an die KI zu schicken. Wie genau, steht in der{' '}
+            <Link to="/privacy">Datenschutzerklärung</Link>. Du kannst alles jederzeit in den Einstellungen herunterladen.
           </p>
         </section>
 
         <section>
-          <h2>7. Verfügbarkeit</h2>
+          <h2>6. KI-Vorschläge</h2>
           <p>
-            Wir bemühen uns um hohe Verfügbarkeit, können aber keine 100% Uptime garantieren.
-            Wartungsarbeiten werden angekündigt. Wir haften nicht für Ausfälle oder
-            Datenverluste.
+            Der Assistent und die Zeitplanung machen Vorschläge. Sie können falsch sein, etwa ein falsches Datum oder eine
+            unpassende Dauer. Vorschläge des Assistenten landen erst in deinem Kalender oder deinen Aufgaben, wenn du sie
+            annimmst. Die automatische Planung trägt nur deine eigenen Aufgaben in den separaten DayFlow-Kalender ein,
+            nie in deine anderen Kalender. Prüf Vorschläge, bevor du sie übernimmst, besonders bei wichtigen Terminen.
           </p>
         </section>
 
         <section>
-          <h2>8. Zahlungen und Abonnements</h2>
+          <h2>7. Verfügbarkeit und Daten</h2>
           <p>
-            Aktuell ist DayFlow kostenlos. Sollten wir zukünftig kostenpflichtige Features
-            einführen, werden Sie im Voraus informiert.
+            DayFlow wird nach bestem Bemühen betrieben, aber ohne Zusage, dass es immer erreichbar ist oder fehlerfrei
+            funktioniert. Es kann Ausfälle geben, und der Dienst kann eingestellt werden. Wird DayFlow eingestellt, erfährst
+            du das mindestens 30 Tage vorher und kannst deine Daten herunterladen. Wichtige Termine sollten zusätzlich in
+            deinem eigenen Kalender stehen.
           </p>
         </section>
 
         <section>
-          <h2>9. Kündigung</h2>
-          <h3>9.1 Durch Sie</h3>
+          <h2>8. Haftung</h2>
           <p>
-            Sie können Ihren Account jederzeit in den Einstellungen löschen. Ihre Daten werden
-            innerhalb von 30 Tagen unwiderruflich gelöscht.
-          </p>
-
-          <h3>9.2 Durch uns</h3>
-          <p>Wir können Ihren Account sperren oder löschen bei:</p>
-          <ul>
-            <li>Verstoß gegen diese Nutzungsbedingungen</li>
-            <li>Illegaler oder missbräuchlicher Nutzung</li>
-            <li>Längerer Inaktivität (nach Vorankündigung)</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2>10. Haftungsbeschränkung</h2>
-          <p>
-            Der Dienst wird "wie besehen" bereitgestellt. Wir haften nicht für indirekte Schäden,
-            Datenverlust oder entgangene Gewinne. Unsere Haftung ist auf den gesetzlich
-            zulässigen Rahmen beschränkt.
+            Der Anbieter haftet unbeschränkt bei Vorsatz und grober Fahrlässigkeit, bei Verletzung von Leben, Körper oder
+            Gesundheit und nach dem Produkthaftungsgesetz. Weil DayFlow kostenlos ist, ist die Haftung für leichte
+            Fahrlässigkeit im Übrigen ausgeschlossen.
           </p>
         </section>
 
         <section>
-          <h2>11. Änderungen der Bedingungen</h2>
+          <h2>9. Konto beenden</h2>
           <p>
-            Wir können diese Bedingungen jederzeit aktualisieren. Wesentliche Änderungen werden per
-            E-Mail mitgeteilt. Die fortgesetzte Nutzung nach Änderungen gilt als Zustimmung.
+            Du kannst dein Konto jederzeit in den Einstellungen unter „Deine Daten“ löschen. Dann werden dein Konto und
+            alle Daten sofort gelöscht, auch der DayFlow-Kalender bei Google. Das lässt sich nicht rückgängig machen.
           </p>
         </section>
 
         <section>
-          <h2>12. Anwendbares Recht</h2>
+          <h2>10. Änderungen</h2>
           <p>
-            Diese Bedingungen unterliegen deutschem Recht. Gerichtsstand ist [Ihr Standort].
+            Diese Bedingungen können angepasst werden, etwa wenn neue Funktionen dazukommen. Bei wesentlichen Änderungen
+            wirst du vorher in der App oder per E-Mail informiert. Bist du nicht einverstanden, kannst du dein Konto vorher
+            löschen.
           </p>
         </section>
 
         <section>
-          <h2>13. Kontakt</h2>
+          <h2>11. Recht</h2>
           <p>
-            Bei Fragen zu diesen Bedingungen:
-            <br />
-            E-Mail: <a href="mailto:legal@makenow.app">legal@makenow.app</a>
+            Es gilt deutsches Recht. Wenn du Verbraucher bist und in einem anderen EU-Land lebst, bleiben dir die
+            zwingenden Schutzvorschriften deines Landes erhalten.
           </p>
         </section>
+
+        <section>
+          <h2>12. Kontakt</h2>
+          <p>Fragen zu diesen Bedingungen: {mail}</p>
+        </section>
+
+        <p className={styles.footer}>
+          <Link to="/impressum">Impressum</Link> · <Link to="/privacy">Datenschutzerklärung</Link>
+        </p>
       </div>
     </div>
   );
