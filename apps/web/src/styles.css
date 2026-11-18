@@ -56,8 +56,8 @@ body {
 }
 
 :root {
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter Variable', 'Inter', system-ui, sans-serif;
 
   --radius-sm: 10px;
   --radius-md: 16px;
