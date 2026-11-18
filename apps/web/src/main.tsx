@@ -20,6 +20,10 @@ import { OnboardingGuard } from './components/OnboardingGuard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { watchForUpdates } from './utils/appUpdate';
 import { ImpressumScreen } from './screens/ImpressumScreen';
+// fonts ship with the app: no request to Google, works offline
+import '@fontsource-variable/inter';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/700.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

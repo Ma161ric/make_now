@@ -102,8 +102,8 @@ export const PrivacyPolicyScreen: React.FC = () => {
           <p>DayFlow nutzt diese Dienste. Sie verarbeiten die Daten im Auftrag (Art. 28 DSGVO) auf Grundlage ihrer Verträge zur Auftragsverarbeitung.</p>
           <ul>
             <li>
-              <strong>Google Firebase</strong> (Google Ireland Ltd. / Google LLC): Anmeldung und Datenbank für Konto,
-              Aufgaben, Pläne und Einstellungen.
+              <strong>Google Firebase</strong> (Google Ireland Ltd. / Google LLC): Datenbank für Aufgaben, Pläne und
+              Einstellungen, gespeichert in Frankfurt (Region europe-west3); dazu die Anmeldung, die Google weltweit betreibt.
             </li>
             <li>
               <strong>Vercel Inc.</strong> (USA, Server in Frankfurt): Hosting der App und der Server-Funktionen,
@@ -121,10 +121,6 @@ export const PrivacyPolicyScreen: React.FC = () => {
             <li>
               <strong>Push-Dienste</strong> von Apple, Google, Mozilla oder Microsoft, je nach Gerät: Zustellung der
               Erinnerungen.
-            </li>
-            <li>
-              <strong>Google Fonts</strong> (Google LLC): Die Schriften der App werden von Google geladen, dabei sieht Google
-              deine IP-Adresse.
             </li>
           </ul>
           <p>
@@ -168,7 +164,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <section>
           <h2>7. Speicher im Browser</h2>
           <p>
-            DayFlow nutzt keine Tracking-Cookies. Im Speicher deines Browsers liegen nur Dinge, die die App zum Funktionieren
+            DayFlow nutzt keine Tracking-Cookies und lädt nichts von fremden Servern, auch keine Schriften. Im Speicher deines Browsers liegen nur Dinge, die die App zum Funktionieren
             braucht: deine Anmeldung, Design, Chat-Verlauf, zwischengespeicherte Pläne und eine Offline-Kopie der App. Für die
             Verbindung mit Google Kalender wird für höchstens 10 Minuten ein Cookie gesetzt, das den Vorgang an deinen Browser
             bindet. All das ist technisch notwendig (§ 25 Abs. 2 TDDDG) und braucht keine Einwilligung.
