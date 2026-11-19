@@ -179,7 +179,7 @@ export const AssistentScreen: React.FC = () => {
     ta.style.height = 'auto';
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
   }, [input]);
-  // No rubber-banding of the whole page while the chat is open (iPhone)
+  // The page stays put while the chat is open, only the history scrolls (iPhone)
   useEffect(() => {
     document.documentElement.classList.add('no-overscroll');
     return () => document.documentElement.classList.remove('no-overscroll');
