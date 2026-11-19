@@ -221,6 +221,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
+  min-height: 100dvh; /* the visible height, not the one behind Safari's toolbars */
   display: flex;
   flex-direction: column;
   transition: background-color 0.2s, color 0.2s;
@@ -437,4 +438,11 @@ select {
 }
 
 /* chat open: the page itself never bounces, only the message list scrolls */
-html.no-overscroll, html.no-overscroll body { overscroll-behavior: none; }
+/* Assistent: only the history scrolls, the page itself never moves (iOS would otherwise
+   drag the whole app when the history is empty or already at its end) */
+html.no-overscroll,
+html.no-overscroll body {
+  overscroll-behavior: none;
+  overflow: hidden;
+  height: 100%;
+}
