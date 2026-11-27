@@ -16,9 +16,7 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "@vercel/node": "^2.15.10",
     "ajv": "^8.12.0",
-    "ajv-formats": "^2.1.1",
-    "vite": "7.3.7"
+    "ajv-formats": "^2.1.1"
   }
 }

@@ -164,3 +164,10 @@
 @keyframes checkIn { from { transform: scale(0.4); opacity: 0; } }
 .doneTitle { transition: color 0.3s, opacity 0.3s; }
 @media (prefers-reduced-motion: reduce) { .checked, .checked svg { animation: none; } }
+
+/* hint while typing a title that is already open */
+.dupHint {
+  margin: 6px 2px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
