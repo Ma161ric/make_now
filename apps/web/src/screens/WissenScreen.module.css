@@ -1,0 +1,399 @@
+/* Wissen: calm cards like the settings, one row per entry, actions on the right */
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 20px 48px;
+  box-sizing: border-box;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--text-primary);
+}
+
+.h1 {
+  margin: 4px 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.intro {
+  margin: 0 0 20px;
+  max-width: 60ch;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.section {
+  margin-bottom: 16px;
+  padding: 8px 20px 16px;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 6px 0 4px;
+}
+
+.sectionHead h2 {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.headButton {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.headButton:focus-visible,
+.iconBtn:focus-visible,
+.personHead:focus-visible,
+.textButton:focus-visible,
+.danger:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.addRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.addRow :global(.input) {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.addRow :global(.button) {
+  flex: none;
+}
+
+.list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.row,
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.row:last-child,
+.note:last-child {
+  border-bottom: 0;
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 2px;
+}
+
+.text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.meta,
+.muted,
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.muted {
+  padding: 10px 0 2px;
+}
+
+.hint {
+  margin-top: 2px;
+}
+
+.iconBtn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-top: -6px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.iconBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.editForm {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editForm textarea,
+.noteForm textarea {
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.textButton {
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.textButton:hover {
+  color: var(--text-primary);
+}
+
+/* ---------- people ---------- */
+.personForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.personForm label,
+.aboutRow label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.personForm :global(.input) {
+  min-height: 44px;
+}
+
+.personForm :global(.button) {
+  align-self: flex-start;
+}
+
+.person {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.person:last-child {
+  border-bottom: 0;
+}
+
+.personHead {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  color: var(--accent-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.chevron {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+
+.personOpen .chevron {
+  transform: rotate(-135deg);
+}
+
+.personBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 16px 48px;
+}
+
+.aboutRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.noteForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.noteForm :global(.button) {
+  align-self: flex-end;
+}
+
+.notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.danger {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--danger);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.danger:disabled {
+  opacity: 0.5;
+}
+
+.error {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.footnote {
+  margin: 8px 4px 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.footnote a {
+  color: inherit;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px 16px 32px;
+  }
+
+  .h1 {
+    font-size: 1.5rem;
+  }
+
+  .section {
+    padding: 4px 16px 12px;
+  }
+
+  .personBody {
+    padding-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

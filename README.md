@@ -11,7 +11,8 @@ Live: https://make-now.vercel.app · privat betriebenes Projekt, kostenlos
 | Bildschirm | Was er macht |
 |---|---|
 | **Heute** | Was jetzt dran ist, Zeitleiste des Tages mit freien Lücken, Notiz-Feld mit Vorschlägen, Blöcke verschieben, abhaken, Rückgängig, Abendrückblick |
-| **Assistent** | Chat mit der KI; Vorschläge für Aufgaben und Termine mit einem Tipp übernehmen; Spracheingabe |
+| **Assistent** | Chat mit der KI; Vorschläge für Aufgaben, Termine, Dinge zum Merken und Notizen zu Personen mit einem Tipp übernehmen; kennt deine Termine der nächsten 7 Tage; Spracheingabe |
+| **Wissen** | Was der Assistent sich über dich merkt, und Personen mit Beschreibung und Notizen; alles ansehen, ändern, löschen (Knopf oben im Assistenten) |
 | **Woche** | Die sieben Tage mit Terminen und geplanten Blöcken |
 | **Aufgaben** | Alle Aufgaben mit Dauer, Wichtigkeit, Wiederholung (täglich bis monatlich), Suche |
 | **Einstellungen** | Kalender verbinden (Google oder Kalender-Link, z. B. iCloud), Planungsfenster und Grenzen, Sport, Erinnerungen, Design, Daten herunterladen und löschen |

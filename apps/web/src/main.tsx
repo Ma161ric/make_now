@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';
 import { AufgabenScreen } from './screens/AufgabenScreen';
 import { AssistentScreen } from './screens/AssistentScreen';
+import { WissenScreen } from './screens/WissenScreen';
 import { HeuteScreen } from './screens/HeuteScreen';
 import { WocheScreen } from './screens/WocheScreen';
 import { LoginScreen } from './screens/LoginScreen';
@@ -46,6 +47,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <Route path="today" element={<ProtectedRoute><OnboardingGuard><HeuteScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="tasks" element={<ProtectedRoute><OnboardingGuard><AufgabenScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="chat" element={<Navigate to="/" replace />} />
+                <Route path="wissen" element={<ProtectedRoute><OnboardingGuard><WissenScreen /></OnboardingGuard></ProtectedRoute>} />
                 <Route path="settings" element={<ProtectedRoute><OnboardingGuard><SettingsScreen /></OnboardingGuard></ProtectedRoute>} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />

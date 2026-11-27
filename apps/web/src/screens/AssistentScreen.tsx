@@ -1,8 +1,8 @@
 /**
  * Assistent = chat + inbox in one page.
  * Left: talk or dictate. Right: what the assistant recognised, typed as
- * To-do (→ Aufgaben) or Termin (→ DayFlow calendar). Plain chatting yields
- * no proposal. Each card: take over, edit, drop. On phones the proposals sit
+ * To-do (→ Aufgaben), Termin (→ DayFlow calendar), something to remember about you
+ * or a note about a person (→ Wissen). Plain chatting yields no proposal. Each card: take over, edit, drop. On phones the proposals sit
  * right under the assistant's reply and can be swiped (right = take, left = drop).
  */
 import React, { useEffect, useRef, useState } from 'react';
@@ -12,7 +12,8 @@ import { saveTask } from '../storage';
 import { uuid } from '../utils';
 import { API_BASE, authHeaders } from '../utils/apiAuth';
 import { MicButton } from '../components/MicButton';
-import { IconCheck, IconX, IconPencil, IconArrowUp } from '../components/Icons';
+import { IconCheck, IconX, IconPencil, IconArrowUp, IconBook } from '../components/Icons';
+import { addMemory, addPersonNote, MEMORY_MAX, NOTE_MAX, NAME_MAX } from '../utils/knowledge';
 import {
   type Suggestion,
   loadSuggestions,
@@ -22,6 +23,7 @@ import {
   addSuggestions,
   suggestionToTask,
   durationLabel,
+  isKnowledge,
 } from '../utils/suggestions';
 import styles from './AssistentScreen.module.css';
 
@@ -29,7 +31,9 @@ import styles from './AssistentScreen.module.css';
 interface Done {
   id: string;
   title: string;
-  kind: 'task' | 'event';
+  kind: 'task' | 'event' | 'memory' | 'person_note';
+  /** person_note: who the note is about */
+  person?: string;
   taskId?: string;
   minutes?: number;
   placed?: string; // "heute 18:15–19:15" or "morgen"
@@ -84,7 +88,13 @@ const toLocalInput = (iso?: string) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
+const kindLabel = (s: Suggestion) =>
+  s.kind === 'event' && s.start_at ? 'Termin' : s.kind === 'idea' ? 'Idee' : s.kind === 'memory' ? 'Merken' : s.kind === 'person_note' ? 'Person' : 'To-do';
+const cardClass = (s: Suggestion) => (s.kind === 'event' && s.start_at ? styles.cardEvent : isKnowledge(s) ? styles.cardKnow : styles.cardTask);
+
 function summary(s: Suggestion): string[] {
+  if (s.kind === 'memory') return ['kommt ins Gedächtnis'];
+  if (s.kind === 'person_note') return [`Notiz zu ${s.person || 'einer Person'}`];
   if (s.kind === 'event' && s.start_at) {
     const parts = [`${dayLabel(s.start_at)}, ${timeLabel(s.start_at)}${s.end_at ? `–${timeLabel(s.end_at)}` : ''}`];
     if (s.location) parts.push(s.location);
@@ -104,9 +114,10 @@ function proposalNote(m: ChatMessage, open: Suggestion[]): string {
     s.kind === 'event' && s.start_at
       ? ` ${new Date(s.start_at).toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${s.end_at ? `–${timeLabel(s.end_at)}` : ''}`
       : '';
+  const label = (kind: string, person?: string) => (kind === 'event' ? 'Termin' : kind === 'memory' ? 'Merken' : kind === 'person_note' ? `Notiz zu ${person || '?'}` : 'Aufgabe');
   const items = [
-    ...open.filter((s) => s.msg_id === m.id).map((s) => `${s.kind === 'event' ? 'Termin' : 'Aufgabe'} "${s.title}"${when(s)}, noch offen`),
-    ...(m.done || []).map((d) => `${d.kind === 'event' ? 'Termin' : 'Aufgabe'} "${d.title}"${d.placed ? ` ${d.placed}` : ''}, angenommen`),
+    ...open.filter((s) => s.msg_id === m.id).map((s) => `${label(s.kind, s.person)} "${s.title}"${when(s)}, noch offen`),
+    ...(m.done || []).map((d) => `${label(d.kind, d.person)} "${d.title}"${d.placed ? ` ${d.placed}` : ''}, angenommen`),
   ];
   return items.length ? `\n[Vorgeschlagen: ${items.join('; ')}]` : '';
 }
@@ -288,7 +299,15 @@ export const AssistentScreen: React.FC = () => {
     setBusyId(s.id);
     setError(null);
     try {
-      if (s.kind === 'event' && s.start_at) {
+      if (s.kind === 'memory') {
+        const { existed } = await addMemory(uid, s.title, 'chat');
+        if (inChat(s)) addDone(s, { id: s.id, title: s.title, kind: 'memory' });
+        else setToast({ text: existed ? 'Steht schon in deinem Wissen' : 'Gemerkt' });
+      } else if (s.kind === 'person_note') {
+        const person = await addPersonNote(uid, { person: s.person || '', person_id: s.person_id, text: s.title });
+        if (inChat(s)) addDone(s, { id: s.id, title: s.title, kind: 'person_note', person: person.name });
+        else setToast({ text: `Bei ${person.name} notiert` });
+      } else if (s.kind === 'event' && s.start_at) {
         const end = s.end_at || new Date(new Date(s.start_at).getTime() + (s.duration_min_minutes || 60) * 60_000).toISOString();
         const res = await fetch(`${API_BASE}/calendar/event`, {
           method: 'POST',
@@ -360,11 +379,28 @@ export const AssistentScreen: React.FC = () => {
   useEffect(() => {
     if (sheet === 'list' && orphans.length === 0) setSheet(null);
   }, [sheet, orphans.length]);
-  const tasks = suggestions.filter((s) => s.kind !== 'event' || !s.start_at);
+  const tasks = suggestions.filter((s) => !isKnowledge(s) && (s.kind !== 'event' || !s.start_at));
   const events = suggestions.filter((s) => s.kind === 'event' && s.start_at);
+  const knowledge = suggestions.filter(isKnowledge);
 
   const renderEditor = (s: Suggestion) => {
     const isEvent = s.kind === 'event' && !!s.start_at;
+    if (isKnowledge(s)) {
+      return (
+        <div className={styles.editor}>
+          {s.kind === 'person_note' && (
+            <label>
+              <span>Person</span>
+              <input className="input" value={s.person || ''} maxLength={NAME_MAX} onChange={(e) => patch(s.id, { person: e.target.value, person_id: undefined })} />
+            </label>
+          )}
+          <label>
+            <span>{s.kind === 'memory' ? 'Was ich mir merke' : 'Notiz'}</span>
+            <textarea className="input" rows={3} value={s.title} maxLength={s.kind === 'memory' ? MEMORY_MAX : NOTE_MAX} onChange={(e) => patch(s.id, { title: e.target.value })} />
+          </label>
+        </div>
+      );
+    }
     return (
           <div className={styles.editor}>
             <label>
@@ -463,13 +499,12 @@ export const AssistentScreen: React.FC = () => {
   };
 
   const renderCard = (s: Suggestion) => {
-    const isEvent = s.kind === 'event' && !!s.start_at;
     const isEditing = editing === s.id;
     return (
-      <li key={s.id} className={`${styles.card} ${isEvent ? styles.cardEvent : styles.cardTask}`}>
+      <li key={s.id} className={`${styles.card} ${cardClass(s)}`}>
         <div className={styles.cardRow}>
           <div className={styles.cardMain}>
-            <span className={styles.kind}>{isEvent ? 'Termin' : s.kind === 'idea' ? 'Idee' : 'To-do'}</span>
+            <span className={styles.kind}>{kindLabel(s)}</span>
             <strong className={styles.title}>{s.title}</strong>
             <span className={styles.meta}>{summary(s).join(' · ')}</span>
           </div>
@@ -496,16 +531,22 @@ export const AssistentScreen: React.FC = () => {
       <section className={styles.chat} aria-label="Chat">
         <div className={styles.head}>
           <h1>Assistent</h1>
-          {messages.length > 0 && (
-            <button className={styles.textButton} onClick={clearChat}>Verlauf löschen</button>
-          )}
+          <div className={styles.headActions}>
+            {messages.length > 0 && (
+              <button className={styles.textButton} onClick={clearChat}>Verlauf löschen</button>
+            )}
+            <Link to="/wissen" className={styles.headLink} aria-label="Wissen: was ich mir merke und deine Personen" title="Wissen">
+              <IconBook size={18} />
+              <span>Wissen</span>
+            </Link>
+          </div>
         </div>
 
         <div className={styles.messages} ref={listRef} onScroll={onListScroll}>
           {messages.length === 0 && (
             <div className={styles.empty}>
               <p>Erzähl einfach, was ansteht.</p>
-              <p className={styles.emptyHint}>„Muss noch die Steuer machen und Do um 14 Uhr Wohnung anschauen“ wird zu einem To-do und einem Termin. Einfach reden geht auch, dann schlage ich nichts vor.</p>
+              <p className={styles.emptyHint}>„Muss noch die Steuer machen und Do um 14 Uhr Wohnung anschauen“ wird zu einem To-do und einem Termin. Einfach reden geht auch, dann schlage ich nichts vor. Was ich mir über dich oder andere merken soll, schlage ich dir ebenfalls vor.</p>
             </div>
           )}
           {messages.map((m) => {
@@ -530,7 +571,7 @@ export const AssistentScreen: React.FC = () => {
                         <IconCheck size={14} />
                         <span className={styles.doneText}>
                           <strong>{d.title}</strong>
-                          {d.kind === 'event' ? ' im Kalender' : d.placed ? ` eingeplant ${d.placed}` : ' in Aufgaben'}
+                          {d.kind === 'event' ? ' im Kalender' : d.kind === 'memory' ? ' gemerkt' : d.kind === 'person_note' ? ` bei ${d.person || 'der Person'} notiert` : d.placed ? ` eingeplant ${d.placed}` : ' in Aufgaben'}
                         </span>
                         {d.kind === 'task' && !d.placed && d.taskId && (
                           <button className={styles.doneAction} disabled={placing} onClick={() => placeToday({ id: d.taskId!, title: d.title, minutes: d.minutes || 30 }, d.id)}>
@@ -613,7 +654,7 @@ export const AssistentScreen: React.FC = () => {
 
         {suggestions.length === 0 ? (
           <p className={styles.panelEmpty}>
-            Was ich aus dem Gespräch erkenne, landet hier. Übernommene To-dos gehen in <Link to="/tasks">Aufgaben</Link> und ein Termin in deinen Kalender.
+            Was ich aus dem Gespräch erkenne, landet hier. Übernommene To-dos gehen in <Link to="/tasks">Aufgaben</Link>, ein Termin in deinen Kalender und was ich mir merken soll in <Link to="/wissen">Wissen</Link>.
           </p>
         ) : (
           <>
@@ -627,6 +668,12 @@ export const AssistentScreen: React.FC = () => {
               <>
                 <h3 className={styles.group}>Termine</h3>
                 <ul className={styles.list}>{events.map(renderCard)}</ul>
+              </>
+            )}
+            {knowledge.length > 0 && (
+              <>
+                <h3 className={styles.group}>Merken</h3>
+                <ul className={styles.list}>{knowledge.map(renderCard)}</ul>
               </>
             )}
             {suggestions.length > 1 && (
@@ -653,7 +700,7 @@ export const AssistentScreen: React.FC = () => {
                 if (!s) return <p className={styles.panelEmpty}>Der Vorschlag ist schon erledigt.</p>;
                 return (
                   <>
-                    <h2 className={styles.sheetTitle}>{s.kind === 'event' && s.start_at ? 'Termin bearbeiten' : 'To-do bearbeiten'}</h2>
+                    <h2 className={styles.sheetTitle}>{s.kind === 'event' && s.start_at ? 'Termin bearbeiten' : s.kind === 'memory' ? 'Merken bearbeiten' : s.kind === 'person_note' ? 'Notiz bearbeiten' : 'To-do bearbeiten'}</h2>
                     {renderEditor(s)}
                     <div className={styles.sheetActions}>
                       <button className={styles.sheetSecondary} onClick={() => { drop(s.id); setSheet(null); }}>Verwerfen</button>
@@ -686,7 +733,6 @@ export const AssistentScreen: React.FC = () => {
  * right takes it over, left drops it.
  */
 const InlineCard: React.FC<{ s: Suggestion; busy: boolean; onAccept: () => void; onDrop: () => void; onEdit: () => void }> = ({ s, busy, onAccept, onDrop, onEdit }) => {
-  const isEvent = s.kind === 'event' && !!s.start_at;
   const [dx, setDx] = useState(0);
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const moved = useRef(false);
@@ -723,7 +769,7 @@ const InlineCard: React.FC<{ s: Suggestion; busy: boolean; onAccept: () => void;
         {dx > 0 ? <><IconCheck size={16} /> Übernehmen</> : <>Verwerfen <IconX size={16} /></>}
       </div>
       <div
-        className={`${styles.inlineCard} ${isEvent ? styles.cardEvent : styles.cardTask}`}
+        className={`${styles.inlineCard} ${cardClass(s)}`}
         style={{ transform: dx ? `translateX(${dx}px)` : undefined, transition: dx ? 'none' : undefined }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -737,7 +783,7 @@ const InlineCard: React.FC<{ s: Suggestion; busy: boolean; onAccept: () => void;
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onEdit())}
           aria-label={`„${s.title}“ bearbeiten`}
         >
-          <span className={styles.kind}>{isEvent ? 'Termin' : 'To-do'}</span>
+          <span className={styles.kind}>{kindLabel(s)}</span>
           <strong className={styles.title}>{s.title}</strong>
           <span className={styles.meta}>{summary(s).join(' · ')}</span>
         </div>

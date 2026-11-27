@@ -41,7 +41,7 @@ dem Kalender-Abo-Link und den Cron-Endpunkten (eigene Prüfung, siehe unten).
 | Endpunkt | Aufgabe |
 |---|---|
 | `calendar` | Aktionen `connect` `status` `week` `today` `settings` `plan` `place` `extend` `event` `resolve` `move` `done` `missed` `undo` `local` `feed-rotate` `links` `push` `push-subscribe` `push-unsubscribe` `push-test` `disconnect`, außerdem der OAuth-Callback und `GET /api/feed/:token` (Kalender-Abo) |
-| `chat` | Assistent; Vorschläge als JSON, Datumsangaben aus einem mitgeschickten Kalender der nächsten 8 Tage |
+| `chat` | Assistent; Vorschläge als JSON (`task`, `event`, `memory`, `person_note`), Datumsangaben aus einem mitgeschickten Kalender der nächsten 8 Tage; im Prompt außerdem Gedächtnis, Personen und Termine der nächsten 7 Tage (`_lib/knowledge.ts`, jeder Teil mit Zeitlimit, ein Fehler kostet nur diesen Teil) |
 | `extractFromNote` | Notiz → Aufgaben, Termine, Ideen |
 | `transcribe` | Sprachaufnahme → Text (Groq Whisper) |
 | `account` | `export` (alle Daten als JSON), `forget_learning`, `delete_all` |
@@ -67,6 +67,8 @@ Die eigentliche Lücken-Suche steckt in `packages/core/src/freeSlotScheduling.ts
 |---|---|---|
 | `users/{uid}/items` | Nutzer (validiert) | Aufgaben |
 | `users/{uid}/inbox_notes`, `extractions`, `day_plans`, `daily_reviews` | Nutzer | Notizen und Pläne |
+| `users/{uid}/memories` | Nutzer (validiert, Text bis 300) | Gedächtnis: Fakten über dich |
+| `users/{uid}/people` | Nutzer (validiert, bis 50 Notizen) | Personen mit Beschreibung und Notizen |
 | `users/{uid}/time_log` | Nutzer lesen, Server schreiben | Erledigt-Zeiten fürs Lernen |
 | `users/{uid}` (Dokument selbst) | Nutzer lesen | wird nicht genutzt |
 | `calendar_connections/{uid}` | nur Server | Einstellungen, Google-Token, Abo-Token, Rückgängig-Stand |
