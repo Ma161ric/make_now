@@ -19,6 +19,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { OnboardingGuard } from './components/OnboardingGuard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { watchForUpdates } from './utils/appUpdate';
+import { startAppCheck } from './firebase/appCheck';
 import { ImpressumScreen } from './screens/ImpressumScreen';
 // fonts ship with the app: no request to Google, works offline
 import '@fontsource-variable/inter';
@@ -57,6 +58,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       </ErrorBoundary>
   </React.StrictMode>
 );
+
+// App Check (only with VITE_APPCHECK_SITE_KEY): start early so the first requests already carry a token
+void startAppCheck();
 
 // Installable app (PWA): register the service worker in production builds
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './LegalPage.module.css';
 import { OPERATOR, LEGAL_UPDATED } from '../legal/operator';
+import { appCheckEnabled } from '../firebase/appCheck';
 
 /**
  * Privacy policy. Keep it in step with what the app really does (api/, firestore.rules, sw.js):
@@ -123,6 +124,14 @@ export const PrivacyPolicyScreen: React.FC = () => {
               <strong>Push-Dienste</strong> von Apple, Google, Mozilla oder Microsoft, je nach Gerät: Zustellung der
               Erinnerungen.
             </li>
+            {appCheckEnabled() && (
+              <li>
+                <strong>Firebase App Check mit reCAPTCHA Enterprise</strong> (Google): prüft im Hintergrund, dass Anfragen von
+                der echten DayFlow-App kommen und nicht von automatisierten Programmen. Dafür werden technische Merkmale des
+                Browsers und Geräts an Google übermittelt. Grundlage ist das berechtigte Interesse am Schutz vor Missbrauch
+                (Art. 6 Abs. 1 lit. f DSGVO).
+              </li>
+            )}
           </ul>
           <p>
             Einige dieser Anbieter sitzen in den USA. Die Übermittlung stützt sich auf das EU-US Data Privacy Framework, soweit

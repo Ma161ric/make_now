@@ -3,10 +3,12 @@
  * Files under api/_lib are not deployed as endpoints (underscore prefix).
  *
  * Env: FIREBASE_SERVICE_ACCOUNT = the service account JSON (one line)
+ *      APPCHECK_ENFORCE = '1' to accept only requests from the real DayFlow app (App Check token)
  */
 import { initializeApp, cert, getApps, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAppCheck } from 'firebase-admin/app-check';
 import type { VercelRequest } from '@vercel/node';
 
 function app(): App {
@@ -53,11 +55,30 @@ export async function requireUserInfo(req: VercelRequest): Promise<{ uid: string
   const header = req.headers.authorization || '';
   const match = header.match(/^Bearer (.+)$/);
   if (!match) throw new HttpError(401, 'Not signed in');
+  let info: { uid: string; verified: boolean };
   try {
     const decoded = await getAuth(app()).verifyIdToken(match[1]);
-    return { uid: decoded.uid, verified: decoded.email_verified === true };
+    info = { uid: decoded.uid, verified: decoded.email_verified === true };
   } catch {
     throw new HttpError(401, 'Invalid session');
+  }
+  await requireAppCheck(req);
+  return info;
+}
+
+/**
+ * App Check: with APPCHECK_ENFORCE=1 only requests carrying a valid token from the
+ * DayFlow web app get through (scripts with a stolen login do not). Off by default.
+ */
+export async function requireAppCheck(req: VercelRequest): Promise<void> {
+  if (process.env.APPCHECK_ENFORCE !== '1') return;
+  const raw = req.headers['x-firebase-appcheck'];
+  const token = Array.isArray(raw) ? raw[0] : raw;
+  if (!token) throw new HttpError(403, 'App-Prüfung fehlt. Lade DayFlow neu.');
+  try {
+    await getAppCheck(app()).verifyToken(token);
+  } catch {
+    throw new HttpError(403, 'App-Prüfung fehlgeschlagen. Lade DayFlow neu.');
   }
 }
 

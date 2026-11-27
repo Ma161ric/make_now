@@ -62,3 +62,4 @@ export const initializeApp = () => ({});
 export const getApps = () => [{}];
 export const cert = () => ({});
 export const getAuth = () => ({ verifyIdToken: async () => ({ uid: 'u1' }) });
+export const getAppCheck = () => ({ verifyToken: async (t) => { if (t !== 'good-app-token') throw new Error('bad'); return { appId: 'web' }; } });
