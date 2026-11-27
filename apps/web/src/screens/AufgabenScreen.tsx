@@ -173,6 +173,12 @@ export const AufgabenScreen: React.FC = () => {
 
   const q = query.trim().toLowerCase();
   const matching = useMemo(() => (q ? tasks.filter((t) => t.title.toLowerCase().includes(q)) : tasks), [tasks, q]);
+  // same title already open: say so while typing, but still allow it (two "Einkaufen" can be fine)
+  const norm = (t: string) => t.trim().toLowerCase().replace(/\s+/g, ' ');
+  const duplicate = useMemo(() => {
+    const t = norm(newTitle);
+    return t ? tasks.find((x) => OPEN.has(x.status) && norm(x.title) === t) : undefined;
+  }, [tasks, newTitle]);
   const addTask = async (e: React.FormEvent) => {
     e.preventDefault();
     const title = newTitle.trim();
@@ -256,6 +262,7 @@ export const AufgabenScreen: React.FC = () => {
             <input id="new-task" className="input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Titel, z. B. Zahnarzt anrufen" maxLength={200} autoFocus />
             <button className="button" type="submit" disabled={!newTitle.trim()}>Anlegen</button>
           </div>
+          {duplicate && <p className={styles.dupHint} role="status">„{duplicate.title}“ ist schon offen. Anlegen geht trotzdem.</p>}
           <div className={styles.addOptions}>
             <DurationChips value={newMinutes} onChange={setNewMinutes} idPrefix="new-d" />
             <label className={styles.repeatLabel}>
