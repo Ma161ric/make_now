@@ -61,9 +61,18 @@ export const PrivacyPolicyScreen: React.FC = () => {
           <p>
             Was du dem Assistenten schreibst, eine Notiz zum Auswerten oder eine Sprachaufnahme wird zusammen mit den Titeln
             deiner offenen Aufgaben an einen KI-Anbieter (Abschnitt 4) geschickt, damit er antworten und Vorschläge machen
-            kann. DayFlow speichert diese Inhalte nicht auf dem Server. Der Chat-Verlauf liegt nur im Speicher deines
+            kann. Beim Chat gehen außerdem dein Wissen (siehe unten) und deine Termine der nächsten sieben Tage (Titel, Zeit,
+            Ort) mit, damit der Assistent sie berücksichtigen kann. DayFlow speichert diese Inhalte nicht auf dem Server. Der Chat-Verlauf liegt nur im Speicher deines
             Browsers und wird beim Abmelden gelöscht. Pro Tag wird gezählt, wie oft du die KI nutzt, um Missbrauch und Kosten
             zu begrenzen.
+          </p>
+          <h3>Wissen: Gedächtnis und Personen</h3>
+          <p>
+            Unter „Wissen“ speichert DayFlow, was der Assistent sich über dich merken soll, und Personen, die du erwähnst,
+            mit kurzer Beschreibung und Notizen. Gespeichert wird nur, was du im Chat übernimmst oder selbst einträgst; du
+            kannst jeden Eintrag dort ändern und löschen. Sensibles schlägt der Assistent nur vor, wenn du ausdrücklich darum
+            bittest. Notizen über andere Menschen sind Daten über Dritte: Notier nur, was du für dich wirklich brauchst, und
+            nichts, was die Person nicht über sich lesen sollte.
           </p>
           <h3>Erinnerungen</h3>
           <p>
@@ -133,7 +142,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <section>
           <h2>5. Wie lange Daten bleiben</h2>
           <ul>
-            <li>Konto, Aufgaben, Pläne, Einstellungen und gelernte Zeiten: bis du sie oder dein Konto löschst.</li>
+            <li>Konto, Aufgaben, Pläne, Einstellungen, gelernte Zeiten und dein Wissen (Gedächtnis, Personen): bis du sie oder dein Konto löschst.</li>
             <li>Zugang zu Google Kalender: bis du ihn in den Einstellungen trennst oder das Konto löschst.</li>
             <li>Push-Adressen: bis du Erinnerungen ausschaltest, dich abmeldest oder das Konto löschst.</li>
             <li>Tageszähler für die KI-Nutzung (nur Anzahl und Datum): bis du das Konto löschst.</li>

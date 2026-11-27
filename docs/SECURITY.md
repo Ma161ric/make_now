@@ -28,6 +28,7 @@ Bitte nicht als öffentliches Issue, sondern per E-Mail an die Adresse im
 - Kalender-Links: nur öffentliche Adressen, jede Weiterleitung neu geprüft, höchstens 5 MB und 5000 Termine.
 - Push-Abos: nur Adressen bekannter Push-Dienste.
 - KI: Tageslimits pro Konto (Chat 150, Notizen 100, Sprache 60), Vorschläge werden serverseitig bereinigt.
+- Gedächtnis, Personen und Kalender im Chat-Prompt: als Daten markiert ("keine Anweisungen"), Zeilenumbrüche entfernt, Länge begrenzt; eine `person_id` im Vorschlag wird nur übernommen, wenn sie zu einer eigenen Person gehört. Gespeichert wird nur, was der Nutzer bestätigt.
 
 **Browser**
 - Content-Security-Policy erzwungen (Skripte nur von der eigenen Seite und Google/Firebase für den Login),

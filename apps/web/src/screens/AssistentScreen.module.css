@@ -19,7 +19,7 @@
 
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
 }
@@ -257,6 +257,11 @@
   border-left-color: var(--event-bg);
 }
 
+/* something to remember (fact or a note about a person): quiet, neither to-do nor appointment */
+.cardKnow {
+  border-left-color: var(--border-strong);
+}
+
 .cardRow {
   display: flex;
   align-items: center;
@@ -382,6 +387,38 @@
   padding: 10px 0;
 }
 
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* to Wissen: what the assistant remembers and the people */
+.headLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.headLink:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.headLink:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 .editor .textButton {
   margin-top: 0;
 }
@@ -476,6 +513,10 @@
 
 .inlineCard.cardEvent {
   border-left-color: var(--event-bg);
+}
+
+.inlineCard.cardKnow {
+  border-left-color: var(--border-strong);
 }
 
 .inlineMain {

@@ -51,6 +51,26 @@ service cloud.firestore {
         allow create, update: if isOwner(userId) && smallDoc();
       }
 
+      // what the assistant remembers about you (Wissen)
+      match /memories/{memoryId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && smallDoc()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 300;
+      }
+
+      // people you told the assistant about, with notes (Wissen)
+      match /people/{personId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && smallDoc()
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() <= 80
+          && (!('about' in request.resource.data) || (request.resource.data.about is string && request.resource.data.about.size() <= 200))
+          && (!('notes' in request.resource.data) || (request.resource.data.notes is list && request.resource.data.notes.size() <= 50));
+      }
+
       // written by the server only (learning data); you may look at it
       match /time_log/{entryId} {
         allow read: if isOwner(userId);

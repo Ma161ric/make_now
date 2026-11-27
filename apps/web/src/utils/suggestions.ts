@@ -7,8 +7,12 @@ import { uuid } from '../utils';
 
 export interface Suggestion {
   id: string;
-  kind: 'task' | 'event' | 'idea';
+  kind: 'task' | 'event' | 'idea' | 'memory' | 'person_note';
+  /** memory / person_note: the text to remember */
   title: string;
+  // person_note: who it is about (person_id when the assistant knew the person)
+  person?: string;
+  person_id?: string;
   duration_min_minutes: number;
   duration_max_minutes: number;
   importance: Importance;
@@ -108,6 +112,13 @@ export function fromChatProposals(proposals: any[], source: string, msgId?: stri
   return (proposals || []).flatMap((p): Suggestion[] => {
     if (!p?.title) return [];
     const base = { id: uuid(), title: String(p.title), source, msg_id: msgId, created_at: now, importance: (p.importance || 'medium') as Importance };
+    if (p.kind === 'memory') {
+      return [{ ...base, kind: 'memory', importance: 'low', duration_min_minutes: 0, duration_max_minutes: 0 }];
+    }
+    if (p.kind === 'person_note') {
+      if (typeof p.person !== 'string' || !p.person.trim()) return [];
+      return [{ ...base, kind: 'person_note', importance: 'low', duration_min_minutes: 0, duration_max_minutes: 0, person: p.person.trim(), ...(typeof p.person_id === 'string' ? { person_id: p.person_id } : {}) }];
+    }
     if (p.kind === 'event' && p.start_at) {
       const mins = p.end_at ? Math.max(15, Math.round((+new Date(p.end_at) - +new Date(p.start_at)) / 60000)) : 60;
       return [{ ...base, kind: 'event', importance: 'high', start_at: p.start_at, end_at: p.end_at, location: p.location, duration_min_minutes: mins, duration_max_minutes: mins }];
@@ -124,6 +135,9 @@ export function fromChatProposals(proposals: any[], source: string, msgId?: stri
     }];
   });
 }
+
+/** Remember this (fact or note about a person) instead of a to-do or appointment */
+export const isKnowledge = (s: Pick<Suggestion, 'kind'>) => s.kind === 'memory' || s.kind === 'person_note';
 
 export function addSuggestions(uid: string, list: Suggestion[]) {
   if (list.length) saveSuggestions(uid, [...list, ...loadSuggestions(uid)]);
