@@ -27,6 +27,10 @@ export const auth = getAuth(app);
 let cachedDb: any | null = null;
 export async function getDb() {
   if (cachedDb) return cachedDb;
+  // App Check must be running before Firestore starts, so its requests carry the token
+  const { startAppCheck } = await import('./appCheck');
+  await startAppCheck();
+  if (cachedDb) return cachedDb;
   const { initializeFirestore } = await import('firebase/firestore');
   // Optional fields (due_at, notes, ...) are often undefined: drop them
   // instead of rejecting the whole write.
